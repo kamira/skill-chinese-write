@@ -1,0 +1,50 @@
+name: governance
+on:
+  push: { branches: [main] }
+  pull_request:
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+
+      # 隨身治理工具的漂移。上游是否前進看不出來,這道閘只查本地有沒有被改過。
+      - name: vendored tools drift
+        run: python3 tools/tools_drift_check.py
+
+      - name: doc integrity (CHG↔ACC + 結構同步 + secrets)
+        run: python3 tools/doc_integrity_check.py --repo .
+
+      - name: static & security check
+        run: python3 tools/static_check.py --repo .
+
+      # 好樣本要過、壞樣本要擋——只驗「跑得動」等於沒驗(綠燈可達 + 紅燈可達,KN-001/KN-003)
+      - name: style lint fixtures (good must pass, bad must fail)
+        run: |
+          python3 skills/writing/scripts/style_check.py skills/writing/assets/sample-good.md
+          python3 skills/writing/scripts/style_check.py skills/writing/assets/sample-issue.md
+          if python3 skills/writing/scripts/style_check.py skills/writing/assets/sample-bad.md > /dev/null; then
+            echo "sample-bad.md 竟然通過 lint —— 詞表或門檻壞了"; exit 1
+          fi
+
+      - name: py_compile all scripts
+        run: python3 -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
+
+      - name: JSON validity
+        run: |
+          for f in $(find . -name '*.json' -not -path './.git/*'); do
+            python3 -m json.tool "$f" > /dev/null || { echo "壞掉的 JSON: $f"; exit 1; }
+          done
+
+      - name: plugin skills copies in sync
+        run: python3 plugins/build_suite.py --check
+
+      - name: catalog version (static + bump-on-change)
+        run: |
+          python3 plugins/catalog_check.py --repo . --check
+          git fetch origin main --depth=50 || true
+          python3 plugins/catalog_check.py --repo . --since origin/main

@@ -1,0 +1,14 @@
+# 評測執行產物(skill-creator 的測試輸出,非 skill 本體)
+skills/*-workspace/
+
+# 系統與相依
+.DS_Store
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# gh-pages 生成產物:不進版控(CHG-20260729-03;已提交的衍生產物必漂移——見 CHG-20260729-01)
+site/_site/
+.mutation-in-progress
+artifacts/

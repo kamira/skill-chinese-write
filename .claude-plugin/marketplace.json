@@ -1,0 +1,29 @@
+{
+  "name": "skill-write",
+  "owner": {
+    "name": "kamira"
+  },
+  "metadata": {
+    "description": "中文寫作技能(繁中):目前只做評論文章——第一人稱、口語、句長與段落刻意參差、刻意句(對稱/反差/明喻)限量、禁 AI 腔與公文腔與句型殼。能寫也能改稿(去 AI 味,保存優先:不編造、不換作者的判斷)。規則不是散文建議,而是可跑的 lint(style_check.py:硬性違規 exit 1)。小說與散文尚未實作。Traditional-Chinese commentary writing and de-slop editing with an enforceable style linter.",
+    "version": "1.36.0"
+  },
+  "plugins": [
+    {
+      "name": "writing",
+      "source": "./plugins/writing",
+      "description": "中文寫作技能(繁中):目前只做評論文章——第一人稱、口語、句長與段落刻意參差、刻意句(對稱/反差/明喻)限量、禁 AI 腔與公文腔與句型殼。能寫也能改稿(去 AI 味,保存優先:不編造、不換作者的判斷)。規則不是散文建議,而是可跑的 lint(style_check.py:硬性違規 exit 1)。小說與散文尚未實作。Traditional-Chinese commentary writing and de-slop editing with an enforceable style linter.",
+      "version": "1.3.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "writing",
+        "commentary",
+        "chinese",
+        "style",
+        "lint",
+        "editing"
+      ]
+    }
+  ]
+}

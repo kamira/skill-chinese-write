@@ -1,0 +1,11 @@
+{
+  "_doc": "由 kamira/skill-ai-sdlc-autopilot 帶過來的治理工具副本。雜湊記的是**帶過來當下**的內容:本地被改過會對不上,上游前進了則要主動同步——兩者都看得出來,而『看不出來』才是真正的問題。",
+  "source_repo": "kamira/skill-ai-sdlc-autopilot",
+  "source_commit": "45d7de3ed471bad9639d499d184d42d9a5161fd3",
+  "sha256": {
+    "doc_integrity_check.py": "0c53db7c83b7c17c849c76a168ab6968021dddf1b52d3cb0056a33e20decb8c6",
+    "static_check.py": "7a618cd7ca0e5de12096f7a1a4cf3adc298e0d397c11da3a839ef86a29a2bf94",
+    "bilingual_check.py": "60c6ddfa011da079ddb91dea528fc329f49baa497c861fb605e5fe98a047e395",
+    "knowledge_index.py": "6f6fc060042274d6b4bba7273ff712b41933511540339a805cb170aef8f54e22"
+  }
+}
