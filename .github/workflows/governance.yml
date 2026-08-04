@@ -55,6 +55,11 @@ jobs:
             fi
           done
 
+      # 驗收節不是寫給人看的裝飾:CI 真的跑它一次。
+      # (沒有這一步時,`## Acceptance operation` 這個標題層級錯誤存活過三次全綠的 CI。)
+      - name: operational verify (the acceptance operation, for real)
+        run: bash .github/verify.sh
+
       - name: plugin skills copies in sync
         run: python3 plugins/build_suite.py --check
 
