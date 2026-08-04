@@ -17,10 +17,14 @@ jobs:
         run: python3 tools/tools_drift_check.py
 
       - name: doc integrity (CHG↔ACC + 結構同步 + secrets)
-        run: python3 tools/doc_integrity_check.py --repo .
+        run: python3 tools/autopilot/scripts/doc_integrity_check.py --repo .
 
-      - name: static & security check
-        run: python3 tools/static_check.py --repo .
+      # 範圍**明示**收在本 repo 自己的程式碼:tools/ 是逐位元組相同的副本,
+      # 上游已對那四處 shell=True 具名豁免,而豁免記的是上游路徑。
+      # 副本的完整性由上一步的漂移檢查負責——重新稽核一份雜湊相符的副本不會增加資訊。
+      # 代價寫明:repo 根目錄新增的 .py 不在這個範圍內。
+      - name: static & security check (own code; tools/ is covered by the drift check)
+        run: python3 tools/autopilot/scripts/static_check.py --repo . --paths skills plugins
 
       # 好樣本要過、壞樣本要擋——只驗「跑得動」等於沒驗(綠燈可達 + 紅燈可達,KN-001/KN-003)
       - name: style lint fixtures (good must pass, bad must fail)
@@ -38,6 +42,17 @@ jobs:
         run: |
           for f in $(find . -name '*.json' -not -path './.git/*'); do
             python3 -m json.tool "$f" > /dev/null || { echo "壞掉的 JSON: $f"; exit 1; }
+          done
+
+      # 帳本自己也要受閘。沒有這一步,CHG 的格式寫成什麼樣都不會紅。
+      - name: autopilot plan-check (plan-format CHGs only; others skipped with log)
+        run: |
+          for f in docs/writing/changes/CHG-*.md; do
+            if grep -qE "^### Global Constraints" "$f" || grep -qE "^- \[.\] T[0-9]" "$f"; then
+              python3 tools/autopilot/scripts/autopilot_runner.py plan-check --chg "$f" || exit 1
+            else
+              echo "(skip non-plan CHG: $f)"
+            fi
           done
 
       - name: plugin skills copies in sync
