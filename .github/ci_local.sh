@@ -15,23 +15,28 @@ command -v python3 > /dev/null 2>&1 || PY=python
 
 RUN=tools/autopilot/scripts/autopilot_runner.py
 
-echo "[1/11] 實際操作驗收(含漂移紅燈可達探針)"
+echo "[1/13] 實際操作驗收(含漂移紅燈可達探針)"
 bash .github/verify.sh
 
-echo "[2/11] writing 風格 lint 夾具:好樣本要過、壞樣本要擋"
+echo "[2/13] writing 風格 lint 夾具:好樣本要過、壞樣本要擋"
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-good.md > /dev/null
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-issue.md > /dev/null
 if $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-bad.md > /dev/null 2>&1; then
   echo "    ❌ sample-bad.md 竟然通過 lint —— 詞表或門檻壞了"; exit 1
 fi
 
-echo "[3/11] fiction lint 夾具:好樣本要過、壞樣本要擋"
+echo "[3/13] fiction lint 夾具:好樣本要過、壞樣本要擋"
 $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-good.md --genre wuxia > /dev/null
 if $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-bad.md --genre wuxia > /dev/null 2>&1; then
   echo "    ❌ fiction sample-bad.md 竟然通過 lint —— 規則或門檻壞了"; exit 1
 fi
 
-echo "[4/11] techdoc lint 夾具:兩份 good 要過、bad 在兩種 kind 都要被擋"
+echo "[4/13] 小說子層四支夾具:各以自己的流派跑"
+for G in scifi mystery romance flash; do
+  $PY skills/fiction/scripts/fiction_check.py "skills/fiction-$G/assets/sample-good.md" --genre $G > /dev/null
+done
+
+echo "[5/13] techdoc lint 夾具:兩份 good 要過、bad 在兩種 kind 都要被擋"
 $PY skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-spec-good.md --kind spec > /dev/null
 $PY skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-arch-good.md --kind arch > /dev/null
 for K in spec arch; do
@@ -40,7 +45,7 @@ for K in spec arch; do
   fi
 done
 
-echo "[5/11] bizdoc lint 夾具:兩份 good 要過、兩份 bad 在對應 kind 要被擋"
+echo "[6/13] bizdoc lint 夾具:兩份 good 要過、兩份 bad 在對應 kind 要被擋"
 $PY skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-gov-good.md --kind gov > /dev/null
 $PY skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-press-good.md --kind press > /dev/null
 for K in gov press; do
@@ -52,7 +57,7 @@ if $PY skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-gov-bad
   echo "    ❌ 主旨過長的夾具竟然通過 —— 規則或門檻壞了"; exit 1
 fi
 
-echo "[6/11] zh-style:夾具雙向 + 全 repo 夾具零半形"
+echo "[7/13] zh-style:夾具雙向 + 全 repo 夾具零半形"
 $PY skills/zh-style/scripts/zh_style_check.py --self-test > /dev/null
 $PY skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-good.md > /dev/null
 if $PY skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-bad.md > /dev/null 2>&1; then
@@ -60,26 +65,30 @@ if $PY skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-b
 fi
 $PY skills/zh-style/scripts/zh_style_check.py skills/*/assets/sample-good.md skills/*/assets/sample-issue.md skills/*/assets/sample-spec-good.md skills/*/assets/sample-arch-good.md skills/*/assets/sample-gov-good.md skills/*/assets/sample-press-good.md > /dev/null
 
-echo "[7/11] skill 清單一致性(含紅燈可達自檢)"
+echo "[8/13] skill 清單一致性(含紅燈可達自檢)"
 $PY scripts/skill_inventory_check.py --self-test > /dev/null
 $PY scripts/skill_inventory_check.py --repo . > /dev/null
 
-echo "[8/11] CHG 設計圖閘:真實帳本要過、夾具紅綠兩端都要對"
+echo "[9/13] CHG 欄位不得留佔位字串(含紅燈可達自檢)"
+$PY scripts/chg_field_check.py --self-test > /dev/null
+$PY scripts/chg_field_check.py --repo . > /dev/null
+
+echo "[10/13] CHG 設計圖閘:真實帳本要過、夾具紅綠兩端都要對"
 $PY scripts/chg_diagram_gate.py --repo . > /dev/null
 $PY scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/pass/case-*.md' > /dev/null
 if $PY scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/fail/case-*.md' > /dev/null 2>&1; then
   echo "    ❌ 缺圖的夾具竟然通過 —— 這道閘等於不存在"; exit 1
 fi
 
-echo "[9/11] py_compile"
+echo "[11/13] py_compile"
 $PY -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
 
-echo "[10/11] JSON 可解析"
+echo "[12/13] JSON 可解析"
 for f in $(find . -name '*.json' -not -path './.git/*'); do
   $PY -m json.tool "$f" > /dev/null || { echo "    ❌ 壞掉的 JSON: $f"; exit 1; }
 done
 
-echo "[11/11] catalog 版本(靜態 + 變動就要 bump)"
+echo "[13/13] catalog 版本(靜態 + 變動就要 bump)"
 $PY plugins/catalog_check.py --repo . --check > /dev/null
 if git fetch origin main --depth=50 -q 2>/dev/null; then
   $PY plugins/catalog_check.py --repo . --since origin/main > /dev/null

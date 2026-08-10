@@ -195,14 +195,12 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
             lo, hi = band
             d = idiom_n / per_k
             label = genres[genre]["label"]
+            # 只有上限。原文沒有任何流派說過「至少要幾個」,下限是自己發明的;
+            # 而且下限的理由對科幻與懸疑是反的——它們寫到 0 個成語是做對了。
             if d > hi:
                 res["warnings"].append(
-                    f"成語密度 {d:.1f}/千字,高於 {label} 的 {lo}-{hi}"
+                    f"成語密度 {d:.1f}/千字,高於 {label} 的上限 {hi}"
                     "——密集用典會把細節的獨特性抹掉")
-            elif d < lo:
-                res["warnings"].append(
-                    f"成語密度 {d:.1f}/千字,低於 {label} 的 {lo}-{hi}"
-                    "——這個流派靠成語撐氣勢與速度感,太素會失去節奏")
     else:
         res["warnings"].append(
             f"未指定 --genre,成語密度 {res['metrics']['idiom_per_1000']}/千字 **只報數不判定**"
