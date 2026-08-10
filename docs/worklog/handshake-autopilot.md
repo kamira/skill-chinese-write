@@ -22,6 +22,18 @@
 `governance.yml` 一行未改即由紅轉綠。轉 public 是不可逆動作,由使用者在出示普查結果後拍板,
 不走 DIR-001 的預先授權。
 
+## 目前的停點(2026-08-10 12:40 UTC+0)
+
+**PR #6(CHG-20260810-07)停在 merge 閘。** GitHub Actions 的 workflow 是 active、
+Actions 權限正常、repo 是 public,但**完全沒有為 `claude/version-sync` 建立任何 run**——
+開 PR、close/reopen、推空 commit 三種觸發都沒有。與 8/10 上午那次不同:那次有帳務訊息,
+這次沒有任何錯誤,單純不啟動。
+
+判定不出 CI 狀態 → 一律停(DIR-001 明文,不在預先授權內)。本機九步閘全綠,
+**但本機綠不能當作 merge 的依據**。
+
+續作:等 CI 恢復後 `gh run rerun` 或推一個新 commit,綠了再 merge。
+
 ## 下一棒要知道的事
 
 - repo 已 public,舊名 `kamira/skill-write` 由 GitHub 轉址;marketplace id 也一併改名
@@ -34,8 +46,8 @@
   「中/高風險 CHG 要有設計圖」。加新治理規則時,順手問它有沒有對應的閘
 
 <!-- autopilot:begin -->
-branch/role/scope: autopilot / CHG-20260810-06
-doing: CHG-20260810-06 全 6 task 完成,已驗收(ACC-20260810-05)
-next: 開 PR → CI 綠 → merge。之後無明顯可拆的文體(見下)
-last-updated: 2026-08-10 12:10 (UTC+0)
+branch/role/scope: autopilot / CHG-20260810-07
+doing: CHG-20260810-07 已 commit + PR #6,**停在 merge 閘**
+next: CI 恢復後重跑 → 綠了才 merge;不得以本機閘為據放行(DIR-001 明文)
+last-updated: 2026-08-10 12:40 (UTC+0)
 <!-- autopilot:end -->
