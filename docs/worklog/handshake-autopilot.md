@@ -12,22 +12,26 @@
 - 已知缺口(CHG-20260804-03 明載):`build` / `review` 兩個角色只證明到停點正確(exit 3),**未接模型實跑**
 - 本輪動作:僅進場握手 + 對齊本檔,未改任何受治理內容
 
-## 目前停在哪(2026-08-10 08:35 UTC+0)
+## 這一輪發生過的停點(已解除,留紀錄)
 
-**CHG-20260810-01 停在 merge 閘前。** PR #1 已開、本機驗收全綠,但 GitHub Actions
-**沒有啟動**——`The job was not started because recent account payments have failed`。
-帳務問題,與程式碼無關。
+**merge 閘曾因 CI 停擺卡住。** GitHub Actions 回報
+`The job was not started because recent account payments have failed`——私有 repo 的帳務問題,
+與程式碼無關,且**把 workflow 改小是無效解**(擋的是 job 啟動,不是步驟)。
 
-merge 是單向門,這道閘 fail-closed:CI 判定不出狀態一律停(DIR-001 明載,不在預先授權內)。
+解除方式:repo 改名 `skill-chinese-write` → 轉 public(Actions 對 public 免費)→ 同一份
+`governance.yml` 一行未改即由紅轉綠。轉 public 是不可逆動作,由使用者在出示普查結果後拍板,
+不走 DIR-001 的預先授權。
 
-續作點二選一:
+## 下一棒要知道的事
 
-1. 修好 GitHub 帳務 → `gh run rerun 31370062149` → 綠了再 merge
-2. 使用者明示放行(等同 `--allow-no-ci`),以本機 `.github/verify.sh` 全綠為據 merge
+- repo 已 public,舊名 `kamira/skill-write` 由 GitHub 轉址;marketplace id 也一併改名
+- `core.hooksPath` 已指向 `.githooks/`,push 前會自動跑 `.github/ci_local.sh`;新機器要先跑 `scripts/install-hooks.sh`
+- **待辦(使用者已交辦,尚未開 CHG)**:依 `chinese.md` 擴充文體規範,且使用者定調
+  「different write should be different skill」——**不同文體要拆成不同 skill**,不是全部塞進 `writing`
 
 <!-- autopilot:begin -->
-branch/role/scope: autopilot / CHG-20260810-01
-doing: CHG-20260810-01 已 commit + PR #1,停在 merge 閘
-next: 等 CI 可用或使用者放行;merge 後刪 branch
-last-updated: 2026-08-10 08:35 (UTC+0)
+branch/role/scope: autopilot / CHG-20260810-02
+doing: CHG-20260810-01 + CHG-20260810-02 皆已驗收,PR #1 CI 全綠
+next: squash merge PR #1 → 刪 branch → 開文體拆分的 CHG
+last-updated: 2026-08-10 08:55 (UTC+0)
 <!-- autopilot:end -->
