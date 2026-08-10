@@ -55,6 +55,20 @@ def plugin_source_dir(repo: Path, entry: dict) -> Path:
     return repo / src
 
 
+SKILL_VER_RE = re.compile(r"^metadata:\s*$\s*^\s+version:\s*(\S+)\s*$", re.M)
+
+
+def skills_of(repo: Path, plugin: str) -> list[Path]:
+    """該 plugin 打包的 skill 本體(頂層 skills/ 才是單一真相,plugin 內是生成物)。
+    找不到就回空——不是每個 plugin 都必然有同名 skill,缺席不該被誤判成分岔。"""
+    return [p for p in [repo / "skills" / plugin / "SKILL.md"] if p.is_file()]
+
+
+def skill_version(skill_md: Path) -> str | None:
+    m = SKILL_VER_RE.search(skill_md.read_text(encoding="utf-8"))
+    return m.group(1) if m else None
+
+
 def check_static(repo: Path) -> list[str]:
     problems = []
     mk = load_marketplace(repo)
@@ -75,6 +89,16 @@ def check_static(repo: Path) -> list[str]:
             continue
         if ev != pjv:
             problems.append(f"plugin「{name}」marketplace entry.version={ev} ≠ plugin.json version={pjv}(版本分岔)")
+        # 第三處:skill 本體的 metadata.version。CHANGELOG 明訂三處同步,而本檢查
+        # 原本只比對其中兩處——writing 因此在 SKILL.md 停在 1.3.0、另外兩處是 1.4.0,
+        # 全綠地活了一輪。規則寫三處、斷言只查兩處,和「規則沒有斷言」是同一個毛病。
+        for skill in skills_of(repo, name):
+            sv = skill_version(skill)
+            if sv is None:
+                problems.append(f"plugin「{name}」的 {skill.relative_to(repo)} 讀不到 metadata.version")
+            elif sv != pjv:
+                problems.append(
+                    f"plugin「{name}」{skill.relative_to(repo)} version={sv} ≠ plugin.json version={pjv}(版本分岔)")
     return problems
 
 

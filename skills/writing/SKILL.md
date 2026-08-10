@@ -11,7 +11,7 @@ description: >
   不編造、不換作者的判斷)。**小說請用 `fiction` skill**(它的硬規則與本 skill 相反);散文、詩歌、
   劇本等其他文體尚未實作,不要冒充。
 metadata:
-  version: 1.3.0
+  version: 1.4.0
 ---
 
 # writing — 中文寫作

@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "繁體中文寫作技能集:一種文體一支 skill,因為它們的硬規則會互相誤殺。writing 管評論、fiction 管小說、techdoc 管規格書與架構說明、bizdoc 管公文與新聞稿——同一個詞(如「予以」)在不同文體是相反的判定。規則不是散文建議,而是可跑的 lint(硬性違規 exit 1)。拆分判準與其餘文體的狀態見 docs/genres.md。Traditional-Chinese writing skills, one per genre, each with an enforceable linter.",
-    "version": "1.39.0"
+    "version": "1.40.0"
   },
   "plugins": [
     {

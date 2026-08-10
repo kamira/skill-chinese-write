@@ -2,6 +2,19 @@
 
 本檔記錄 `writing` skill 的版本變更。格式參考 Keep a Changelog;tag 採 skill 範圍 `writing-vX.Y.Z`。版本號寫於 `skills/writing/SKILL.md` 的 `metadata.version`,與 `plugins/writing/.claude-plugin/plugin.json`、`.claude-plugin/marketplace.json` 的 entry 三處同步。
 
+## [1.4.0] — 2026-08-10
+
+小說拆出去了(見 `docs/writing/changes/CHG-20260810-03.md`)。**規則一條沒動**,改的只有指路。
+
+### Changed
+- SKILL.md 的「現在能寫什麼」表:小說由「未實作」改為**改用 `fiction` skill**,並列出三條理由——本 skill 要求第一人稱、禁短句收尾、限制刻意句配額,這三條對小說全是反的(第三人稱限知是主流視角、斷頭台法則要的就是戛然而止、武打段落要的就是密集對偶)。
+- description 同步:小說請用 `fiction`;散文等其他文體仍未實作。
+- 新增指路到 [`docs/genres.md`](../genres.md)——其餘文體的規格與難點。
+- `plugin.json` 的 `homepage` 由 `kamira/ai-skills` 改為 `kamira/skill-chinese-write`(拆 repo 之後那個網址一直是錯的)。
+
+### 沒有改的
+`style_rules.json` 與 `style_check.py` 的 diff 為**空**。三份夾具行為完全不變。
+
 ## [1.3.0] — 2026-07-29
 
 議題型文體與條列規範(見 `docs/writing/changes/CHG-20260729-01.md`)。使用者連續給出五則規格,一次收進 skill;實際照規格寫示範稿時,lint 對條列連續誤報三次,另暴露引用誤判與標題被當句子兩個既有缺口。
