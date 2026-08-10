@@ -26,6 +26,7 @@ SRC = ROOT / "skills"
 PLUGINS = {
     "writing": ("writing",),
     "fiction": ("fiction",),
+    "techdoc": ("techdoc",),
 }
 EXCLUDE = ("__pycache__", ".DS_Store")
 

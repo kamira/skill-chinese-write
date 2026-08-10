@@ -15,31 +15,40 @@ command -v python3 > /dev/null 2>&1 || PY=python
 
 RUN=tools/autopilot/scripts/autopilot_runner.py
 
-echo "[1/6] 實際操作驗收(含漂移紅燈可達探針)"
+echo "[1/7] 實際操作驗收(含漂移紅燈可達探針)"
 bash .github/verify.sh
 
-echo "[2/6] writing 風格 lint 夾具:好樣本要過、壞樣本要擋"
+echo "[2/7] writing 風格 lint 夾具:好樣本要過、壞樣本要擋"
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-good.md > /dev/null
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-issue.md > /dev/null
 if $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-bad.md > /dev/null 2>&1; then
   echo "    ❌ sample-bad.md 竟然通過 lint —— 詞表或門檻壞了"; exit 1
 fi
 
-echo "[3/6] fiction lint 夾具:好樣本要過、壞樣本要擋"
+echo "[3/7] fiction lint 夾具:好樣本要過、壞樣本要擋"
 $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-good.md --genre wuxia > /dev/null
 if $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-bad.md --genre wuxia > /dev/null 2>&1; then
   echo "    ❌ fiction sample-bad.md 竟然通過 lint —— 規則或門檻壞了"; exit 1
 fi
 
-echo "[4/6] py_compile"
+echo "[4/7] techdoc lint 夾具:兩份 good 要過、bad 在兩種 kind 都要被擋"
+$PY skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-spec-good.md --kind spec > /dev/null
+$PY skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-arch-good.md --kind arch > /dev/null
+for K in spec arch; do
+  if $PY skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-bad.md --kind $K > /dev/null 2>&1; then
+    echo "    ❌ techdoc sample-bad.md 在 --kind $K 竟然通過 —— 規則或門檻壞了"; exit 1
+  fi
+done
+
+echo "[5/7] py_compile"
 $PY -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
 
-echo "[5/6] JSON 可解析"
+echo "[6/7] JSON 可解析"
 for f in $(find . -name '*.json' -not -path './.git/*'); do
   $PY -m json.tool "$f" > /dev/null || { echo "    ❌ 壞掉的 JSON: $f"; exit 1; }
 done
 
-echo "[6/6] catalog 版本(靜態 + 變動就要 bump)"
+echo "[7/7] catalog 版本(靜態 + 變動就要 bump)"
 $PY plugins/catalog_check.py --repo . --check > /dev/null
 if git fetch origin main --depth=50 -q 2>/dev/null; then
   $PY plugins/catalog_check.py --repo . --since origin/main > /dev/null

@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "繁體中文寫作技能集:每種文體一支 skill,因為它們的硬規則會互相誤殺。writing 管評論(第一人稱、句長參差、刻意句限量、禁 AI 腔);fiction 管小說(對話換行、段落與章節字數、擬聲詞改強動詞、六種流派配比)。規則不是散文建議,而是可跑的 lint(硬性違規 exit 1)。其餘文體的狀態見 docs/genres.md。Traditional-Chinese writing skills, one per genre, each with an enforceable linter.",
-    "version": "1.37.0"
+    "version": "1.38.0"
   },
   "plugins": [
     {
@@ -39,6 +39,23 @@
         "chinese",
         "dialogue",
         "structure",
+        "lint"
+      ]
+    },
+    {
+      "name": "techdoc",
+      "source": "./plugins/techdoc",
+      "description": "中文技術文件寫作技能(繁中):規格書與架構說明。共用硬規則——修辭比例趨近於零、模糊形容詞(快速/良好/適當)一律換成具體數據、禁誇張與情緒詞;結構規則以 --kind 切:規格書要模組化編號與絕對動詞(必須/應該/不可),架構說明必須有圖並記下技術選型的權衡。規則不是散文建議,而是可跑的 lint(techdoc_check.py:硬性違規 exit 1)。Traditional-Chinese specification and architecture documents with an enforceable linter.",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "spec",
+        "architecture",
+        "chinese",
+        "documentation",
+        "requirements",
         "lint"
       ]
     }
