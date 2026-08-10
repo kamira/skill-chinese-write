@@ -68,6 +68,21 @@ jobs:
             echo "主旨過長的夾具竟然通過 —— 規則或門檻壞了"; exit 1
           fi
 
+      # 八篇文體樣稿收成夾具:四支小說子層各以自己的流派驗,八份全部過 zh-style。
+      # 沒有 lint 的四支(prose/poetry/narrative/fu)至少有正字法在管。
+      - name: genre sample fixtures
+        run: |
+          for G in scifi mystery romance flash; do
+            python3 skills/fiction/scripts/fiction_check.py "skills/fiction-$G/assets/sample-good.md" --genre $G
+          done
+
+      # CHG 標頭欄位不得留佔位字串。doc_integrity 查欄位存在,不查欄位有內容——
+      # 兩張 CHG 的 Commit/PR 停在「<close-out 回填>」一路綠燈進了 main。
+      - name: CHG header fields (no unreplaced placeholders)
+        run: |
+          python3 scripts/chg_field_check.py --self-test
+          python3 scripts/chg_field_check.py --repo .
+
       # zh-style 是共用引擎:半形標點在散文與公文裡一樣是錯。
       # 這一步同時擋住既有夾具的回歸——那 12 份曾經全部違規,被當成「好樣本」跑了一輪又一輪。
       - name: zh-style (fixtures both ends + no half-width in any good fixture)
