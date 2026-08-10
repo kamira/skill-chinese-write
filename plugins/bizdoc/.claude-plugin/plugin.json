@@ -1,0 +1,17 @@
+{
+  "name": "bizdoc",
+  "version": "1.0.0",
+  "description": "中文商務與公務應用文寫作技能(繁中):公文與新聞稿。共用硬規則——修辭比例趨近於零、嚴禁情緒化字眼(令人震驚/深感痛心/可喜可賀)、禁止情感修辭(譬喻全禁,結構排比不禁);結構規則以 --kind 切:公文要有主旨(說明與辦法視需要),新聞稿走倒金字塔、導語要在第一段交代完事情並帶數字。規則不是散文建議,而是可跑的 lint(bizdoc_check.py:硬性違規 exit 1)。**與 writing 的硬規則正面衝突,絕不可混用**。Traditional-Chinese official documents and press releases with an enforceable linter.",
+  "author": {
+    "name": "kamira"
+  },
+  "homepage": "https://github.com/kamira/skill-chinese-write",
+  "keywords": [
+    "official-document",
+    "press-release",
+    "chinese",
+    "government",
+    "business",
+    "lint"
+  ]
+}

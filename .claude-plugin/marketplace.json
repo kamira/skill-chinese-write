@@ -4,8 +4,8 @@
     "name": "kamira"
   },
   "metadata": {
-    "description": "繁體中文寫作技能集:每種文體一支 skill,因為它們的硬規則會互相誤殺。writing 管評論(第一人稱、句長參差、刻意句限量、禁 AI 腔);fiction 管小說(對話換行、段落與章節字數、擬聲詞改強動詞、六種流派配比)。規則不是散文建議,而是可跑的 lint(硬性違規 exit 1)。其餘文體的狀態見 docs/genres.md。Traditional-Chinese writing skills, one per genre, each with an enforceable linter.",
-    "version": "1.38.0"
+    "description": "繁體中文寫作技能集:一種文體一支 skill,因為它們的硬規則會互相誤殺。writing 管評論、fiction 管小說、techdoc 管規格書與架構說明、bizdoc 管公文與新聞稿——同一個詞(如「予以」)在不同文體是相反的判定。規則不是散文建議,而是可跑的 lint(硬性違規 exit 1)。拆分判準與其餘文體的狀態見 docs/genres.md。Traditional-Chinese writing skills, one per genre, each with an enforceable linter.",
+    "version": "1.39.0"
   },
   "plugins": [
     {
@@ -56,6 +56,23 @@
         "chinese",
         "documentation",
         "requirements",
+        "lint"
+      ]
+    },
+    {
+      "name": "bizdoc",
+      "source": "./plugins/bizdoc",
+      "description": "中文商務與公務應用文寫作技能(繁中):公文與新聞稿。共用硬規則——修辭比例趨近於零、嚴禁情緒化字眼(令人震驚/深感痛心/可喜可賀)、禁止情感修辭(譬喻全禁,結構排比不禁);結構規則以 --kind 切:公文要有主旨(說明與辦法視需要),新聞稿走倒金字塔、導語要在第一段交代完事情並帶數字。規則不是散文建議,而是可跑的 lint(bizdoc_check.py:硬性違規 exit 1)。**與 writing 的硬規則正面衝突,絕不可混用**。Traditional-Chinese official documents and press releases with an enforceable linter.",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "official-document",
+        "press-release",
+        "chinese",
+        "government",
+        "business",
         "lint"
       ]
     }

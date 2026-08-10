@@ -15,23 +15,23 @@ command -v python3 > /dev/null 2>&1 || PY=python
 
 RUN=tools/autopilot/scripts/autopilot_runner.py
 
-echo "[1/8] 實際操作驗收(含漂移紅燈可達探針)"
+echo "[1/9] 實際操作驗收(含漂移紅燈可達探針)"
 bash .github/verify.sh
 
-echo "[2/8] writing 風格 lint 夾具:好樣本要過、壞樣本要擋"
+echo "[2/9] writing 風格 lint 夾具:好樣本要過、壞樣本要擋"
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-good.md > /dev/null
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-issue.md > /dev/null
 if $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-bad.md > /dev/null 2>&1; then
   echo "    ❌ sample-bad.md 竟然通過 lint —— 詞表或門檻壞了"; exit 1
 fi
 
-echo "[3/8] fiction lint 夾具:好樣本要過、壞樣本要擋"
+echo "[3/9] fiction lint 夾具:好樣本要過、壞樣本要擋"
 $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-good.md --genre wuxia > /dev/null
 if $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-bad.md --genre wuxia > /dev/null 2>&1; then
   echo "    ❌ fiction sample-bad.md 竟然通過 lint —— 規則或門檻壞了"; exit 1
 fi
 
-echo "[4/8] techdoc lint 夾具:兩份 good 要過、bad 在兩種 kind 都要被擋"
+echo "[4/9] techdoc lint 夾具:兩份 good 要過、bad 在兩種 kind 都要被擋"
 $PY skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-spec-good.md --kind spec > /dev/null
 $PY skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-arch-good.md --kind arch > /dev/null
 for K in spec arch; do
@@ -40,22 +40,34 @@ for K in spec arch; do
   fi
 done
 
-echo "[5/8] CHG 設計圖閘:真實帳本要過、夾具紅綠兩端都要對"
+echo "[5/9] bizdoc lint 夾具:兩份 good 要過、兩份 bad 在對應 kind 要被擋"
+$PY skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-gov-good.md --kind gov > /dev/null
+$PY skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-press-good.md --kind press > /dev/null
+for K in gov press; do
+  if $PY skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-bad.md --kind $K > /dev/null 2>&1; then
+    echo "    ❌ bizdoc sample-bad.md 在 --kind $K 竟然通過 —— 規則或門檻壞了"; exit 1
+  fi
+done
+if $PY skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-gov-bad-subject.md --kind gov > /dev/null 2>&1; then
+  echo "    ❌ 主旨過長的夾具竟然通過 —— 規則或門檻壞了"; exit 1
+fi
+
+echo "[6/9] CHG 設計圖閘:真實帳本要過、夾具紅綠兩端都要對"
 $PY scripts/chg_diagram_gate.py --repo . > /dev/null
 $PY scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/pass/case-*.md' > /dev/null
 if $PY scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/fail/case-*.md' > /dev/null 2>&1; then
   echo "    ❌ 缺圖的夾具竟然通過 —— 這道閘等於不存在"; exit 1
 fi
 
-echo "[6/8] py_compile"
+echo "[7/9] py_compile"
 $PY -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
 
-echo "[7/8] JSON 可解析"
+echo "[8/9] JSON 可解析"
 for f in $(find . -name '*.json' -not -path './.git/*'); do
   $PY -m json.tool "$f" > /dev/null || { echo "    ❌ 壞掉的 JSON: $f"; exit 1; }
 done
 
-echo "[8/8] catalog 版本(靜態 + 變動就要 bump)"
+echo "[9/9] catalog 版本(靜態 + 變動就要 bump)"
 $PY plugins/catalog_check.py --repo . --check > /dev/null
 if git fetch origin main --depth=50 -q 2>/dev/null; then
   $PY plugins/catalog_check.py --repo . --since origin/main > /dev/null
