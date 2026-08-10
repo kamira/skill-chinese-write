@@ -27,6 +27,7 @@ PLUGINS = {
     "writing": ("writing",),
     "fiction": ("fiction",),
     "techdoc": ("techdoc",),
+    "bizdoc": ("bizdoc",),
 }
 EXCLUDE = ("__pycache__", ".DS_Store")
 

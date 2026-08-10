@@ -26,15 +26,16 @@
 
 - repo 已 public,舊名 `kamira/skill-write` 由 GitHub 轉址;marketplace id 也一併改名
 - `core.hooksPath` 已指向 `.githooks/`,push 前會自動跑 `.github/ci_local.sh`;新機器要先跑 `scripts/install-hooks.sh`
-- **本 repo 現在有三支 skill**:`writing`(評論)、`fiction`(小說)、`techdoc`(規格書+架構說明)。
+- **本 repo 現在有四支 skill**:`writing`(評論)、`fiction`(小說)、`techdoc`(規格書+架構說明)、`bizdoc`(公文+新聞稿)。
   拆分判準見 knowledge 的 **KN-003**:硬規則相反才拆,只差結構的用旗標,規格薄的先不拆
 - 使用者定調:**different write should be different skill**,收斂為 KN-003
+- **可拆的文體已用完**:剩下 9 個的核心指標都是修辭比例,量不出來,現在拆會生空頭規則(見 `docs/genres.md` 的難點欄)
 - **治理規則本身也要有斷言**(KN-001 已擴及):`scripts/chg_diagram_gate.py` 管住
   「中/高風險 CHG 要有設計圖」。加新治理規則時,順手問它有沒有對應的閘
 
 <!-- autopilot:begin -->
-branch/role/scope: autopilot / CHG-20260810-05
-doing: CHG-20260810-05 全 4 task 完成,已驗收(ACC-20260810-04)
-next: 開 PR → CI 綠 → merge;接著做公文/新聞稿 skill
-last-updated: 2026-08-10 11:20 (UTC+0)
+branch/role/scope: autopilot / CHG-20260810-06
+doing: CHG-20260810-06 全 6 task 完成,已驗收(ACC-20260810-05)
+next: 開 PR → CI 綠 → merge。之後無明顯可拆的文體(見下)
+last-updated: 2026-08-10 12:10 (UTC+0)
 <!-- autopilot:end -->

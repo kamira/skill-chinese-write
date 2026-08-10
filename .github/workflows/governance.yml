@@ -54,6 +54,20 @@ jobs:
             fi
           done
 
+      # bizdoc 與 writing 是正面衝突的兩套規則,夾具當然也要各驗各的
+      - name: bizdoc lint fixtures (both goods pass, bads fail)
+        run: |
+          python3 skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-gov-good.md --kind gov
+          python3 skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-press-good.md --kind press
+          for K in gov press; do
+            if python3 skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-bad.md --kind $K > /dev/null; then
+              echo "bizdoc sample-bad.md 在 --kind $K 竟然通過 —— 規則或門檻壞了"; exit 1
+            fi
+          done
+          if python3 skills/bizdoc/scripts/bizdoc_check.py skills/bizdoc/assets/sample-gov-bad-subject.md --kind gov > /dev/null; then
+            echo "主旨過長的夾具竟然通過 —— 規則或門檻壞了"; exit 1
+          fi
+
       # 中/高風險 CHG 要附設計圖。這條規則從 v1.21 起就存在,但一直沒有任何機器在查
       # ——三張中風險 CHG 都有圖,純粹因為寫的人記得畫(KN-001 的型樣第五次)。
       - name: CHG design-diagram gate (real ledger + both fixture ends)
