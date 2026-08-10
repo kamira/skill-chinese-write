@@ -1,0 +1,10 @@
+# proposal
+
+中文企劃書寫作技能(繁中)。當使用者要寫企劃書、專案提案、活動企劃、簡報型提案時使用。 規格化與標準化,開門見山,採用固定欄位、格式與專業術語。修辭比例趨近於零(0%-5%),嚴禁情緒化或模糊的修辭。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。
+
+```
+/plugin marketplace add kamira/skill-chinese-write
+/plugin install proposal
+```
+
+完整規範見 `skills/proposal/SKILL.md`。各文體的拆分判準見 knowledge 的 KN-003。

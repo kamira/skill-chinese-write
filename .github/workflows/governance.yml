@@ -68,6 +68,13 @@ jobs:
             echo "主旨過長的夾具竟然通過 —— 規則或門檻壞了"; exit 1
           fi
 
+      # 23 支 skill 之後,一致性不能再靠人記:沒被打包的 skill 裝不到、
+      # 前門叫人跑引擎卻沒帶上引擎會跑不動、沒有 lint 又缺明標節就是空頭規則。
+      - name: skill inventory (with red-light self-test)
+        run: |
+          python3 scripts/skill_inventory_check.py --self-test
+          python3 scripts/skill_inventory_check.py --repo .
+
       # 中/高風險 CHG 要附設計圖。這條規則從 v1.21 起就存在,但一直沒有任何機器在查
       # ——三張中風險 CHG 都有圖,純粹因為寫的人記得畫(KN-001 的型樣第五次)。
       - name: CHG design-diagram gate (real ledger + both fixture ends)
