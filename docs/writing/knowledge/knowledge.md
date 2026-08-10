@@ -81,7 +81,7 @@
 
 ### 規則(邊界寫窄)
 
-**在 `kamira/skill-write` 這個 repo 內**,變更風險評為**低或中**時,以下四個閘不再逐次徵詢,直接執行:
+**在 `kamira/skill-chinese-write` 這個 repo 內**(2026-08-10 前名為 `kamira/skill-write`),變更風險評為**低或中**時,以下四個閘不再逐次徵詢,直接執行:
 
 1. commit(訊息帶 CHG 編號)
 2. push 並開 PR
