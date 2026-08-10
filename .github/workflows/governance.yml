@@ -43,6 +43,17 @@ jobs:
             echo "fiction sample-bad.md 竟然通過 lint —— 規則或門檻壞了"; exit 1
           fi
 
+      # techdoc 的 bad 夾具要在**兩種 kind** 都被擋——只驗一種等於放掉另一種的規則
+      - name: techdoc lint fixtures (both goods pass, bad fails under both kinds)
+        run: |
+          python3 skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-spec-good.md --kind spec
+          python3 skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-arch-good.md --kind arch
+          for K in spec arch; do
+            if python3 skills/techdoc/scripts/techdoc_check.py skills/techdoc/assets/sample-bad.md --kind $K > /dev/null; then
+              echo "techdoc sample-bad.md 在 --kind $K 竟然通過 —— 規則或門檻壞了"; exit 1
+            fi
+          done
+
       - name: py_compile all scripts
         run: python3 -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
 
