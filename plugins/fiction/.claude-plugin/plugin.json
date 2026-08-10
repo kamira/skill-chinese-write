@@ -1,0 +1,17 @@
+{
+  "name": "fiction",
+  "version": "1.0.0",
+  "description": "中文小說寫作技能(繁中):對話三形式與換行鐵律、段落字數上限(實體 150 字 / 網文 80 字且不超過 3 行)、擬聲詞改用強動詞、分章字數與切章點,以及六種篇幅流派(微型、中長篇、武俠仙俠、科幻、懸疑推理、言情都市)的修辭與成語配比。規則不是散文建議,而是可跑的 lint(fiction_check.py:硬性違規 exit 1)。與 writing skill 的硬規則互斥,不可混用。Traditional-Chinese fiction writing with an enforceable structural linter.",
+  "author": {
+    "name": "kamira"
+  },
+  "homepage": "https://github.com/kamira/skill-chinese-write",
+  "keywords": [
+    "fiction",
+    "novel",
+    "chinese",
+    "dialogue",
+    "structure",
+    "lint"
+  ]
+}

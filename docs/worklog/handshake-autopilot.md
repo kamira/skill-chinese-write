@@ -26,12 +26,14 @@
 
 - repo 已 public,舊名 `kamira/skill-write` 由 GitHub 轉址;marketplace id 也一併改名
 - `core.hooksPath` 已指向 `.githooks/`,push 前會自動跑 `.github/ci_local.sh`;新機器要先跑 `scripts/install-hooks.sh`
-- **待辦(使用者已交辦,尚未開 CHG)**:依 `chinese.md` 擴充文體規範,且使用者定調
-  「different write should be different skill」——**不同文體要拆成不同 skill**,不是全部塞進 `writing`
+- **本 repo 現在是多 skill**:`writing`(評論)與 `fiction`(小說)。兩支的硬規則互斥,
+  不可混用也不可合併;其餘文體的狀態與難點見 `docs/genres.md`
+- 使用者定調:**different write should be different skill**。下一支要拆哪個文體,
+  依 `docs/genres.md` 的「難點」欄判斷——規格厚到能落成斷言的才值得拆
 
 <!-- autopilot:begin -->
-branch/role/scope: autopilot / CHG-20260810-02
-doing: CHG-20260810-01 + CHG-20260810-02 皆已驗收,PR #1 CI 全綠
-next: squash merge PR #1 → 刪 branch → 開文體拆分的 CHG
-last-updated: 2026-08-10 08:55 (UTC+0)
+branch/role/scope: autopilot / CHG-20260810-03
+doing: CHG-20260810-03 全 7 task 完成,已驗收(ACC-20260810-02)
+next: 開 PR → CI 綠 → merge;之後依 docs/genres.md 挑下一支文體
+last-updated: 2026-08-10 09:40 (UTC+0)
 <!-- autopilot:end -->
