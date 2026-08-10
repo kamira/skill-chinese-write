@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "skills"
 PLUGINS = {
     "writing": ("writing",),
+    "fiction": ("fiction",),
 }
 EXCLUDE = ("__pycache__", ".DS_Store")
 
