@@ -35,6 +35,7 @@ python3 skills/writing/scripts/style_check.py <你的稿子.md>
 | `skills/fiction/` | 小說 skill:SKILL.md、三份 references、fiction_check.py、規則表與 fixture |
 | `skills/techdoc/` | 技術文件 skill(規格書 + 架構說明):techdoc_check.py,以 `--kind` 切結構規則 |
 | `plugins/*/` | 可安裝的 plugin(skill 副本為生成物) |
+| `scripts/` | 治理腳本:`install-hooks.sh`、`chg_diagram_gate.py` |
 | `docs/genres.md` | 文體對照表:哪些已是 skill,哪些還沒有任何機器在把關 |
 | `docs/writing/` | 帳本(CHG / ACC)+ 知識庫 |
 | `tools/` | 隨身治理工具,來自 `kamira/skill-ai-sdlc-autopilot` |

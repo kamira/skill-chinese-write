@@ -54,6 +54,16 @@ jobs:
             fi
           done
 
+      # 中/高風險 CHG 要附設計圖。這條規則從 v1.21 起就存在,但一直沒有任何機器在查
+      # ——三張中風險 CHG 都有圖,純粹因為寫的人記得畫(KN-001 的型樣第五次)。
+      - name: CHG design-diagram gate (real ledger + both fixture ends)
+        run: |
+          python3 scripts/chg_diagram_gate.py --repo .
+          python3 scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/pass/case-*.md'
+          if python3 scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/fail/case-*.md' > /dev/null; then
+            echo "缺圖的夾具竟然通過 —— 這道閘等於不存在"; exit 1
+          fi
+
       - name: py_compile all scripts
         run: python3 -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
 
