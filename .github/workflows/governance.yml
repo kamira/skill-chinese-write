@@ -68,6 +68,17 @@ jobs:
             echo "主旨過長的夾具竟然通過 —— 規則或門檻壞了"; exit 1
           fi
 
+      # zh-style 是共用引擎:半形標點在散文與公文裡一樣是錯。
+      # 這一步同時擋住既有夾具的回歸——那 12 份曾經全部違規,被當成「好樣本」跑了一輪又一輪。
+      - name: zh-style (fixtures both ends + no half-width in any good fixture)
+        run: |
+          python3 skills/zh-style/scripts/zh_style_check.py --self-test
+          python3 skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-good.md
+          if python3 skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-bad.md > /dev/null; then
+            echo "zh-style sample-bad.md 竟然通過"; exit 1
+          fi
+          python3 skills/zh-style/scripts/zh_style_check.py skills/*/assets/sample-good.md skills/*/assets/sample-issue.md skills/*/assets/sample-spec-good.md skills/*/assets/sample-arch-good.md skills/*/assets/sample-gov-good.md skills/*/assets/sample-press-good.md
+
       # 23 支 skill 之後,一致性不能再靠人記:沒被打包的 skill 裝不到、
       # 前門叫人跑引擎卻沒帶上引擎會跑不動、沒有 lint 又缺明標節就是空頭規則。
       - name: skill inventory (with red-light self-test)

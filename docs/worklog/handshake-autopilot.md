@@ -38,7 +38,7 @@ Actions 權限正常、repo 是 public,但**完全沒有為 `claude/version-sync
 
 - repo 已 public,舊名 `kamira/skill-write` 由 GitHub 轉址;marketplace id 也一併改名
 - `core.hooksPath` 已指向 `.githooks/`,push 前會自動跑 `.github/ci_local.sh`;新機器要先跑 `scripts/install-hooks.sh`
-- **本 repo 現在有 23 支 skill / 21 個 plugin / 4 份規則檔**。前門 + 引擎分層:
+- **本 repo 現在有 24 支 skill / 21 個 plugin / 5 份規則檔**(第五支 `zh-style` 是跨文體引擎,所有 plugin 打包)。前門 + 引擎分層:
   前門管觸發與寫作指引,引擎管判定;前門的 plugin 會把引擎一起打包。舊說明(四支):`writing`(評論)、`fiction`(小說)、`techdoc`(規格書+架構說明)、`bizdoc`(公文+新聞稿)。
   拆分判準見 knowledge 的 **KN-003**:硬規則相反才拆,只差結構的用旗標,規格薄的先不拆
 - 使用者定調:**different write should be different skill**,收斂為 KN-003
@@ -47,8 +47,8 @@ Actions 權限正常、repo 是 public,但**完全沒有為 `claude/version-sync
   「中/高風險 CHG 要有設計圖」。加新治理規則時,順手問它有沒有對應的閘
 
 <!-- autopilot:begin -->
-branch/role/scope: autopilot / CHG-20260810-08
-doing: CHG-20260810-08 全 7 task 完成,已驗收(ACC-20260810-06)
-next: 開 PR;**CI 自 11:36 起未再啟動**,merge 閘可能仍是停的
-last-updated: 2026-08-10 13:30 (UTC+0)
+branch/role/scope: autopilot / CHG-20260810-09
+doing: CHG-20260810-09 全 7 task 完成,已驗收(ACC-20260810-07)
+next: 開 PR → CI 綠 → merge
+last-updated: 2026-08-10 14:20 (UTC+0)
 <!-- autopilot:end -->
