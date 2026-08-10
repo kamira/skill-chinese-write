@@ -1,4 +1,4 @@
-# skill-write
+# skill-chinese-write
 
 `writing` 的獨立 repo:繁體中文寫作技能。目前只做**評論文章**——
 第一人稱、口語、句長與段落刻意參差、刻意句(對稱/反差/明喻)限量,
@@ -9,9 +9,12 @@
 ## 安裝
 
 ```
-/plugin marketplace add kamira/skill-write
+/plugin marketplace add kamira/skill-chinese-write
 /plugin install writing
 ```
+
+舊名 `kamira/skill-write` 於 2026-08-10 改為現名。GitHub 會轉址,但 **marketplace id 也一起改了**——
+先前用舊名加過的人要移除再重加一次;plugin 本身仍叫 `writing`,不受影響。
 
 ## 規則是可跑的 lint,不是散文建議
 

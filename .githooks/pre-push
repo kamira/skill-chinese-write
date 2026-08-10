@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# push 之前跑本機治理閘。這是 governance.yml 撤掉之後的自動執行載體。
+#
+# 放在版本控制裡的 .githooks/(而非 .git/hooks/),配 core.hooksPath 指過來,
+# 這樣 hook 本身也受 review,不會是每台機器各改各的。
+set -euo pipefail
+repo_root="$(git rev-parse --show-toplevel)"
+echo "[pre-push] 跑本機治理閘 .github/ci_local.sh"
+bash "$repo_root/.github/ci_local.sh"

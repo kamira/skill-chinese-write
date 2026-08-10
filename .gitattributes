@@ -1,0 +1,5 @@
+# shell 腳本一律 LF。Windows 上簽出成 CRLF 的話,行尾的 \r 會被當成
+# shebang 的一部分,在 Linux(CI runner、pre-push hook)上炸成
+# `bad interpreter: /usr/bin/env bash^M`——而且錯誤訊息完全不像是行尾造成的。
+*.sh text eol=lf
+.githooks/* text eol=lf
