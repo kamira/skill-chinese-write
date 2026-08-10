@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "note": "bizdoc skill 的規則單一真相(公文與新聞稿共用——兩者的硬規則相同,只差結構)。人類可讀版在 references/official.md 與 references/press.md;不同步時以本檔為準。執行者:scripts/bizdoc_check.py。判不了的規則不寫在這裡,寫在 SKILL.md 並明標靠人判斷(KN-001)。",
+
+  "not_shared_with_other_skills": "**刻意不沿用 writing/techdoc 的弱動詞表**。「予以」「加以」在那兩支是被架空的動詞,在公文裡卻是精準的行文動詞——同一個詞,兩種文體的判定相反。這就是 KN-003 說的硬規則互斥,也是四支 skill 至今不抽共用規則層的理由。",
+
+  "emotion_words": [
+    { "term": "令人震驚", "fix": "刪掉,只陳述事實與數字" },
+    { "term": "震驚社會", "fix": "刪掉" },
+    { "term": "深感痛心", "fix": "刪掉;要表達立場請用具體作為" },
+    { "term": "痛心疾首", "fix": "刪掉" },
+    { "term": "義憤填膺", "fix": "刪掉" },
+    { "term": "可喜可賀", "fix": "刪掉" },
+    { "term": "欣喜若狂", "fix": "刪掉" },
+    { "term": "悲痛萬分", "fix": "刪掉" },
+    { "term": "令人髮指", "fix": "刪掉" },
+    { "term": "怵目驚心", "fix": "刪掉,改用數字" },
+    { "term": "萬分感謝", "fix": "改用制式的致意用語" },
+    { "term": "無比", "fix": "刪掉" }
+  ],
+
+  "figurative_pattern": "(像[^,。;、!?\\n]{1,12}(一樣|似的)|彷彿|宛如|猶如|恰似|好比)",
+  "figurative_reason": "原文明寫「嚴禁情緒化或模糊的修辭」「禁止情感修辭,僅保留最基本的結構排比」。排比不禁,譬喻全禁。",
+
+  "vague_reference": [
+    { "term": "相關單位", "fix": "寫出是哪個機關" },
+    { "term": "有關單位", "fix": "寫出是哪個機關" },
+    { "term": "有關方面", "fix": "寫出是誰" },
+    { "term": "部分人士", "fix": "寫出是誰,或刪掉" },
+    { "term": "外界普遍", "fix": "刪掉;沒有來源就不要寫" },
+    { "term": "適時", "fix": "給期限" },
+    { "term": "適度", "fix": "給範圍" },
+    { "term": "妥為", "fix": "寫出要做什麼" },
+    { "term": "儘速", "fix": "給期限" },
+    { "term": "從速", "fix": "給期限" },
+    { "term": "若干", "fix": "給數量" }
+  ],
+
+  "idioms": [
+    "刻不容緩", "迫在眉睫", "雪上加霜", "亡羊補牢", "前所未有", "史無前例",
+    "空前絕後", "滿目瘡痍", "民不聊生", "如火如荼", "方興未艾", "有目共睹",
+    "首當其衝", "層出不窮", "屢見不鮮", "變本加厲", "急轉直下", "風雨飄搖"
+  ],
+  "idioms_per_1000": [0, 6],
+  "idioms_reason": "區間為**本 skill 自訂**。原文給「低(5%-15%)」但未定義分母,不冒充實作;改用可計算的次數/千字,上限取原文的相對高低。公文用於標準化的規定限制,新聞稿用於快速概括事件規模。",
+
+  "official_verbs": ["請", "查照", "辦理", "核示", "鑒核", "備查", "轉知", "惠允", "見復", "依規定"],
+
+  "kinds": {
+    "gov": {
+      "label": "公文",
+      "require_subject": true,
+      "subject_pattern": "^\\s*[【\\[]?\\s*主\\s*旨\\s*[】\\]]?\\s*[::]",
+      "max_subject_chars": 150,
+      "optional_sections": ["說明", "辦法"],
+      "require_lead_fact": false,
+      "max_lead_chars": 0
+    },
+    "press": {
+      "label": "新聞稿",
+      "require_subject": false,
+      "subject_pattern": "",
+      "max_subject_chars": 0,
+      "optional_sections": [],
+      "require_lead_fact": true,
+      "max_lead_chars": 150
+    }
+  },
+
+  "fact_pattern": "([0-9０-９]|[一二三四五六七八九十百千萬]+(年|月|日|時|人|件|元|億|萬))"
+}

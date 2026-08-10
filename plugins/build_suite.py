@@ -24,10 +24,27 @@ for _stream in (sys.stdout, sys.stderr):
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "skills"
 PLUGINS = {
-    "writing": ("writing",),
-    "fiction": ("fiction",),
-    "techdoc": ("techdoc",),
-    "bizdoc": ("bizdoc",),
+    "writing": ('writing',),
+    "fiction": ('fiction',),
+    "fiction-flash": ('fiction-flash', 'fiction'),
+    "fiction-long": ('fiction-long', 'fiction'),
+    "fiction-wuxia": ('fiction-wuxia', 'fiction'),
+    "fiction-scifi": ('fiction-scifi', 'fiction'),
+    "fiction-mystery": ('fiction-mystery', 'fiction'),
+    "fiction-romance": ('fiction-romance', 'fiction'),
+    "spec": ('spec', 'techdoc'),
+    "architecture": ('architecture', 'techdoc'),
+    "official": ('official', 'bizdoc'),
+    "press": ('press', 'bizdoc'),
+    "proposal": ('proposal',),
+    "prose": ('prose',),
+    "poetry": ('poetry',),
+    "drama": ('drama',),
+    "narrative": ('narrative',),
+    "lyric": ('lyric',),
+    "exposition": ('exposition',),
+    "fu": ('fu',),
+    "historiography": ('historiography',),
 }
 EXCLUDE = ("__pycache__", ".DS_Store")
 

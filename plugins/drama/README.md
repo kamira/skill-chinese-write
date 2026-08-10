@@ -1,0 +1,10 @@
+# drama
+
+中文戲劇 / 劇本寫作技能(繁中)。當使用者要寫劇本、舞台劇、對白為主的作品、獨白時使用。 純對話驅動,僅靠台詞與舞台說明推動劇情、展現衝突。修辭比例低至中(15%-25%),必須符合角色說話的口語習慣。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。
+
+```
+/plugin marketplace add kamira/skill-chinese-write
+/plugin install drama
+```
+
+完整規範見 `skills/drama/SKILL.md`。各文體的拆分判準見 knowledge 的 KN-003。

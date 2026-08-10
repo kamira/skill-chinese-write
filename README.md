@@ -31,29 +31,29 @@ python3 skills/writing/scripts/style_check.py <你的稿子.md>
 
 | 路徑 | 內容 |
 |------|------|
-| `skills/writing/` | 評論 skill(單一真相):SKILL.md、四份 references、style_check.py、規則表與 fixture |
-| `skills/fiction/` | 小說 skill:SKILL.md、三份 references、fiction_check.py、規則表與 fixture |
-| `skills/techdoc/` | 技術文件 skill(規格書 + 架構說明):techdoc_check.py,以 `--kind` 切結構規則 |
-| `skills/bizdoc/` | 公文與新聞稿 skill:bizdoc_check.py,以 `--kind` 切結構規則 |
-| `plugins/*/` | 可安裝的 plugin(skill 副本為生成物) |
-| `scripts/` | 治理腳本:`install-hooks.sh`、`chg_diagram_gate.py` |
-| `docs/genres.md` | 文體對照表:哪些已是 skill,哪些還沒有任何機器在把關 |
+| `skills/` | **23 支 skill**:4 支引擎(writing / fiction / techdoc / bizdoc)+ 19 支前門。分組見 [`docs/genres.md`](docs/genres.md) |
+| `plugins/*/` | 21 個可安裝的 plugin(skill 副本為生成物;前門會把引擎一起打包) |
+| `scripts/` | 治理腳本:install-hooks、chg_diagram_gate、skill_inventory_check |
+| `docs/genres.md` | 文體對照表:誰有 lint、誰明標沒有 lint、為什麼 |
 | `docs/writing/` | 帳本(CHG / ACC)+ 知識庫 |
 | `tools/` | 隨身治理工具,來自 `kamira/skill-ai-sdlc-autopilot` |
 
-## 什麼時候拆成兩支 skill
+## 一個文體一支 skill,但規則檔只有四份
 
-判準是**硬規則互不互斥**,不是文體名字不同:
+判準分兩層(knowledge KN-003):
 
-1. **硬規則相反 → 拆。** `writing` 要求第一人稱、禁短句收尾、限制刻意句配額,三條對小說全是反的(第三人稱限知是主流視角、斷頭台法則要的就是戛然而止、武打段落要的就是密集對偶)。共用會誤殺。
-2. **只差結構 → 一支 + 旗標。** 規格書與架構說明的硬規則完全相同(修辭趨近零、禁模糊形容詞),差別只在編號條列 vs 圖文互補,所以是 `techdoc --kind spec|arch`。
-3. **規格薄到落不成斷言 → 先不拆。** 用四五行的規格生一個 skill,產出的是空頭規則。
+1. **拆不拆看觸發面。** 使用者會說「幫我寫一篇武俠」,所以武俠要有自己的 skill——skill 的第一個功能是**被找到**。
+2. **規則檔共不共用看硬規則。** 武俠與科幻的硬規則相同(只差配比),共用 `fiction` 引擎;`writing` 與 `fiction` 的硬規則相反(第一人稱、結尾、刻意句三條全反),各自一份。
 
-完整判準見 knowledge 的 KN-003。
+所以是 **23 支 skill、4 份規則檔**。前門的 plugin 會把引擎一起打包,裝了就跑得動。
 
-## 尚未實作
+沒有任何可判定規則的文體(散文、詩歌、戲劇⋯)一樣有 skill,但 SKILL.md **明標「本支沒有 lint,規則靠人判斷」**——假裝有斷言比沒有更糟。
 
-散文、詩歌、劇本、記敘文、抒情文、說明文、公文與新聞稿、賦駢文、史傳奏啟。各自的規格、成語比例與**難點**見 [`docs/genres.md`](docs/genres.md)——那一欄就是挑下一支的依據。
+## 尚未有 lint 的文體
+
+散文、詩歌、戲劇、記敘文、抒情文、說明文、賦駢文、史傳奏啟、企劃書——**它們都有 skill**,但沒有斷言,各自的 SKILL.md 寫明原因。見 [`docs/genres.md`](docs/genres.md)。
+
+其中 `fu`(賦/駢文)最有機會補上:四六句對偶是字數對稱,恰好可判——但那份規則會與 `writing` 的對稱句配額完全相反,必須是獨立引擎。
 
 ## 授權
 

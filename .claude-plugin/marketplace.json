@@ -4,20 +4,19 @@
     "name": "kamira"
   },
   "metadata": {
-    "description": "繁體中文寫作技能集:一種文體一支 skill,因為它們的硬規則會互相誤殺。writing 管評論、fiction 管小說、techdoc 管規格書與架構說明、bizdoc 管公文與新聞稿——同一個詞(如「予以」)在不同文體是相反的判定。規則不是散文建議,而是可跑的 lint(硬性違規 exit 1)。拆分判準與其餘文體的狀態見 docs/genres.md。Traditional-Chinese writing skills, one per genre, each with an enforceable linter.",
-    "version": "1.40.0"
+    "description": "繁體中文寫作技能集:**每個文體一支 skill**,因為它們的硬規則會互相誤殺——同一個詞(如「予以」)在評論裡要改掉、在公文裡是精準用語。21 支涵蓋評論、小說(主層 + 六支流派子層)、規格書、架構說明、公文、新聞稿、企劃、散文、詩歌、戲劇、記敘、抒情、說明文、賦駢文、史傳奏啟。有可判定規則的配可跑的 lint(硬性違規 exit 1);判不了的**明標「本支沒有 lint」**,不假裝有把關。Traditional-Chinese writing skills, one per genre.",
+    "version": "2.0.0"
   },
   "plugins": [
     {
       "name": "writing",
       "source": "./plugins/writing",
-      "description": "中文寫作技能(繁中):只做評論文章——第一人稱、口語、句長與段落刻意參差、刻意句(對稱/反差/明喻)限量、禁 AI 腔與公文腔與句型殼。能寫也能改稿(去 AI 味,保存優先:不編造、不換作者的判斷)。規則不是散文建議,而是可跑的 lint(style_check.py:硬性違規 exit 1)。小說請用 fiction;散文等其他文體尚未實作。Traditional-Chinese commentary writing and de-slop editing with an enforceable style linter.",
+      "description": "中文寫作技能(繁中)。目前只做一種文體:**評論文章**——時事評論、觀點文、專欄、影評書評、 產品/現象評論、讀後感式的論述。當使用者要寫評論、寫觀點、寫專欄、要你「針對某件事寫一篇 文章談看法」、要你把筆記或想法整理成一篇可讀的評論、或要你改稿讓文章不那麼像 AI 寫的時候 使用。核心約束:第一人稱、口語、句長刻意參差、對稱句只用在零星重點、禁 AI 腔與公文腔詞句。 議題型另有分節寫法(現象/可選的省思/結語/後記,要寫出感受)。 規則不是散文建議而是可跑的 lint(`scripts/style_check.py`;**只支援中文**)。也能接手改稿:使用者丟一篇已經寫好 的文章要你「去掉 AI 味」「改得像人寫的」「潤一下但不要變成公文」時,走改稿模式(保存優先—— 不編造、不換作者的判斷)。**小說請用 `fiction` skill**(它的硬規則與本 skill 相反);散文、詩歌、 劇本等其他文體尚未實作,不要冒充。",
       "version": "1.4.0",
       "author": {
         "name": "kamira"
       },
       "keywords": [
-        "writing",
         "commentary",
         "chinese",
         "style",
@@ -28,7 +27,7 @@
     {
       "name": "fiction",
       "source": "./plugins/fiction",
-      "description": "中文小說寫作技能(繁中):對話三形式與換行鐵律、段落字數上限(實體 150 字 / 網文 80 字且不超過 3 行)、擬聲詞改用強動詞、分章字數與切章點,以及六種篇幅流派(微型、中長篇、武俠仙俠、科幻、懸疑推理、言情都市)的修辭與成語配比。規則不是散文建議,而是可跑的 lint(fiction_check.py:硬性違規 exit 1)。與 writing 的硬規則互斥,不可混用。Traditional-Chinese fiction writing with an enforceable structural linter.",
+      "description": "中文小說寫作技能(繁中)。當使用者要寫小說、寫故事、寫連載、寫一段情節或場景、要你續寫或改 小說稿、要你處理對話與分章分段時使用。涵蓋篇幅(微型/中長篇)與流派(武俠仙俠、科幻、 懸疑推理驚悚、言情都市),以及對話形式、擬聲詞、分段分行、切章點這些技術規範。 核心約束:換人說話就獨立成段、段落有字數上限(實體 150 字 / 網文 80 字且不超過 3 行)、 擬聲詞能不用就不用改用強動詞、對話禁止無意義寒暄。規則不是散文建議而是可跑的 lint (`scripts/fiction_check.py`;**只支援中文**)。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。散文、詩歌、劇本、議論文等其他文體尚未實作,不要冒充。",
       "version": "1.0.0",
       "author": {
         "name": "kamira"
@@ -43,37 +42,288 @@
       ]
     },
     {
-      "name": "techdoc",
-      "source": "./plugins/techdoc",
-      "description": "中文技術文件寫作技能(繁中):規格書與架構說明。共用硬規則——修辭比例趨近於零、模糊形容詞(快速/良好/適當)一律換成具體數據、禁誇張與情緒詞;結構規則以 --kind 切:規格書要模組化編號與絕對動詞(必須/應該/不可),架構說明必須有圖並記下技術選型的權衡。規則不是散文建議,而是可跑的 lint(techdoc_check.py:硬性違規 exit 1)。Traditional-Chinese specification and architecture documents with an enforceable linter.",
+      "name": "fiction-flash",
+      "source": "./plugins/fiction-flash",
+      "description": "中文微型小說(極短篇 / 掌篇)寫作技能(繁中)。當使用者要寫微型小說、極短篇、掌篇小說、一千字以內的故事、有反轉結局的短故事時使用。 這是 `fiction` 小說主層的**子層**:主層的技術規範(換人說話就獨立成段、段落字數上限、 擬聲詞改用強動詞、分章與切章點)全部適用,本支再加上這個流派特有的配比—— 修辭比例低至中 15%-20%、成語密度1-3 次/千字,以及成語該落在哪些段落。 交稿前跑主層的 lint 並帶上 `--genre flash`。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "flash-fiction",
+        "short-story",
+        "chinese",
+        "twist"
+      ]
+    },
+    {
+      "name": "fiction-long",
+      "source": "./plugins/fiction-long",
+      "description": "中文中／長篇小說寫作技能(繁中)。當使用者要寫長篇小說、連載、多線劇情、宏大世界觀、幾十萬字的故事時使用。 這是 `fiction` 小說主層的**子層**:主層的技術規範(換人說話就獨立成段、段落字數上限、 擬聲詞改用強動詞、分章與切章點)全部適用,本支再加上這個流派特有的配比—— 修辭比例中高 25%-35%、成語密度4-8 次/千字,以及成語該落在哪些段落。 交稿前跑主層的 lint 並帶上 `--genre long`。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "novel",
+        "serial",
+        "chinese",
+        "long-form"
+      ]
+    },
+    {
+      "name": "fiction-wuxia",
+      "source": "./plugins/fiction-wuxia",
+      "description": "中文武俠 / 仙俠小說寫作技能(繁中)。當使用者要寫武俠、仙俠、修真、江湖故事、武打場面、門派恩怨時使用。 這是 `fiction` 小說主層的**子層**:主層的技術規範(換人說話就獨立成段、段落字數上限、 擬聲詞改用強動詞、分章與切章點)全部適用,本支再加上這個流派特有的配比—— 修辭比例中高 30%-40%、成語密度8-14 次/千字,全流派最高,以及成語該落在哪些段落。 交稿前跑主層的 lint 並帶上 `--genre wuxia`。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "wuxia",
+        "xianxia",
+        "martial-arts",
+        "chinese",
+        "fiction"
+      ]
+    },
+    {
+      "name": "fiction-scifi",
+      "source": "./plugins/fiction-scifi",
+      "description": "中文科幻小說寫作技能(繁中)。當使用者要寫科幻、未來題材、太空、AI、賽博龐克、硬科幻時使用。 這是 `fiction` 小說主層的**子層**:主層的技術規範(換人說話就獨立成段、段落字數上限、 擬聲詞改用強動詞、分章與切章點)全部適用,本支再加上這個流派特有的配比—— 修辭比例低 10%-15%、成語密度1-3 次/千字,以及成語該落在哪些段落。 交稿前跑主層的 lint 並帶上 `--genre scifi`。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "scifi",
+        "science-fiction",
+        "chinese",
+        "fiction"
+      ]
+    },
+    {
+      "name": "fiction-mystery",
+      "source": "./plugins/fiction-mystery",
+      "description": "中文懸疑 / 推理 / 驚悚小說寫作技能(繁中)。當使用者要寫懸疑、推理、偵探、犯罪、驚悚、恐怖故事、解謎時使用。 這是 `fiction` 小說主層的**子層**:主層的技術規範(換人說話就獨立成段、段落字數上限、 擬聲詞改用強動詞、分章與切章點)全部適用,本支再加上這個流派特有的配比—— 修辭比例低至中 15%-20%、成語密度2-5 次/千字,以及成語該落在哪些段落。 交稿前跑主層的 lint 並帶上 `--genre mystery`。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "mystery",
+        "thriller",
+        "detective",
+        "chinese",
+        "fiction"
+      ]
+    },
+    {
+      "name": "fiction-romance",
+      "source": "./plugins/fiction-romance",
+      "description": "中文言情 / 都市愛情小說寫作技能(繁中)。當使用者要寫言情、愛情故事、都市戀愛、感情戲、告白、雙視角戀愛時使用。 這是 `fiction` 小說主層的**子層**:主層的技術規範(換人說話就獨立成段、段落字數上限、 擬聲詞改用強動詞、分章與切章點)全部適用,本支再加上這個流派特有的配比—— 修辭比例高 35%-45%,全流派最高、成語密度5-10 次/千字,以及成語該落在哪些段落。 交稿前跑主層的 lint 並帶上 `--genre romance`。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "romance",
+        "love-story",
+        "chinese",
+        "fiction"
+      ]
+    },
+    {
+      "name": "spec",
+      "source": "./plugins/spec",
+      "description": "中文規格書寫作技能(繁中)。當使用者要寫規格書、需求規格、驗收標準、API 規格、功能規格時使用。 修辭比例0%,嚴禁任何修辭。規則不是散文建議而是可跑的 lint——判定邏輯在 `techdoc` 引擎, 交稿前跑 `techdoc_check.py --kind spec`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
       "version": "1.0.0",
       "author": {
         "name": "kamira"
       },
       "keywords": [
         "spec",
-        "architecture",
+        "requirements",
         "chinese",
         "documentation",
-        "requirements",
         "lint"
       ]
     },
     {
-      "name": "bizdoc",
-      "source": "./plugins/bizdoc",
-      "description": "中文商務與公務應用文寫作技能(繁中):公文與新聞稿。共用硬規則——修辭比例趨近於零、嚴禁情緒化字眼(令人震驚/深感痛心/可喜可賀)、禁止情感修辭(譬喻全禁,結構排比不禁);結構規則以 --kind 切:公文要有主旨(說明與辦法視需要),新聞稿走倒金字塔、導語要在第一段交代完事情並帶數字。規則不是散文建議,而是可跑的 lint(bizdoc_check.py:硬性違規 exit 1)。**與 writing 的硬規則正面衝突,絕不可混用**。Traditional-Chinese official documents and press releases with an enforceable linter.",
+      "name": "architecture",
+      "source": "./plugins/architecture",
+      "description": "中文架構說明 / 設計文件寫作技能(繁中)。當使用者要寫架構說明、系統設計文件、技術選型文件、模組關係說明時使用。 修辭比例極低(0%-2%),僅允許類比。規則不是散文建議而是可跑的 lint——判定邏輯在 `techdoc` 引擎, 交稿前跑 `techdoc_check.py --kind arch`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "architecture",
+        "design-doc",
+        "chinese",
+        "documentation",
+        "lint"
+      ]
+    },
+    {
+      "name": "official",
+      "source": "./plugins/official",
+      "description": "中文公文寫作技能(繁中)。當使用者要寫公文、函、簽、通知、公告、開會通知、陳報時使用。 修辭比例趨近於零(0%-5%),嚴禁情緒化或模糊的修辭。規則不是散文建議而是可跑的 lint——判定邏輯在 `bizdoc` 引擎, 交稿前跑 `bizdoc_check.py --kind gov`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
       "version": "1.0.0",
       "author": {
         "name": "kamira"
       },
       "keywords": [
         "official-document",
-        "press-release",
-        "chinese",
         "government",
-        "business",
+        "chinese",
         "lint"
+      ]
+    },
+    {
+      "name": "press",
+      "source": "./plugins/press",
+      "description": "中文新聞稿寫作技能(繁中)。當使用者要寫新聞稿、媒體聲明、對外公告、記者會稿時使用。 修辭比例趨近於零(0%-5%)。規則不是散文建議而是可跑的 lint——判定邏輯在 `bizdoc` 引擎, 交稿前跑 `bizdoc_check.py --kind press`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "press-release",
+        "media",
+        "chinese",
+        "lint"
+      ]
+    },
+    {
+      "name": "proposal",
+      "source": "./plugins/proposal",
+      "description": "中文企劃書寫作技能(繁中)。當使用者要寫企劃書、專案提案、活動企劃、簡報型提案時使用。 規格化與標準化,開門見山,採用固定欄位、格式與專業術語。修辭比例趨近於零(0%-5%),嚴禁情緒化或模糊的修辭。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "proposal",
+        "planning",
+        "chinese",
+        "business"
+      ]
+    },
+    {
+      "name": "prose",
+      "source": "./plugins/prose",
+      "description": "中文散文寫作技能(繁中)。當使用者要寫散文、抒情散文、生活隨筆、遊記式的美文時使用。 形散神聚,藉由人事物抒發真實情感、美感或哲理。修辭比例極高(40%-50%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "prose",
+        "essay",
+        "chinese",
+        "literary"
+      ]
+    },
+    {
+      "name": "poetry",
+      "source": "./plugins/poetry",
+      "description": "中文詩歌寫作技能(繁中)。當使用者要寫詩、現代詩、新詩、分行的作品時使用。 分行跳躍,用凝練、具音樂性的語言表達強烈情感。修辭比例最高(70%-90%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "poetry",
+        "poem",
+        "chinese",
+        "literary"
+      ]
+    },
+    {
+      "name": "drama",
+      "source": "./plugins/drama",
+      "description": "中文戲劇 / 劇本寫作技能(繁中)。當使用者要寫劇本、舞台劇、對白為主的作品、獨白時使用。 純對話驅動,僅靠台詞與舞台說明推動劇情、展現衝突。修辭比例低至中(15%-25%),必須符合角色說話的口語習慣。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "drama",
+        "screenplay",
+        "playwright",
+        "chinese"
+      ]
+    },
+    {
+      "name": "narrative",
+      "source": "./plugins/narrative",
+      "description": "中文記敘文寫作技能(繁中)。當使用者要寫記敘文、事件記述、遊記、人物側寫時使用。 圍繞六要素(時、地、人、事、因、果)展開事件或景物描寫。修辭比例中高(30%-40%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "narrative",
+        "chinese",
+        "storytelling"
+      ]
+    },
+    {
+      "name": "lyric",
+      "source": "./plugins/lyric",
+      "description": "中文抒情文 / 心得文寫作技能(繁中)。當使用者要寫心得、讀後感、觀後感、抒情文、感想時使用。 以主觀情感為核心,或由外在媒介(書、影、事)引發個人反省、體悟與收穫。修辭比例中至高(20%-60%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "reflection",
+        "review",
+        "chinese",
+        "essay"
+      ]
+    },
+    {
+      "name": "exposition",
+      "source": "./plugins/exposition",
+      "description": "中文說明文寫作技能(繁中)。當使用者要寫說明文、原理解說、科普說明、操作說明時使用。 依照時空或邏輯順序,客觀、平實地解說事物的特徵、構造、功能與原理。修辭比例極低(5%-10%),追求準確,禁用誇張。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "exposition",
+        "explainer",
+        "chinese"
+      ]
+    },
+    {
+      "name": "fu",
+      "source": "./plugins/fu",
+      "description": "中文賦 / 駢文寫作技能(繁中)。當使用者要寫賦、駢文、四六文、對仗鋪陳的古典文體時使用。 句式排比對仗(四六句為主),講究平仄聲律與辭藻華麗。修辭比例極高(60%-80%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "fu",
+        "parallel-prose",
+        "classical-chinese"
+      ]
+    },
+    {
+      "name": "historiography",
+      "source": "./plugins/historiography",
+      "description": "中文史傳文 / 奏啟文寫作技能(繁中)。當使用者要寫史傳、人物傳記、奏章、表、疏、陳情文時使用。 紀實或陳情。史傳追求文學性紀實,奏啟(表、疏)講求委婉進諫或陳情。修辭比例中(20%-30%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
+      "version": "1.0.0",
+      "author": {
+        "name": "kamira"
+      },
+      "keywords": [
+        "historiography",
+        "memorial",
+        "classical-chinese"
       ]
     }
   ]

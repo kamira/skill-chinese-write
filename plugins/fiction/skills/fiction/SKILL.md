@@ -8,7 +8,7 @@ description: >
   擬聲詞能不用就不用改用強動詞、對話禁止無意義寒暄。規則不是散文建議而是可跑的 lint
   (`scripts/fiction_check.py`;**只支援中文**)。
   **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句,
-  三條對小說都是反的。散文、詩歌、劇本、議論文等其他文體尚未實作,不要冒充。
+  三條對小說都是反的。六個流派各有獨立子層 skill(`fiction-wuxia` / `-scifi` / `-mystery` / `-romance` / `-flash` / `-long`),要寫特定流派請用那些。
 metadata:
   version: 1.0.0
 ---
