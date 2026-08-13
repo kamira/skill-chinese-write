@@ -136,7 +136,7 @@ rm -f "$EMPTY"
 # 成語密度規則沒有任何夾具跑得到,正是 D-1 要修的那個 KN-001 狀態被門檻重新引入
 # (V5 審議)。另外三支原本連「未驗到」都不印,已一併補上。
 echo "[10d/13] 未驗到名單必須釘死(門檻不得悄悄變成逃生門)"
-# 實測值,不是憑印象填的——第一次填錯就是這道閘擋下來的。
+# 實測值,不是憑印象填的。
 # 這三份的密度規則目前沒有任何輸入跑得到,是已知且具名的缺口,不是通過。
 EXPECT_UNVERIFIED="skills/bizdoc/assets/sample-gov-good.md skills/fiction-flash/assets/sample-good.md skills/zh-style/assets/sample-good.md"
 ACTUAL_UNVERIFIED=""

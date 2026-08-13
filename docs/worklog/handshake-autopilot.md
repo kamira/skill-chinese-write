@@ -89,12 +89,17 @@ Actions 權限正常、repo 是 public,但**完全沒有為 `claude/version-sync
 
 <!-- autopilot:begin -->
 branch/role/scope: build / claude/fixture-cross-review
-doing: CHG-20260813-01 **已驗收**(ACC-20260813-01,通過有保留);5 個 commit,ci_local 16 步全綠
-next: (a) 開 PR → merge(中風險,DIR-001 涵蓋)→ (b) 分類重構那張(高風險,merge 前要人拍板)→ (c) 自傳文體
+doing: CHG-20260813-01 施工完成,ACC-20260813-01 已寫。11 個 commit,ci_local **17 步**全綠
+review: fable 拆成 V1-V6 分項審完(整份送審三度撞 API 529,改一次一項才跑完)。
+  V1 通過;V2 抓骨架同構;V3 抓我改壞三處;V4 抓四個實作缺口;V5 抓九條新缺陷(含我自己造的後門);
+  V6 審 ACC 本身,判「結案框架搶跑」——證據三處不實、判詞縮水一處、未達標缺五條,全部已更正
+next: **不要直接 merge。** V2-V6 之後的十六處修正無人複審,ACC 結論已改為
+  「驗收條件通過;驗收程序未完結」。要先送一輪外部複審,通過才改記驗收完成
 known:
-  - **fable 兩度 API 529 中斷,DIR-002 只執行了 codex 一方**——fable 沒看過施工結果,不是「兩邊都同意」
-  - codex 三條意見有兩條對但未做:逐體裁密度門檻、每條提醒規則要有 --strict 正反例對、per_k 收成 helper
-  - D-7 上游 doc_integrity 兩個洞(草稿分支不可達、「暫停」誤觸即豁免)**尚未送回上游**
-last-updated: 2026-08-13 (UTC+0)
-last-updated: 2026-08-13 (UTC+0)
+  - 骨架同構的**章法層**未解決:要換一種論證形狀,不是改句子
+  - bizdoc 成語密度至今沒有任何夾具跑得到([10d] 釘死三份未驗到,缺口還在)
+  - codex 兩條意見未做:逐體裁密度門檻、每條提醒規則的 --strict 正反例對、per_k helper
+  - **DIR-002 不在 knowledge INDEX 裡**(只有 DIR-001),單方不可用條款也還沒寫成常駐規則
+  - D-7 上游 doc_integrity 兩個洞尚未送回上游
+last-updated: 2026-08-14 (UTC+0)
 <!-- autopilot:end -->
