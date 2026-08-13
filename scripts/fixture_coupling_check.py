@@ -229,11 +229,47 @@ def scan(repo: Path, n: int) -> tuple[list[str], list[str], list[tuple[str, str]
     return problems, known, stale
 
 
+def scan_draft(repo: Path, draft: Path, n: int) -> list[str]:
+    """成品掃描:一篇新產出的稿子,對「規則檔 + references + 已收成的歷史樣稿」比對。
+
+    **這是把「登記指紋」從人工追認改成機器自動的那一步。**
+    前四輪的做法是:產文 → 審議席讀出跨題目重複的句子 → 回頭改示範句。
+    那條路不收斂——實測換掉一個示範句就長出另一個指紋,而本輪**剛加進**的
+    收尾示範,當輪就被新產出採用(CHG-20260814-01)。
+    有了這個模式,任何新指紋**第一次重複就被抓**,不用等下一輪審議發現。
+    """
+    corpus: list[tuple[Path, set[str], str]] = []
+    globs = list(RULE_GLOBS) + [FIXTURE_GLOB]
+    for g in globs:
+        for f in sorted(repo.glob(g)):
+            body = cjk_only(f.read_text(encoding="utf-8", errors="ignore"))
+            if len(body) >= n:
+                corpus.append((f, shingles(body, n), body))
+    if not corpus:
+        raise LookupError("比對語料是空的——這道閘等於沒跑")
+
+    body = cjk_only(draft.read_text(encoding="utf-8", errors="ignore"))
+    if len(body) < n:
+        return []
+    dsh = shingles(body, n)
+    out = []
+    for f, csh, cbody in corpus:
+        common = dsh & csh
+        if common:
+            out.append(f"{f.relative_to(repo).as_posix()}\n"
+                       f"    共用 {len(common)} 個 {n} 字片段,"
+                       f"例如「{longest_run(body, cbody, common, n)}」")
+    return out
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="夾具不得逐字引用規則自己的例句")
     ap.add_argument("--repo", default=".", help="repo 根目錄")
     ap.add_argument("-n", type=int, default=DEFAULT_N,
                     help=f"視為耦合的連續中文字元數(預設 {DEFAULT_N})")
+    ap.add_argument("--draft", default=None,
+                    help="成品掃描模式:給一篇新產出的稿子,對規則檔 + references + "
+                         "歷史樣稿比對。抓的是「教材被當成句型抄走」")
     ap.add_argument("--self-test", action="store_true",
                     help="紅燈可達自檢:造一組必紅與一組必綠的輸入")
     args = ap.parse_args(argv)
@@ -245,6 +281,26 @@ def main(argv=None) -> int:
     if not repo.is_dir():
         print(f"ERROR: 找不到 {repo}", file=sys.stderr)
         return 2
+
+    if args.draft:
+        dp = Path(args.draft)
+        if not dp.is_file():
+            print(f"ERROR: 找不到 {dp}", file=sys.stderr)
+            return 2
+        try:
+            hits = scan_draft(repo, dp, args.n)
+        except LookupError as e:
+            print(f"ERROR: {e}", file=sys.stderr)
+            return 2
+        if hits:
+            print(f"\n✗ 這篇成品與教材/歷史樣稿有 {len(hits)} 處逐字重合:\n")
+            for h in hits:
+                print("  " + h)
+            print("\n示範句是在教動作,不是給句型。把重合的部分改掉——"
+                  "\n這些句子在其他產出裡也會出現,重複本身就是 AI 味。")
+            return 1
+        print(f"✅ 這篇成品與教材/歷史樣稿無 {args.n} 字以上的逐字重合。")
+        return 0
 
     try:
         problems, known, stale = scan(repo, args.n)
