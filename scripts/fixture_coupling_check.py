@@ -49,16 +49,28 @@ FIXTURE_GLOB = "skills/*/assets/sample-*.md"
 RULE_GLOBS = ("skills/*/references/*.md", "skills/*/assets/*_rules.json",
               "skills/*/scripts/*.py", "skills/*/SKILL.md")
 
-# **格式即規則**的文體不在這道閘的射程內。
+# 已知待清的耦合(**釘住的基準線,不是豁免**)
 #
-# 公文與技術文件的 reference 裡放的是**完整範本**——「主旨:」「說明:」的行文、
-# 規格書的模組化編號,那些字句本身就是規格。夾具與範本重疊不是抄考古題,
-# 是同一份格式的兩次出現;要求它們用字不同,等於要求夾具偏離規格。
+# 初版曾把 bizdoc / techdoc 家族整組豁免,理由是「格式即規則」。那個判準被驗收審議
+# 判為**開後門**,而且理由成立:整組豁免等於只要把抄來的示範句包裝成公文,
+# 就能繞過這道閘。已撤掉。
 #
-# 這條豁免與被擋下的四處有本質差別:writing / prose / romance 那幾處重疊的是
-# **散文句子**(某人某天想到的一句話),那種句子沒有任何理由在兩個地方一模一樣。
-# 判準:規則規定「長什麼樣」→ 豁免;規則規定「寫得好不好」→ 不豁免。
-FORMAT_PRESCRIBED = {"bizdoc", "official", "press", "techdoc", "spec", "architecture"}
+# 取而代之的是一份**逐對列舉**的基準線:這幾對是本閘上線時就存在的耦合,
+# 清掉它們要重寫四份公文/技術文件夾具(讓夾具與 reference 的範本是同一種格式的
+# **不同實例**),不在 CHG-20260813-01 的範圍內。
+#
+# 與豁免的差別有三:
+#   1. 逐對列舉——換一個檔名就擋下來,包裝成公文也混不進去
+#   2. **會印出來**,不是靜默跳過;掃描結果永遠說得出還欠幾對
+#   3. 只准縮不准長:清單裡列了卻已經沒有耦合的項目,本閘會反過來要求你把它刪掉
+BASELINE = {
+    ("skills/bizdoc/assets/sample-bad.md", "skills/bizdoc/references/press.md"),
+    ("skills/bizdoc/assets/sample-gov-bad-subject.md", "skills/bizdoc/references/official.md"),
+    ("skills/bizdoc/assets/sample-gov-good.md", "skills/bizdoc/references/official.md"),
+    ("skills/bizdoc/assets/sample-gov-good.md", "skills/bizdoc/SKILL.md"),
+    ("skills/bizdoc/assets/sample-press-good.md", "skills/bizdoc/references/press.md"),
+    ("skills/techdoc/assets/sample-arch-good.md", "skills/techdoc/references/architecture.md"),
+}
 
 
 def cjk_only(text: str) -> str:
@@ -76,17 +88,16 @@ def skill_of(p: Path, repo: Path) -> str:
     return parts[1] if len(parts) > 1 else ""
 
 
-def scan(repo: Path, n: int) -> list[str]:
-    fixtures = [f for f in sorted(repo.glob(FIXTURE_GLOB))
-                if skill_of(f, repo) not in FORMAT_PRESCRIBED]
+def scan(repo: Path, n: int) -> tuple[list[str], list[str], list[tuple[str, str]]]:
+    """回傳 (新耦合, 基準線內仍存在的耦合, 已消失但還列在基準線的項目)。"""
+    fixtures = sorted(repo.glob(FIXTURE_GLOB))
     rule_files = []
     for g in RULE_GLOBS:
-        rule_files.extend(f for f in sorted(repo.glob(g))
-                          if skill_of(f, repo) not in FORMAT_PRESCRIBED)
+        rule_files.extend(sorted(repo.glob(g)))
 
     if not fixtures:
         print(f"⚠ 找不到任何夾具({FIXTURE_GLOB})——這道閘等於沒跑", file=sys.stderr)
-        return []
+        return [], [], []
 
     rule_index: list[tuple[Path, set[str]]] = []
     for rf in rule_files:
@@ -97,7 +108,7 @@ def scan(repo: Path, n: int) -> list[str]:
         if len(body) >= n:
             rule_index.append((rf, shingles(body, n)))
 
-    problems = []
+    problems, known, seen_pairs = [], [], set()
     for fx in fixtures:
         body = cjk_only(fx.read_text(encoding="utf-8", errors="ignore"))
         if len(body) < n:
@@ -118,10 +129,14 @@ def scan(repo: Path, n: int) -> list[str]:
                         break
                     if len(ext) > len(longest):
                         longest = ext
-            problems.append(
-                f"{fx.relative_to(repo).as_posix()} ↔ {rf.relative_to(repo).as_posix()}\n"
-                f"    共用 {len(common)} 個 {n} 字片段,例如「{longest}」")
-    return problems
+            pair = (fx.relative_to(repo).as_posix(), rf.relative_to(repo).as_posix())
+            seen_pairs.add(pair)
+            line = (f"{pair[0]} ↔ {pair[1]}\n"
+                    f"    共用 {len(common)} 個 {n} 字片段,例如「{longest}」")
+            (known if pair in BASELINE else problems).append(line)
+
+    stale = sorted(BASELINE - seen_pairs)
+    return problems, known, stale
 
 
 def main(argv=None) -> int:
@@ -141,16 +156,33 @@ def main(argv=None) -> int:
         print(f"ERROR: 找不到 {repo}", file=sys.stderr)
         return 2
 
-    problems = scan(repo, args.n)
+    problems, known, stale = scan(repo, args.n)
+    rc = 0
+
+    if stale:
+        print(f"\n✗ 基準線有 {len(stale)} 對已經沒有耦合了,請從 BASELINE 刪掉:")
+        for a, b in stale:
+            print(f"    {a} ↔ {b}")
+        print("  基準線只准縮不准長——留著已清乾淨的項目,下次就會有人拿它當豁免用。")
+        rc = 1
+
     if problems:
-        print(f"\n✗ 夾具與規則文件逐字耦合 {len(problems)} 處:\n")
+        print(f"\n✗ 夾具與規則文件逐字耦合 {len(problems)} 處(基準線之外):\n")
         for p in problems:
             print("  " + p)
         print("\n夾具引用規則自己的示範句 = 用考古題驗考生:lint 對那些句子必然綠燈,"
               "\n因為規則就是照它們校準的。改寫夾具,不要改規則去遷就它。")
-        return 1
-    print(f"✅ 夾具與規則文件無 {args.n} 字以上的逐字重疊。")
-    return 0
+        rc = 1
+
+    if known:
+        # 基準線內的**印出來**,不靜默跳過——掃描結果永遠說得出還欠幾對。
+        print(f"\n⚠ 基準線內既有耦合 {len(known)} 對(待另開 CHG 重寫,不擋本次):")
+        for k in known:
+            print("  " + k)
+
+    if rc == 0:
+        print(f"\n✅ 基準線之外無 {args.n} 字以上的逐字重疊。")
+    return rc
 
 
 def self_test(n: int) -> int:
