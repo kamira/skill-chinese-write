@@ -104,7 +104,15 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     chapters, paragraphs = parse(raw, chapter_re)
     body = "".join(t for _, lines, _ in paragraphs for t in lines)
     total = char_len(body)
-    per_k = max(total, 1000) / 1000
+    # 分母用**真實字數**。原本寫 max(total, 1000)/1000,任何短於 1000 字的稿件密度都被
+    # 系統性低報——武俠 good 夾具 8 次 / 536 字(真實 14.9/千字,超過上限 14)被印成
+    # 「8.0/千字」綠燈放行,而六份小說夾具全部短於 1000 字,於是成語密度這條規則
+    # 從來沒有被任何輸入真正跑到過(CHG-20260813-01 D-1;KN-001 第九次)。
+    # 樣本太短時**明說未驗到**,不拿一個扭曲的數字冒充判過。
+    per_k = total / 1000 if total else 0.0
+    min_chars = min(i_cfg.get("min_sample_chars", 300),
+                    o_cfg.get("min_sample_chars", 300))
+    too_short = total < min_chars
 
     res = {"file": str(path), "mode": mode, "genre": genre, "chars": total,
            "paragraphs": len(paragraphs), "chapters": len(chapters),
@@ -179,7 +187,9 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     ono_n = sum(body.count(w) for w in o_cfg.get("words", []))
     res["metrics"]["onomatopoeia_count"] = ono_n
     ono_cap = o_cfg.get("max_per_1000", 3)
-    if ono_n >= 2 and ono_n / per_k > ono_cap:
+    if too_short:
+        res["metrics"]["onomatopoeia_per_1000"] = None
+    elif ono_n >= 2 and ono_n / per_k > ono_cap:
         res["warnings"].append(
             f"擬聲詞 {ono_n} 次 / {total} 字(上限 {ono_cap}/千字):{'、'.join(ono_hits[:8])}"
             "——能不用就不用,滿篇「啪、轟、啊」會顯得幼稚")
@@ -187,9 +197,14 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     # ---- 3. 成語密度(需 --genre;沒指定就只報數,不判定)
     idiom_n = sum(body.count(w) for w in i_cfg.get("list", []))
     res["metrics"]["idiom_count"] = idiom_n
-    res["metrics"]["idiom_per_1000"] = round(idiom_n / per_k, 2)
+    res["metrics"]["idiom_per_1000"] = None if too_short else round(idiom_n / per_k, 2)
     genres = i_cfg.get("genres", {})
-    if genre:
+    if too_short:
+        # 明說未驗到,而不是印一個被鉗位分母算出來的假數字。
+        res["warnings"].append(
+            f"樣本只有 {total} 字(低於 {min_chars} 字),成語與擬聲詞密度 **未驗到**"
+            "——短樣本的密度沒有統計意義,不判定也不冒充判過")
+    elif genre:
         band = genres.get(genre, {}).get("per_1000")
         if band:
             lo, hi = band
@@ -230,8 +245,11 @@ def report(res: dict) -> None:
         print("\n✓ 硬性違規:無")
 
     m = res["metrics"]
+    # 樣本過短時 idiom_per_1000 是 None——印「未驗到」,不要印 None,更不要印一個假數字。
+    per_k_txt = ("未驗到" if m.get("idiom_per_1000") is None
+                 else f"{m.get('idiom_per_1000')}/千字")
     print(f"\n密度:擬聲詞 {m.get('onomatopoeia_count')} 次 · 成語 {m.get('idiom_count')} 次"
-          f"({m.get('idiom_per_1000')}/千字) · 最長純對話 {m.get('max_pure_dialogue_run')} 段")
+          f"({per_k_txt}) · 最長純對話 {m.get('max_pure_dialogue_run')} 段")
 
     if res["warnings"]:
         print(f"\n⚠ 提醒 {len(res['warnings'])} 則:")
@@ -249,6 +267,10 @@ def main(argv=None) -> int:
     ap.add_argument("--genre", default=None,
                     help="流派,用於成語密度判定:wuxia / scifi / mystery / romance / flash / long")
     ap.add_argument("--json", action="store_true", help="輸出 JSON")
+    ap.add_argument("--strict", action="store_true",
+                    help="把提醒也當成失敗(exit 1)。CI 用:密度這類規則只出提醒,"
+                         "沒有這個旗標就沒有任何辦法讓它在 CI 裡變成紅燈——"
+                         "規則存在但閘不可達,等於沒有(CHG-20260813-01 D-1)")
     args = ap.parse_args(argv)
 
     rules_path = Path(args.rules)
@@ -275,14 +297,17 @@ def main(argv=None) -> int:
             return 2
         res = analyse(p, rules, args.mode, args.genre)
         results.append(res)
-        failed = failed or not res["ok"]
+        failed = failed or not res["ok"] or (args.strict and bool(res["warnings"]))
 
     if args.json:
         print(json.dumps(results, ensure_ascii=False, indent=2))
     else:
         for res in results:
             report(res)
-        print("\n" + ("✗ 有硬性違規,回去改。" if failed else "✓ 過。剩下的提醒自己判斷。"))
+        if failed and args.strict and all(r["ok"] for r in results):
+            print("\n✗ --strict:有提醒即視為失敗。")
+        else:
+            print("\n" + ("✗ 有硬性違規,回去改。" if failed else "✓ 過。剩下的提醒自己判斷。"))
     return 1 if failed else 0
 
 

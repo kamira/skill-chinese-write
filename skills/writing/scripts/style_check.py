@@ -217,7 +217,11 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
     total_chars = sum(lengths)
     # 短稿不放大密度:1000 字以下,「每千字上限」直接當絕對次數上限。否則一篇 400 字的稿子
     # 出現一次軟限詞就會被判超標,警告變雜訊。
-    per_k = max(total_chars, 1000) / 1000
+    # 分母用真實字數。原本是 max(total_chars, 1000)/1000——實測 repo 內 24/24 份夾具
+    # 全部短於 1000 字,於是每一條 per_1000 規則都被系統性低報(129 字的稿被除以 1000,
+    # 低報近 8 倍),密度類規則從來沒有一次用對過分母(CHG-20260813-01 D-1)。
+    per_k = total_chars / 1000 if total_chars else 0.0
+    density_verifiable = total_chars >= rules.get("min_sample_chars", 300)
 
     r = rules.get("rhythm", {})
     sym_cfg = rules.get("symmetry", {})
@@ -248,7 +252,7 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
                                    f"(門檻 {p_cfg.get('first_hit_within_chars', 200)})")
 
     hedge_n = sum(joined.count(h) for h in p_cfg.get("hedges", []))
-    if hedge_n / per_k > p_cfg.get("max_hedge_per_1000", 3):
+    if density_verifiable and hedge_n / per_k > p_cfg.get("max_hedge_per_1000", 3):
         res["warnings"].append(f"「我認為/我覺得」太密({hedge_n} 次 / {total_chars} 字)——判斷句直接講就好")
 
     # 2. 節奏
@@ -365,7 +369,10 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
     soft_over = []
     for rule in rules.get("soft_limits", []):
         label, n = count_rule(all_text, rule)
-        if n >= 2 and n / per_k > rule["per_1000"]:
+        # min_count 預設 2:字面詞出現一次不算問題(KN-002 防誤報)。
+        # 句型殼不一樣——出現一次就是那個殼,所以那類條目自己設 min_count: 1。
+        if (density_verifiable and n >= rule.get("min_count", 2)
+                and n / per_k > rule["per_1000"]):
             soft_over.append(f"{label}×{n}(上限 {rule['per_1000']}/千字)")
     res["metrics"]["soft_over"] = soft_over
     if soft_over:

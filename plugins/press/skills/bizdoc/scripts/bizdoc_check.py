@@ -91,7 +91,10 @@ def analyse(path: Path, rules: dict, kind: str, allow: set) -> dict:
     k = rules["kinds"][kind]
     joined = "".join(t for _, t in lines)
     total = char_len(joined)
-    per_k = max(total, 1000) / 1000
+    # 分母用真實字數(CHG-20260813-01 D-1)。原本 max(total,1000)/1000 讓所有短於 1000 字的
+    # 稿件密度被系統性低報,而 repo 內 24/24 份夾具全部短於 1000 字。
+    per_k = total / 1000 if total else 0.0
+    density_verifiable = total >= rules.get("min_sample_chars", 300)
 
     res = {"file": str(path), "kind": kind, "chars": total,
            "paragraphs": len(paragraphs), "hard": [], "warnings": [], "metrics": {}}
@@ -161,9 +164,9 @@ def analyse(path: Path, rules: dict, kind: str, allow: set) -> dict:
     hit = [w for w in idioms if w in joined]
     n = sum(joined.count(w) for w in idioms)
     res["metrics"]["idiom_count"] = n
-    res["metrics"]["idiom_per_1000"] = round(n / per_k, 2)
+    res["metrics"]["idiom_per_1000"] = round(n / per_k, 2) if density_verifiable else None
     lo, hi = rules.get("idioms_per_1000", [0, 6])
-    if n / per_k > hi:
+    if density_verifiable and n / per_k > hi:
         res["warnings"].append(
             f"成語密度 {n / per_k:.1f}/千字,高於上限 {hi}:{'、'.join(hit[:6])}"
             "——成語用來快速概括規模,用多了就變成沒有事實的形容")

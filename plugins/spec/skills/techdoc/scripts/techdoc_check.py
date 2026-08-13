@@ -91,7 +91,10 @@ def analyse(path: Path, rules: dict, kind: str, allow: set, allow_no_diagram: bo
     text_lines = sorted(body + bullets + headings, key=lambda x: x[0])
     joined = "".join(t for _, t in text_lines)
     total = char_len(joined)
-    per_k = max(total, 1000) / 1000
+    # 分母用真實字數(CHG-20260813-01 D-1)。原本 max(total,1000)/1000 讓所有短於 1000 字的
+    # 稿件密度被系統性低報,而 repo 內 24/24 份夾具全部短於 1000 字。
+    per_k = total / 1000 if total else 0.0
+    density_verifiable = total >= rules.get("min_sample_chars", 300)
 
     res = {"file": str(path), "kind": kind, "chars": total,
            "hard": [], "warnings": [], "metrics": {}}
@@ -167,7 +170,7 @@ def analyse(path: Path, rules: dict, kind: str, allow: set, allow_no_diagram: bo
     n = sum(joined.count(w) for w in idioms)
     res["metrics"]["idiom_count"] = n
     cap = rules.get("max_idioms_per_1000", 1)
-    if n and n / per_k > cap:
+    if density_verifiable and n and n / per_k > cap:
         res["warnings"].append(
             f"文學性成語 {n} 次 / {total} 字(上限 {cap}/千字):{'、'.join(hit[:6])}"
             "——技術文件的成語比例趨近於零,它們讓句子聽起來有結論但沒有內容")
