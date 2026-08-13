@@ -18,7 +18,10 @@ RUN=tools/autopilot/scripts/autopilot_runner.py
 echo "[1/13] 實際操作驗收(含漂移紅燈可達探針)"
 bash .github/verify.sh
 
-echo "[2/13] writing 風格 lint 夾具:好樣本要過、壞樣本要擋"
+echo "[2/13] writing 風格 lint 夾具 + 句型殼紅綠端自檢"
+# 句型殼那條(生造的帶勁口語)腳本判不準,斷言只抓最有把握的形狀。self-test 釘住
+# 使用者實測給的五個合法用法——regex 一放寬就誤殺,誤殺即紅。
+$PY skills/writing/scripts/style_check.py --self-test dummy > /dev/null
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-good.md > /dev/null
 $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-issue.md > /dev/null
 if $PY skills/writing/scripts/style_check.py skills/writing/assets/sample-bad.md > /dev/null 2>&1; then

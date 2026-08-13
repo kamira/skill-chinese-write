@@ -474,12 +474,55 @@ def report(res: dict) -> None:
         print("\n✓ 無提醒")
 
 
+# 句型殼規則的紅綠端測資。**這一組是使用者實測給的反例。**
+# 「生造的帶勁口語」這條腳本判不準,斷言只抓最有把握的形狀;收窄之後如果有人把
+# regex 放寬,下面五個合法句會重新被誤殺——所以把它們釘成 self-test,
+# 誤殺即紅。收窄本身也要有斷言,否則它就是一次沒人守得住的修正(KN-001)。
+SHELL_CASES = [
+    # (句子, 該不該被抓, 為什麼)
+    ("鑽石是自然界最硬的礦物", False, "物性比較,「硬」是字面義"),
+    ("這是我遇過最硬的材質", False, "同上"),
+    ("他不想把話講死", False, "台灣口語,意思是不留餘地"),
+    ("我不想把話講這麼死", False, "同上"),
+    ("這件事還不能說死", False, "同上"),
+    ("我知道最硬的反駁在哪裡", True, "拿強度詞修飾論述性名詞"),
+    ("最狠的批評來自他自己", True, "同上"),
+    ("還有一件事我想講死", True, "拿它當「最重要的是」在用"),
+]
+SHELL_LABELS = ("生造強度形容", "生造動詞加碼")
+
+
+def self_test(rules) -> int:
+    """句型殼規則的紅綠端可達自檢。"""
+    pats = [re.compile(e["pattern"]) for e in rules.get("soft_limits", [])
+            if any(e.get("label", "").startswith(x) for x in SHELL_LABELS)]
+    if not pats:
+        print("  ❌ 找不到句型殼規則——規則被刪掉了,這道自檢等於沒跑")
+        return 1
+    fails = []
+    for s, want, why in SHELL_CASES:
+        hit = any(rx.search(s) for rx in pats)
+        if hit != want:
+            fails.append(f"「{s}」預期{'該抓' if want else '不該抓'}、實際"
+                         f"{'抓到' if hit else '沒抓'}({why})")
+    if fails:
+        for f in fails:
+            print(f"  ❌ {f}")
+        print("\n✗ self-test 未通過:句型殼規則誤殺了合法用法,或漏掉了該抓的形狀。")
+        return 1
+    print(f"✅ self-test:句型殼規則 {len(SHELL_CASES)} 個測資全對"
+          f"(5 個合法用法不誤殺、3 個生造形狀抓得到)。")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="評論文章風格 lint")
     ap.add_argument("files", nargs="+", help="要檢查的稿件(.md / .txt)")
     ap.add_argument("--rules", default=str(DEFAULT_RULES), help="規則檔路徑")
     ap.add_argument("--allow", default="", help="個案放行的禁用詞,逗號分隔(限引用原文)")
     ap.add_argument("--json", action="store_true", help="輸出 JSON")
+    ap.add_argument("--self-test", action="store_true",
+                    help="句型殼規則的紅綠端自檢(使用者實測給的合法用法不得被誤殺)")
     args = ap.parse_args(argv)
 
     rules_path = Path(args.rules)
@@ -491,6 +534,9 @@ def main(argv=None) -> int:
     except json.JSONDecodeError as e:
         print(f"ERROR: 規則檔不是合法 JSON — {e}", file=sys.stderr)
         return 2
+
+    if args.self_test:
+        return self_test(rules)
 
     allow = {a.strip() for a in args.allow.split(",") if a.strip()}
     results, failed = [], False
