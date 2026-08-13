@@ -412,7 +412,7 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
                                "——評論是散文,論證用文字推")
     dashes = raw.count("——")
     res["metrics"]["em_dash"] = dashes
-    if dashes / per_k > l_cfg.get("max_em_dash_per_1000", 4):
+    if density_verifiable and dashes / per_k > l_cfg.get("max_em_dash_per_1000", 4):
         res["warnings"].append(f"破折號 {dashes} 個 / {total_chars} 字——太多代表你不會用句號")
     # 4c. 條列:只放扼要重點,禁止完整說明
     b_cfg = rules.get("bullets", {})

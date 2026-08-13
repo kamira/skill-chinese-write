@@ -93,6 +93,25 @@ echo "[10b/13] 夾具不得逐字引用規則自己的例句(含紅燈可達自�
 $PY scripts/fixture_coupling_check.py --self-test > /dev/null
 $PY scripts/fixture_coupling_check.py --repo . > /dev/null
 
+# 分母改成真實字數之後,per_k 可能是 0——每一處除法都得有守衛。
+# 施工時 style_check.py 的破折號密度就漏了一個,空輸入直接 ZeroDivisionError。
+# 「我記得加守衛」不是斷言,所以把它變成閘:五支引擎各餵一個空檔,不准有 traceback。
+echo "[10c/13] 空輸入不得 traceback(per_k 除以零守衛)"
+EMPTY="$(mktemp)"; : > "$EMPTY"
+for CMD in \
+  "skills/writing/scripts/style_check.py $EMPTY" \
+  "skills/fiction/scripts/fiction_check.py $EMPTY" \
+  "skills/techdoc/scripts/techdoc_check.py $EMPTY --kind spec" \
+  "skills/techdoc/scripts/techdoc_check.py $EMPTY --kind arch" \
+  "skills/bizdoc/scripts/bizdoc_check.py $EMPTY --kind gov" \
+  "skills/bizdoc/scripts/bizdoc_check.py $EMPTY --kind press" \
+  "skills/zh-style/scripts/zh_style_check.py $EMPTY" ; do
+  if $PY $CMD 2>&1 | grep -q Traceback; then
+    echo "    ❌ 空輸入炸了:$CMD"; rm -f "$EMPTY"; exit 1
+  fi
+done
+rm -f "$EMPTY"
+
 echo "[11/13] py_compile"
 $PY -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
 
