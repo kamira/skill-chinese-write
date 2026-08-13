@@ -82,6 +82,27 @@ def shingles(text: str, n: int) -> set[str]:
     return {text[i:i + n] for i in range(len(text) - n + 1)}
 
 
+def longest_run(body: str, rule_body: str, common: set[str], n: int) -> str:
+    """從共用的 n 字片段往右延伸,找出實際最長的一段共用文字。
+
+    所有 shingle 長度都是 n,所以直接比長度是沒有意義的——初版就寫成
+    `max(common, key=len)` 加一個第一行就 break 的 while,整段是死碼,
+    只是隨機挑一個片段來印。訊息因此常常從句子中間切開,讀起來像亂碼
+    (例如「度資料匯出作業修正規」)。這裡真的把它延伸出來。
+    """
+    best = ""
+    for c in sorted(common):
+        start = body.find(c)
+        if start < 0:
+            continue
+        end = start + n
+        while end < len(body) and body[start:end + 1] in rule_body:
+            end += 1
+        if end - start > len(best):
+            best = body[start:end]
+    return best or next(iter(sorted(common)))
+
+
 def skill_of(p: Path, repo: Path) -> str:
     """skills/<name>/... → <name>"""
     parts = p.relative_to(repo).parts
@@ -99,14 +120,14 @@ def scan(repo: Path, n: int) -> tuple[list[str], list[str], list[tuple[str, str]
         print(f"⚠ 找不到任何夾具({FIXTURE_GLOB})——這道閘等於沒跑", file=sys.stderr)
         return [], [], []
 
-    rule_index: list[tuple[Path, set[str]]] = []
+    rule_index: list[tuple[Path, set[str], str]] = []
     for rf in rule_files:
         try:
             body = cjk_only(rf.read_text(encoding="utf-8", errors="ignore"))
         except OSError:
             continue
         if len(body) >= n:
-            rule_index.append((rf, shingles(body, n)))
+            rule_index.append((rf, shingles(body, n), body))
 
     problems, known, seen_pairs = [], [], set()
     for fx in fixtures:
@@ -114,21 +135,11 @@ def scan(repo: Path, n: int) -> tuple[list[str], list[str], list[tuple[str, str]
         if len(body) < n:
             continue
         fx_sh = shingles(body, n)
-        for rf, rule_sh in rule_index:
+        for rf, rule_sh, rule_body in rule_index:
             common = fx_sh & rule_sh
             if not common:
                 continue
-            # 把重疊的 shingle 合併成最長片段,訊息才讀得懂
-            longest = max(common, key=len)
-            for c in sorted(common):
-                idx = body.find(c)
-                if idx >= 0:
-                    ext = c
-                    while (idx + len(ext) < len(body)
-                           and body[idx:idx + len(ext) + 1] in rule_sh | {ext}):
-                        break
-                    if len(ext) > len(longest):
-                        longest = ext
+            longest = longest_run(body, rule_body, common, n)
             pair = (fx.relative_to(repo).as_posix(), rf.relative_to(repo).as_posix())
             seen_pairs.add(pair)
             line = (f"{pair[0]} ↔ {pair[1]}\n"
