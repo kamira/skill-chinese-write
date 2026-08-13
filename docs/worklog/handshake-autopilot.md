@@ -88,10 +88,13 @@ Actions 權限正常、repo 是 public,但**完全沒有為 `claude/version-sync
   「中/高風險 CHG 要有設計圖」。加新治理規則時,順手問它有沒有對應的閘
 
 <!-- autopilot:begin -->
-branch/role/scope: handshake / claude/ai-sdlc-handshake-ae9a3d
-doing: CHG-20260813-01 已開(草稿,未施工)——九份 good 夾具經 codex + fable 交叉審查,結論是文章沒事、壞的是量它的尺
-next: (a) 施工 CHG-20260813-01 → (b) 另開分類重構那張(高風險,merge 前要人拍板)
-blocked: 無。工具鏈兩個阻塞(python3 缺 exe、hooksPath 沒設)皆已解除,13 步全綠
-known: D-7 上游 doc_integrity 草稿豁免不可達,本張草稿會被誤判「缺 ACC」——是閘缺陷不是漂移
+branch/role/scope: build / claude/fixture-cross-review
+doing: CHG-20260813-01 **已驗收**(ACC-20260813-01,通過有保留);5 個 commit,ci_local 16 步全綠
+next: (a) 開 PR → merge(中風險,DIR-001 涵蓋)→ (b) 分類重構那張(高風險,merge 前要人拍板)→ (c) 自傳文體
+known:
+  - **fable 兩度 API 529 中斷,DIR-002 只執行了 codex 一方**——fable 沒看過施工結果,不是「兩邊都同意」
+  - codex 三條意見有兩條對但未做:逐體裁密度門檻、每條提醒規則要有 --strict 正反例對、per_k 收成 helper
+  - D-7 上游 doc_integrity 兩個洞(草稿分支不可達、「暫停」誤觸即豁免)**尚未送回上游**
+last-updated: 2026-08-13 (UTC+0)
 last-updated: 2026-08-13 (UTC+0)
 <!-- autopilot:end -->
