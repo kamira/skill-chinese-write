@@ -35,8 +35,18 @@ fi
 # 沒有這一步,密度規則等於沒有閘——CHG-20260813-01 D-1:分母鉗位讓這條規則
 # 從來沒有被任何輸入真正跑到過,而唯一會踩線的輸入正被鉗位遮著。
 echo "[3b/13] fiction 成語密度:紅端要紅、綠端要綠(--strict)"
-if $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-bad-idiom-density.md --genre wuxia --strict > /dev/null 2>&1; then
+# **紅端要分 rc 1 與 rc 2。** 只寫 `if 指令; then 失敗; fi` 的話,夾具被刪、路徑打錯、
+# rules JSON 壞掉(全是 rc 2)都會被當成「紅端成立」而放行——「紅端要紅」可以被
+# ENOENT 滿足(V5 審議)。
+set +e
+$PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-bad-idiom-density.md --genre wuxia --strict > /dev/null 2>&1
+RC=$?
+set -e
+if [ "$RC" -eq 0 ]; then
   echo "    ❌ 成語密度紅端夾具竟然通過 —— 分母又被鉗位了,或門檻壞了"; exit 1
+elif [ "$RC" -ne 1 ]; then
+  echo "    ❌ 紅端夾具的退出碼是 $RC,不是 1 —— 那是環境/參數錯誤(檔案不見?規則檔壞了?),"
+  echo "       不能拿來當作「規則有在擋」的證據"; exit 1
 fi
 $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-good.md --genre wuxia --strict > /dev/null
 
@@ -93,7 +103,9 @@ fi
 # 「會印出來、掃描結果永遠說得出還欠幾對」——把 stdout 重導掉,那個承諾在 CI 裡當場失效,
 # 而且紅燈時只看得到步驟名、看不到是哪一對哪一段文字(V4 審議)。
 echo "[10b/13] 夾具不得逐字引用規則自己的例句(含紅燈可達自檢)"
-$PY scripts/fixture_coupling_check.py --self-test > /dev/null
+# self-test 的輸出也不要吞:五端自檢哪一端不可達,紅燈時要看得到(V5 審議指出
+# 這一行就是我在下一行罵的同款反模式)。
+$PY scripts/fixture_coupling_check.py --self-test | sed "s/^/    /"
 $PY scripts/fixture_coupling_check.py --repo . | sed 's/^/    /'
 
 # 分母改成真實字數之後,per_k 可能是 0——每一處除法都得有守衛。
@@ -119,14 +131,35 @@ rm -f "$EMPTY"
 # 一個真實風險:門檻會**悄悄擴大成規則的逃生門**——今天七份未驗到,明天有人把門檻
 # 調到 600,一半的夾具就靜靜不受規則管了,而 CI 全程綠燈。
 # 所以把「哪幾份預期未驗到」釘死:名單一多一少都轉紅,要改門檻就得同時改這裡並說明。
+# **四支引擎全掃,不只 fiction。** 初版只掃 `skills/fiction*`,等於同一個逃生門
+# 只堵了四分之一——而 bizdoc 的兩份 good 夾具(230 / 226 字)已經掉進去了:
+# 成語密度規則沒有任何夾具跑得到,正是 D-1 要修的那個 KN-001 狀態被門檻重新引入
+# (V5 審議)。另外三支原本連「未驗到」都不印,已一併補上。
 echo "[10d/13] 未驗到名單必須釘死(門檻不得悄悄變成逃生門)"
-EXPECT_UNVERIFIED="skills/fiction-flash/assets/sample-good.md"
+# 實測值,不是憑印象填的——第一次填錯就是這道閘擋下來的。
+# 這三份的密度規則目前沒有任何輸入跑得到,是已知且具名的缺口,不是通過。
+EXPECT_UNVERIFIED="skills/bizdoc/assets/sample-gov-good.md skills/fiction-flash/assets/sample-good.md skills/zh-style/assets/sample-good.md"
 ACTUAL_UNVERIFIED=""
+probe_unverified() {   # $1=腳本 $2=檔案 $3...=額外參數
+  local s="$1"; shift; local f="$1"; shift
+  if $PY "$s" "$f" "$@" 2>&1 | grep -q "未驗到"; then echo "$f"; fi
+}
 for F in skills/fiction/assets/sample-*.md skills/fiction-*/assets/sample-*.md; do
-  if $PY skills/fiction/scripts/fiction_check.py "$F" 2>&1 | grep -q "未驗到"; then
-    ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $F"
-  fi
+  ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $(probe_unverified skills/fiction/scripts/fiction_check.py "$F")"
 done
+for F in skills/writing/assets/sample-*.md skills/prose/assets/sample-*.md \
+         skills/narrative/assets/sample-*.md skills/poetry/assets/sample-*.md \
+         skills/fu/assets/sample-*.md skills/zh-style/assets/sample-*.md; do
+  [ -f "$F" ] || continue
+  ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $(probe_unverified skills/writing/scripts/style_check.py "$F")"
+done
+for F in skills/techdoc/assets/sample-*.md; do
+  ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $(probe_unverified skills/techdoc/scripts/techdoc_check.py "$F" --kind spec)"
+done
+for F in skills/bizdoc/assets/sample-*.md; do
+  ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $(probe_unverified skills/bizdoc/scripts/bizdoc_check.py "$F" --kind gov)"
+done
+ACTUAL_UNVERIFIED="$(echo $ACTUAL_UNVERIFIED | tr ' ' '\n' | sort -u | tr '\n' ' ')"
 ACTUAL_UNVERIFIED="$(echo $ACTUAL_UNVERIFIED | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)"
 EXPECT_UNVERIFIED="$(echo $EXPECT_UNVERIFIED | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)"
 if [ "$ACTUAL_UNVERIFIED" != "$EXPECT_UNVERIFIED" ]; then

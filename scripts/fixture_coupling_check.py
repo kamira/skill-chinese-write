@@ -118,10 +118,18 @@ def cjk_only(text: str) -> str:
     法定固定用語(FORMAT_PHRASES)在比對前剝掉——理由見該常數的註解。
     順序很重要:**先正規化再剝片語**。反過來做的話,片語裡的字會先被抽出來與鄰字黏在
     一起(join 用空字串),replace 就對不上了。
+
+    **剝掉就是剝掉,不要插哨兵。** 初版把片語換成 `\x00` 想切斷 run,結果開了一個
+    我自己造的後門:把抄來的句子**每 9 個字插一次「請查照」**,兩側殘段都短於 N,
+    shingle 一個都配不上,閘全盲(V5 審議實測:38 字整句照抄 → 共用片段 0)。
+    另外六個片語共用同一個哨兵,還會讓兩份引用**不同**法定用語、前後文相同的公文
+    被判為重合(實測 15 個假片段),而且 `\x00` 會被印進 CI log。
+    換成直接刪除之後,插入攻擊反而**自己失效**——插進去的字被移除,兩側重新對齊,
+    照抄的部分照樣配得上。
     """
     s = "".join(CJK.findall(text))
     for ph in FORMAT_PHRASES:
-        s = s.replace(ph, "\x00")   # 非中文的哨兵,把 run 切斷
+        s = s.replace(ph, "")
     return s
 
 
@@ -137,13 +145,19 @@ def longest_run(body: str, rule_body: str, common: set[str], n: int) -> str:
     只是隨機挑一個片段來印。訊息因此常常從句子中間切開,讀起來像亂碼
     (例如「度資料匯出作業修正規」)。這裡真的把它延伸出來。
     """
+    # 複雜度上限。初版對每個 shingle 都從頭延伸,每步做一次全文 `in rule_body` 搜尋——
+    # O(|common| × run長 × |rule|)。V5 審議實測:3000 字整段抄自 20000 字規則檔,
+    # **單一配對就要 29.1 秒**,而觸發它的輸入正是這道閘存在的理由(大段逐字抄)。
+    # 訊息只是為了讓人讀懂,不值得二次方:取樣前 SAMPLE 個 shingle,延伸長度封頂。
+    SAMPLE, MAX_RUN = 40, 200
     best = ""
-    for c in sorted(common):
+    for c in sorted(common)[:SAMPLE]:
         start = body.find(c)
         if start < 0:
             continue
         end = start + n
-        while end < len(body) and body[start:end + 1] in rule_body:
+        limit = min(len(body), start + MAX_RUN)
+        while end < limit and body[start:end + 1] in rule_body:
             end += 1
         if end - start > len(best):
             best = body[start:end]
@@ -201,10 +215,15 @@ def scan(repo: Path, n: int) -> tuple[list[str], list[str], list[tuple[str, str]
                 # 同樣要轉紅,否則基準線就成了那一對的永久免死金牌。
                 problems.append(line + f"\n    ← 基準線上限 {cap},現在 {len(common)}"
                                        f"——釘住的對子裡又長出新的耦合")
+            elif len(common) < cap:
+                # **降下來就要把上限一起調降,否則棘輪只鎖一半。**
+                # 只印勸告不轉紅的話,2 → 1 是綠、之後再抄回 2 也是綠,cap 以內的
+                # 回漲永遠不會紅(V5 審議)。所以這裡也擋。
+                problems.append(line + f"\n    ← 已降到 {len(common)}(上限 {cap}),"
+                                       f"請把 BASELINE 的上限一起改成 {len(common)}"
+                                       f"——不改的話,以後抄回 {cap} 也不會有人發現")
             else:
-                known.append(line + (f"(上限 {cap})" if len(common) == cap
-                                     else f"(上限 {cap},已降到 {len(common)},"
-                                          f"請把 BASELINE 一起調降)"))
+                known.append(line + f"(上限 {cap})")
 
     stale = sorted(set(BASELINE) - seen_pairs)
     return problems, known, stale
@@ -283,7 +302,9 @@ def self_test(n: int) -> int:
     """
     import tempfile
     global BASELINE
-    shared = "他站在門口沒有說話後來那把鑰匙一直放在鞋櫃上"   # 21 字
+    # 自己造的字串,不借任何夾具、任何引擎 self-test 的句子——本分支自己立的原則
+    # (V5 審議附帶觀察:初版這裡與 zh_style_check.py 新造的 GOOD 字串同源)。
+    shared = "鐵皮屋頂上的積水在半夜滑下來砸在雨遮邊緣然後安靜了"   # 25 字
     other = "廟裡的燈滅了兩個人誰也沒有先動雨還在下沒有停"
     fails = []
 

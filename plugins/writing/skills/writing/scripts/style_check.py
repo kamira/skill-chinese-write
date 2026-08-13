@@ -231,6 +231,13 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
     res = {"file": str(path), "chars": total_chars, "sentences": len(sentences),
            "hard": [], "warnings": [], "metrics": {}}
 
+    # 樣本過短時**明說未驗到**。規則檔的 min_sample_chars_reason 白紙黑字承諾了
+    # 「並明說未驗到」,而初版只是靜默跳過——同一個逃生門在這裡沒堵(V5 審議)。
+    if not density_verifiable:
+        res["warnings"].append(
+            f"樣本只有 {total_chars} 字(低於 {rules.get('min_sample_chars', 300)} 字),密度類規則 **未驗到**"
+            "——短樣本的密度沒有統計意義,不判定也不冒充判過")
+
     # 1. 硬性:禁用詞
     res["hard"] = find_hard(all_text, rules, allow)
 

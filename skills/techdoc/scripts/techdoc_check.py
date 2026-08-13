@@ -99,6 +99,13 @@ def analyse(path: Path, rules: dict, kind: str, allow: set, allow_no_diagram: bo
     res = {"file": str(path), "kind": kind, "chars": total,
            "hard": [], "warnings": [], "metrics": {}}
 
+    # 樣本過短時**明說未驗到**。規則檔的 min_sample_chars_reason 白紙黑字承諾了
+    # 「並明說未驗到」,而初版只是靜默跳過——同一個逃生門在這裡沒堵(V5 審議)。
+    if not density_verifiable:
+        res["warnings"].append(
+            f"樣本只有 {total} 字(低於 {rules.get('min_sample_chars', 300)} 字),密度類規則 **未驗到**"
+            "——短樣本的密度沒有統計意義,不判定也不冒充判過")
+
     # ---- 1. 硬性:模糊形容詞(原文語氣為絕對——「拒絕模糊形容詞,一律改用具體數據」)
     for h in find_terms(text_lines, rules.get("vague_adjectives", []), allow):
         res["hard"].append({**h, "group": "模糊形容詞"})

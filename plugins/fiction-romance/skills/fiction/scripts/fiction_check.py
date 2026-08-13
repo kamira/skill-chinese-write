@@ -110,13 +110,19 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     # 從來沒有被任何輸入真正跑到過(CHG-20260813-01 D-1;KN-001 第九次)。
     # 樣本太短時**明說未驗到**,不拿一個扭曲的數字冒充判過。
     per_k = total / 1000 if total else 0.0
-    min_chars = min(i_cfg.get("min_sample_chars", 300),
-                    o_cfg.get("min_sample_chars", 300))
-    too_short = total < min_chars
+    # 兩個門檻**分開判**。初版用 min() 併成一個:日後把 idioms.min_sample_chars 調到 600
+    # 而擬聲詞留 300,min() 取 300,成語密度照樣在 400 字樣本上判定——調高的旋鈕
+    # 靜默無效;而且一則警告同時替兩個指標宣告未驗到,實際可能只有一個沒過(V5 審議)。
+    idiom_min = i_cfg.get("min_sample_chars", 300)
+    ono_min = o_cfg.get("min_sample_chars", 300)
+    idiom_short = total < idiom_min
+    ono_short = total < ono_min
+    min_chars = min(idiom_min, ono_min)
+    too_short = idiom_short
 
     res = {"file": str(path), "mode": mode, "genre": genre, "chars": total,
            "paragraphs": len(paragraphs), "chapters": len(chapters),
-           "hard": [], "warnings": [], "metrics": {}}
+           "hard": [], "warnings": [], "notices": [], "metrics": {}}
 
     # ---- 1. 硬性:段落長度(原文列為「分段鐵律」,且完全可判定)
     cap = m_cfg["max_paragraph_chars"]
@@ -187,7 +193,7 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     ono_n = sum(body.count(w) for w in o_cfg.get("words", []))
     res["metrics"]["onomatopoeia_count"] = ono_n
     ono_cap = o_cfg.get("max_per_1000", 3)
-    if too_short:
+    if ono_short:
         res["metrics"]["onomatopoeia_per_1000"] = None
     elif ono_n >= 2 and ono_n / per_k > ono_cap:
         res["warnings"].append(
@@ -201,7 +207,9 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     genres = i_cfg.get("genres", {})
     if too_short:
         # 明說未驗到,而不是印一個被鉗位分母算出來的假數字。
-        res["warnings"].append(
+        # 放 notices 不放 warnings:這是**通知**不是**提醒**——--strict 只該把
+        # 「文章有問題」打紅,不該把「這項沒驗到」也打紅(V5 審議)。
+        res["notices"].append(
             f"樣本只有 {total} 字(低於 {min_chars} 字),成語與擬聲詞密度 **未驗到**"
             "——短樣本的密度沒有統計意義,不判定也不冒充判過")
     elif genre:
@@ -217,7 +225,7 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
                     f"成語密度 {d:.1f}/千字,高於 {label} 的上限 {hi}"
                     "——密集用典會把細節的獨特性抹掉")
     else:
-        res["warnings"].append(
+        res["notices"].append(
             f"未指定 --genre,成語密度 {res['metrics']['idiom_per_1000']}/千字 **只報數不判定**"
             f"(可選:{'、'.join(genres)})")
 
@@ -310,7 +318,8 @@ def main(argv=None) -> int:
             return 2
         res = analyse(p, rules, args.mode, args.genre)
         results.append(res)
-        failed = failed or not res["ok"] or (args.strict and bool(res["warnings"]))
+        res["strict_failed"] = args.strict and bool(res["warnings"])
+        failed = failed or not res["ok"] or res["strict_failed"]
 
     if args.json:
         print(json.dumps(results, ensure_ascii=False, indent=2))

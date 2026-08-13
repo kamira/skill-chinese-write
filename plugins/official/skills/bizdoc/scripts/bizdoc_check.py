@@ -99,6 +99,13 @@ def analyse(path: Path, rules: dict, kind: str, allow: set) -> dict:
     res = {"file": str(path), "kind": kind, "chars": total,
            "paragraphs": len(paragraphs), "hard": [], "warnings": [], "metrics": {}}
 
+    # 樣本過短時**明說未驗到**。規則檔的 min_sample_chars_reason 白紙黑字承諾了
+    # 「並明說未驗到」,而初版只是靜默跳過——同一個逃生門在這裡沒堵(V5 審議)。
+    if not density_verifiable:
+        res["warnings"].append(
+            f"樣本只有 {total} 字(低於 {rules.get('min_sample_chars', 300)} 字),密度類規則 **未驗到**"
+            "——短樣本的密度沒有統計意義,不判定也不冒充判過")
+
     # ---- 1. 硬性:情緒詞(原文明寫「嚴禁情緒化」)
     for h in find_terms(lines, rules.get("emotion_words", []), allow):
         res["hard"].append({**h, "group": "情緒詞"})
