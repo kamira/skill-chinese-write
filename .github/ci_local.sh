@@ -89,9 +89,12 @@ if $PY scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/fail
   echo "    ❌ 缺圖的夾具竟然通過 —— 這道閘等於不存在"; exit 1
 fi
 
+# **不要把這一步的輸出丟進 /dev/null。** BASELINE 有別於「整組豁免」的核心論據就是
+# 「會印出來、掃描結果永遠說得出還欠幾對」——把 stdout 重導掉,那個承諾在 CI 裡當場失效,
+# 而且紅燈時只看得到步驟名、看不到是哪一對哪一段文字(V4 審議)。
 echo "[10b/13] 夾具不得逐字引用規則自己的例句(含紅燈可達自檢)"
 $PY scripts/fixture_coupling_check.py --self-test > /dev/null
-$PY scripts/fixture_coupling_check.py --repo . > /dev/null
+$PY scripts/fixture_coupling_check.py --repo . | sed 's/^/    /'
 
 # 分母改成真實字數之後,per_k 可能是 0——每一處除法都得有守衛。
 # 施工時 style_check.py 的破折號密度就漏了一個,空輸入直接 ZeroDivisionError。

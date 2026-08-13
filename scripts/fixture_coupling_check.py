@@ -53,8 +53,29 @@ for _stream in (sys.stdout, sys.stderr):
     if hasattr(_stream, "reconfigure"):
         _stream.reconfigure(encoding="utf-8", errors="replace")
 
-CJK = re.compile(r"[一-鿿]+")
+# 中文字元**與數字**。數字要留(理由見 cjk_only)。
+CJK = re.compile(r"[一-鿿0-9０-９]+")
 DEFAULT_N = 10
+
+# 法定固定用語:比對前先剝掉。
+#
+# 這**不是**豁免文體,是豁免**句子**——兩位審議者獨立收斂到同一個做法。
+# 「請查照並轉知所屬依規定辦理」本身 12 字,兩份題材完全無關、各自獨立寫成的公文
+# 都會一字不差地寫它,因為那是法定行文,不寫才是錯的。這種重合沒有任何資訊量。
+#
+# 與初版「整組豁免 bizdoc/techdoc」的差別:那個做法讓**整份文件**免檢,
+# 只要包裝成公文就能夾帶抄來的示範句;這裡只拿掉逐字列舉的固定片語,
+# 同一份公文的主旨內容、說明各款、辦法期限全部照常比對。
+#
+# 加新片語的門檻:必須是**法規或公文程式條例明定**的用語,不是「常見寫法」。
+FORMAT_PHRASES = (
+    "請查照並轉知所屬依規定辦理",
+    "請查照並轉知所屬",
+    "請查照辦理",
+    "請查照",
+    "函復本府備查",
+    "本案奉核可後辦理",
+)
 
 # 夾具側
 FIXTURE_GLOB = "skills/*/assets/sample-*.md"
@@ -76,19 +97,32 @@ RULE_GLOBS = ("skills/*/references/*.md", "skills/*/assets/*_rules.json",
 #   1. 逐對列舉——換一個檔名就擋下來,包裝成公文也混不進去
 #   2. **會印出來**,不是靜默跳過;掃描結果永遠說得出還欠幾對
 #   3. 只准縮不准長:清單裡列了卻已經沒有耦合的項目,本閘會反過來要求你把它刪掉
+#   4. 釘的是 **(檔案對, 片段數上限)**,不是只有檔案對。只釘對子的話,已釘住的兩個檔案
+#      之間可以再抄十段新東西而閘依然綠——基準線會變成那一對的永久免死金牌。
+#      片段數一超過上限就轉紅(V4 審議指出的最大洞)。
 BASELINE = {
-    ("skills/bizdoc/assets/sample-bad.md", "skills/bizdoc/references/press.md"),
-    ("skills/bizdoc/assets/sample-gov-bad-subject.md", "skills/bizdoc/references/official.md"),
-    ("skills/bizdoc/assets/sample-gov-good.md", "skills/bizdoc/references/official.md"),
-    ("skills/bizdoc/assets/sample-gov-good.md", "skills/bizdoc/SKILL.md"),
-    ("skills/bizdoc/assets/sample-press-good.md", "skills/bizdoc/references/press.md"),
-    ("skills/techdoc/assets/sample-arch-good.md", "skills/techdoc/references/architecture.md"),
+    ("skills/bizdoc/assets/sample-bad.md", "skills/bizdoc/references/press.md"): 2,
+    ("skills/techdoc/assets/sample-arch-good.md", "skills/techdoc/references/architecture.md"): 2,
 }
 
 
 def cjk_only(text: str) -> str:
-    """只留中文字元。標點/空白/markdown 記號都剝掉——排版差異不該讓抄襲逃掉。"""
-    return "".join(CJK.findall(text))
+    """只留中文字元與數字。標點/空白/markdown 記號剝掉——排版差異不該讓抄襲逃掉。
+
+    **數字必須保留。** 初版連數字一起剝,於是
+    「依本府 115 年 7 月 30 日府資字第 1150073012 號函辦理」與
+    「依本府 116 年 2 月 3 日府教字第 1160021001 號函辦理」
+    被壓成同一串「依本府年月日府資字第號函辦理」——兩份引用**不同來函**的公文
+    因此被判為逐字重合。那不是抄,是數字被剝掉後的格式殘影(CHG-20260813-01,V4 審議)。
+
+    法定固定用語(FORMAT_PHRASES)在比對前剝掉——理由見該常數的註解。
+    順序很重要:**先正規化再剝片語**。反過來做的話,片語裡的字會先被抽出來與鄰字黏在
+    一起(join 用空字串),replace 就對不上了。
+    """
+    s = "".join(CJK.findall(text))
+    for ph in FORMAT_PHRASES:
+        s = s.replace(ph, "\x00")   # 非中文的哨兵,把 run 切斷
+    return s
 
 
 def shingles(text: str, n: int) -> set[str]:
@@ -130,8 +164,10 @@ def scan(repo: Path, n: int) -> tuple[list[str], list[str], list[tuple[str, str]
         rule_files.extend(sorted(repo.glob(g)))
 
     if not fixtures:
-        print(f"⚠ 找不到任何夾具({FIXTURE_GLOB})——這道閘等於沒跑", file=sys.stderr)
-        return [], [], []
+        # **錯誤,不是警告。** 初版在這裡 return 空清單、rc 0——夾具搬家或 glob 打錯,
+        # 這道閘就靜默綠燈通過。規則側 glob 壞掉反而會紅(BASELINE 全變 stale),
+        # 兩側不對稱正是最容易漏掉的那種洞(V4 審議)。
+        raise LookupError(f"找不到任何夾具({FIXTURE_GLOB})——這道閘等於沒跑")
 
     rule_index: list[tuple[Path, set[str], str]] = []
     for rf in rule_files:
@@ -157,9 +193,20 @@ def scan(repo: Path, n: int) -> tuple[list[str], list[str], list[tuple[str, str]
             seen_pairs.add(pair)
             line = (f"{pair[0]} ↔ {pair[1]}\n"
                     f"    共用 {len(common)} 個 {n} 字片段,例如「{longest}」")
-            (known if pair in BASELINE else problems).append(line)
+            cap = BASELINE.get(pair)
+            if cap is None:
+                problems.append(line)
+            elif len(common) > cap:
+                # 釘住的對子**只准縮不准長**:在已釘住的兩個檔案之間再抄新的東西,
+                # 同樣要轉紅,否則基準線就成了那一對的永久免死金牌。
+                problems.append(line + f"\n    ← 基準線上限 {cap},現在 {len(common)}"
+                                       f"——釘住的對子裡又長出新的耦合")
+            else:
+                known.append(line + (f"(上限 {cap})" if len(common) == cap
+                                     else f"(上限 {cap},已降到 {len(common)},"
+                                          f"請把 BASELINE 一起調降)"))
 
-    stale = sorted(BASELINE - seen_pairs)
+    stale = sorted(set(BASELINE) - seen_pairs)
     return problems, known, stale
 
 
@@ -180,7 +227,11 @@ def main(argv=None) -> int:
         print(f"ERROR: 找不到 {repo}", file=sys.stderr)
         return 2
 
-    problems, known, stale = scan(repo, args.n)
+    try:
+        problems, known, stale = scan(repo, args.n)
+    except LookupError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 2
     rc = 0
 
     if stale:
@@ -209,21 +260,79 @@ def main(argv=None) -> int:
     return rc
 
 
+def _mk(root: Path, rel: str, text: str) -> None:
+    p = root / rel
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text(text, encoding="utf-8")
+
+
 def self_test(n: int) -> int:
-    """紅燈可達:同一句話放兩邊必須被抓到;不同的話必須放行。"""
-    same = "他站在門口沒有說話我伸手往那個方向摸摸到的是牆"
-    diff = "廟裡的燈滅了兩個人誰也沒有先動雨還在下沒有停"
+    """端到端紅燈可達自檢。
+
+    初版的自檢是 `shingles(same, n) & shingles(same, n)`——**一個集合跟它自己取交集**,
+    只要字串長度 ≥ n 就不可能失敗。它宣稱證明了「紅燈可達」,實際只證明了 set 交集運算
+    沒壞:`cjk_only` 剝標點、glob 掃檔、`scan()` 配對、BASELINE 分類、stale 偵測、rc 1
+    ——真正的紅燈路徑一步都沒走到(V4 審議)。
+
+    現在改成在暫存目錄造真的假 repo,跑完整 `scan()`,驗五件事:
+      1. 逐字重疊 → 紅(且**排版與標點不同也要抓到**,這才驗到 cjk_only)
+      2. 不同文字 → 綠
+      3. 恰好 n-1 字 → 綠(邊界)
+      4. 基準線列了卻已無耦合 → 紅(stale 分支,原本零覆蓋)
+      5. 夾具 glob 落空 → **錯誤**,不是綠燈
+    """
+    import tempfile
+    global BASELINE
+    shared = "他站在門口沒有說話後來那把鑰匙一直放在鞋櫃上"   # 21 字
+    other = "廟裡的燈滅了兩個人誰也沒有先動雨還在下沒有停"
     fails = []
-    if not (shingles(same, n) & shingles(same, n)):
-        fails.append("同一段文字竟然沒有共用片段——判定壞了")
-    if shingles(same, n) & shingles(diff, n):
-        fails.append("兩段不同的文字竟然被判為共用——判定過鬆")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        # 規則側寫成一般散文;夾具側加上標點與 markdown——排版不同,內容相同。
+        _mk(root, "skills/t/references/r.md", f"# 示範\n\n{shared}\n")
+        _mk(root, "skills/t/assets/sample-copy.md", f"**{shared[:10]}**,{shared[10:]}。\n")
+        _mk(root, "skills/t/assets/sample-clean.md", other + "\n")
+        _mk(root, "skills/t/assets/sample-edge.md", shared[:n - 1] + "然後就走開了\n")
+
+        saved, BASELINE = BASELINE, {}
+        try:
+            problems, known, stale = scan(root, n)
+        finally:
+            BASELINE = saved
+        hit = {p.split(" ↔ ")[0] for p in problems}
+        if "skills/t/assets/sample-copy.md" not in hit:
+            fails.append("逐字重疊(標點與 markdown 不同)竟然沒被抓到——cjk_only 或配對壞了")
+        if "skills/t/assets/sample-clean.md" in hit:
+            fails.append("不相干的文字被判為耦合——判定過鬆")
+        if "skills/t/assets/sample-edge.md" in hit:
+            fails.append(f"只共用 {n - 1} 字竟然被判耦合——邊界錯了")
+
+        # stale 分支:釘一對根本不存在耦合的,必須轉紅
+        saved, BASELINE = BASELINE, {("skills/t/assets/sample-clean.md",
+                                      "skills/t/references/r.md"): 99}
+        try:
+            _, _, stale2 = scan(root, n)
+        finally:
+            BASELINE = saved
+        if not stale2:
+            fails.append("基準線列了卻已無耦合,竟然沒轉紅——stale 分支不可達")
+
+    # 夾具 glob 落空必須是錯誤,不是綠燈
+    with tempfile.TemporaryDirectory() as td2:
+        try:
+            scan(Path(td2), n)
+            fails.append("夾具一份都掃不到,竟然沒有報錯——這道閘會靜默通過")
+        except LookupError:
+            pass
+
     if fails:
         for f in fails:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:這道閘的紅燈或綠燈不可達。")
         return 1
-    print("✅ self-test:逐字重疊會被抓、不同文字會放行,兩端皆可達。")
+    print("✅ self-test:逐字重疊(含排版不同)會紅、不相干文字會綠、"
+          f"{n - 1} 字邊界不誤殺、stale 會紅、夾具掃不到會報錯——五端皆可達。")
     return 0
 
 
