@@ -112,6 +112,28 @@ for CMD in \
 done
 rm -f "$EMPTY"
 
+# min_sample_chars(300)讓短夾具的密度變成「未驗到」。這是誠實的,但驗收審議指出
+# 一個真實風險:門檻會**悄悄擴大成規則的逃生門**——今天七份未驗到,明天有人把門檻
+# 調到 600,一半的夾具就靜靜不受規則管了,而 CI 全程綠燈。
+# 所以把「哪幾份預期未驗到」釘死:名單一多一少都轉紅,要改門檻就得同時改這裡並說明。
+echo "[10d/13] 未驗到名單必須釘死(門檻不得悄悄變成逃生門)"
+EXPECT_UNVERIFIED="skills/fiction-flash/assets/sample-good.md"
+ACTUAL_UNVERIFIED=""
+for F in skills/fiction/assets/sample-*.md skills/fiction-*/assets/sample-*.md; do
+  if $PY skills/fiction/scripts/fiction_check.py "$F" 2>&1 | grep -q "未驗到"; then
+    ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $F"
+  fi
+done
+ACTUAL_UNVERIFIED="$(echo $ACTUAL_UNVERIFIED | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)"
+EXPECT_UNVERIFIED="$(echo $EXPECT_UNVERIFIED | tr ' ' '\n' | sort | tr '\n' ' ' | xargs)"
+if [ "$ACTUAL_UNVERIFIED" != "$EXPECT_UNVERIFIED" ]; then
+  echo "    ❌ 未驗到名單變了"
+  echo "       預期:$EXPECT_UNVERIFIED"
+  echo "       實際:$ACTUAL_UNVERIFIED"
+  echo "       密度門檻動了就要在這裡同步,並在 CHG 說明為什麼那幾份可以不受規則管"
+  exit 1
+fi
+
 echo "[11/13] py_compile"
 $PY -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
 
