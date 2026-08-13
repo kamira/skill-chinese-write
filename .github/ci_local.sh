@@ -31,6 +31,15 @@ if $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-bad.
   echo "    ❌ fiction sample-bad.md 竟然通過 lint —— 規則或門檻壞了"; exit 1
 fi
 
+# 成語密度是**提醒**而非硬性違規,所以它在 CI 裡要靠 --strict 才擋得住東西。
+# 沒有這一步,密度規則等於沒有閘——CHG-20260813-01 D-1:分母鉗位讓這條規則
+# 從來沒有被任何輸入真正跑到過,而唯一會踩線的輸入正被鉗位遮著。
+echo "[3b/13] fiction 成語密度:紅端要紅、綠端要綠(--strict)"
+if $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-bad-idiom-density.md --genre wuxia --strict > /dev/null 2>&1; then
+  echo "    ❌ 成語密度紅端夾具竟然通過 —— 分母又被鉗位了,或門檻壞了"; exit 1
+fi
+$PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-good.md --genre wuxia --strict > /dev/null
+
 echo "[4/13] 小說子層四支夾具:各以自己的流派跑"
 for G in scifi mystery romance flash; do
   $PY skills/fiction/scripts/fiction_check.py "skills/fiction-$G/assets/sample-good.md" --genre $G > /dev/null
@@ -79,6 +88,10 @@ $PY scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/pass/ca
 if $PY scripts/chg_diagram_gate.py --repo . --glob 'tests/fixtures/chg-gate/fail/case-*.md' > /dev/null 2>&1; then
   echo "    ❌ 缺圖的夾具竟然通過 —— 這道閘等於不存在"; exit 1
 fi
+
+echo "[10b/13] 夾具不得逐字引用規則自己的例句(含紅燈可達自檢)"
+$PY scripts/fixture_coupling_check.py --self-test > /dev/null
+$PY scripts/fixture_coupling_check.py --repo . > /dev/null
 
 echo "[11/13] py_compile"
 $PY -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')

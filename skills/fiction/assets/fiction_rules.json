@@ -272,5 +272,10 @@
   },
   "chapter": {
     "heading_pattern": "^(?:#{1,3}\\s+|第[一二三四五六七八九十百千零〇0-9]+章)"
+  },
+  "formatting": {
+    "emphasis_pattern": "\\*\\*[^*\\n]+\\*\\*|__[^_\\n]+__",
+    "level": "warning",
+    "reason": "小說靠句子本身給重音;markdown 粗體是「AI 在寫 md 文件」的殘留,不是小說排版。writing 管粗體配額,fiction 原本完全不看——scifi 夾具的粗體三支 lint 全部放行(CHG-20260813-01 D-5)"
   }
 }

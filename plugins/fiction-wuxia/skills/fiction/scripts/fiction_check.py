@@ -221,6 +221,19 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
             f"未指定 --genre,成語密度 {res['metrics']['idiom_per_1000']}/千字 **只報數不判定**"
             f"(可選:{'、'.join(genres)})")
 
+    # ---- 3. markdown 強調記號(CHG-20260813-01 D-5)
+    f_cfg = rules.get("formatting", {})
+    emph = f_cfg.get("emphasis_pattern")
+    if emph:
+        # 注意用 raw 不用 body:parse() 會先 strip_md(),body 裡的記號早就被拿掉了。
+        # 這正是這條規則以前抓不到東西的原因之一——它要查的東西在解析階段就被清掉。
+        n_emph = len(re.findall(emph, raw))
+        res["metrics"]["emphasis_marks"] = n_emph
+        if n_emph:
+            res["warnings"].append(
+                f"敘事文裡有 {n_emph} 處 markdown 強調記號(**…** / __…__)"
+                "——小說靠句子本身給重音,粗體是寫文件的殘留")
+
     # ---- 4. 章節字數
     lo, hi = m_cfg["chapter_chars"]
     for start, title, lines in chapters:
