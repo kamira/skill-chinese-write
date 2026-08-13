@@ -491,6 +491,19 @@ SHELL_CASES = [
 ]
 SHELL_LABELS = ("生造強度形容", "生造動詞加碼")
 
+# 條列長度的紅綠端測資。**左欄是 agent 實際產出、被使用者指為 AI 味的寫法,
+# 右欄是使用者給的改法。** 規則檔的 _doc 早就寫著「禁止完整說明」,而斷言原本
+# 只查長度、門檻 16 字——左欄 9/10/10 字全部合法通過(KN-001:規則說一件事,
+# 斷言查另一件)。門檻收到 8 字才切得開,這組測資把它釘住。
+BULLET_CASES = [
+    ("一餐的成本壓得下來", True),      # 寫成句子,該擋
+    ("食安稽核只要查一個點", True),
+    ("學校不必再自己找廚工", True),
+    ("降低成本", False),               # 壓縮過的名詞短語,該過
+    ("單一稽核單位", False),
+    ("校方不需廚工", False),
+]
+
 
 def self_test(rules) -> int:
     """句型殼規則的紅綠端可達自檢。"""
@@ -510,8 +523,23 @@ def self_test(rules) -> int:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:句型殼規則誤殺了合法用法,或漏掉了該抓的形狀。")
         return 1
-    print(f"✅ self-test:句型殼規則 {len(SHELL_CASES)} 個測資全對"
-          f"(5 個合法用法不誤殺、3 個生造形狀抓得到)。")
+    b_max = rules.get("bullets", {}).get("max_chars", 0)
+    if not b_max:
+        fails.append("條列長度上限沒有設定——這條規則等於沒有")
+    for s, want in BULLET_CASES:
+        hit = b_max and char_len(s) > b_max
+        if bool(hit) != want:
+            fails.append(f"條列「{s}」({char_len(s)} 字)預期"
+                         f"{'該擋' if want else '該過'}、實際"
+                         f"{'擋下' if hit else '放行'}(上限 {b_max})")
+    if fails:
+        for f in fails:
+            print(f"  ❌ {f}")
+        print("\n✗ self-test 未通過。")
+        return 1
+    print(f"✅ self-test:句型殼 {len(SHELL_CASES)} 個測資全對"
+          f"(5 個合法用法不誤殺、3 個生造形狀抓得到);"
+          f"條列 {len(BULLET_CASES)} 個測資全對(上限 {b_max} 字)。")
     return 0
 
 
