@@ -102,6 +102,39 @@ def check_static(repo: Path) -> list[str]:
     return problems
 
 
+# `plugins/` 頂層唯二不是 plugin 的東西——**就地複製,不 import**。
+# 兩支治理工具須各自可獨立執行(審議席指定);名單漂移由 self-test 的交叉斷言攔住。
+# 單一真相在 `scripts/skill_inventory_check.py` 的同名常數。
+TOP_TOOL_FILES = {"build_suite.py", "catalog_check.py"}
+
+
+def needs_bump(changed: list[str]) -> list[str]:
+    """從 diff 檔名清單篩出**真的會改變出貨內容**的那些。純函式,好測。
+
+    為什麼要排除 `TOP_TOOL_FILES`(CHG-20260814-03,審議席裁決):
+    原條件是 `startswith(("plugins/","skills/"))` 只排 README.md,於是改建置工具
+    `plugins/build_suite.py` 也會強制 bump marketplace 版號——**但出貨內容一個 byte 都沒變**
+    (`build_suite --check` = 0)。這條規則甚至會**對 catalog_check.py 自己開火**。
+    規則寫得比意圖寬,擋住了不該擋的;零出貨變動卻 bump,還會製造無內容版本、
+    污染版本歷史、讓消費端誤判有新發布。
+
+    **用名單排除,不用路徑深度**:深度規則會把未列名的 `plugins/` 頂層異常檔靜默放過,
+    而那正是孤兒事故的形狀。分類依據是既有語意(TOP_TOOL_FILES),不是目錄層數。
+    """
+    out = []
+    for f in changed:
+        f = f.strip()
+        if not f.startswith(("plugins/", "skills/")):
+            continue
+        parts = f.split("/")
+        if f.rsplit("/", 1)[-1] == "README.md":
+            continue                                  # 純敘述,不影響 plugin 行為
+        if len(parts) == 2 and parts[0] == "plugins" and parts[1] in TOP_TOOL_FILES:
+            continue                                  # 治理工具,不出貨
+        out.append(f)
+    return out
+
+
 def check_since(repo: Path, ref: str) -> list[str]:
     if not (repo / ".git").exists():
         print("(--since:非 git repo,略過)")
@@ -114,8 +147,7 @@ def check_since(repo: Path, ref: str) -> list[str]:
         print(f"(--since:git diff 失敗,略過:{diff.stderr.strip()[:100]})")
         return []
     # plugins/skills 下的實質內容變動;排除純 README.md 敘述(不影響 plugin 行為)
-    content_changed = [f for f in (l.strip() for l in diff.stdout.splitlines())
-                       if f.startswith(("plugins/", "skills/")) and f.rsplit("/", 1)[-1] != "README.md"]
+    content_changed = needs_bump(diff.stdout.splitlines())
     if not content_changed:
         return []
     old = git(repo, "show", f"{ref}:{MARKET_REL}")
@@ -185,7 +217,59 @@ def bump_catalog(repo: Path, ref: str) -> int:
     return 0
 
 
+BUMP_CASES = [
+    # (檔名, 該不該要求 bump, 為什麼)
+    ("plugins/writing/skills/writing/SKILL.md", True, "真的出貨內容"),
+    ("plugins/fiction/.claude-plugin/plugin.json", True, "plugin manifest 也是出貨物"),
+    ("skills/writing/assets/style_rules.json", True, "單一真相變了,出貨物跟著變"),
+    ("plugins/build_suite.py", False, "建置工具,不出貨"),
+    ("plugins/catalog_check.py", False, "同上——這條規則原本會對自己開火"),
+    ("plugins/writing/README.md", False, "純敘述,不影響 plugin 行為"),
+    ("plugins/stray.py", True, "**未列名**的 plugins/ 頂層檔:名單而非深度的存在理由"),
+    ("docs/writing/changes/CHG-1.md", False, "不在 plugins/ 或 skills/ 底下"),
+    (".github/ci_local.sh", False, "同上"),
+]
+
+
+def self_test() -> int:
+    """`--since` 觸發條件的紅綠端 + 名單交叉斷言(CHG-20260814-03,審議席指定)。"""
+    fails = []
+    for f, want, why in BUMP_CASES:
+        hit = bool(needs_bump([f]))
+        if hit != want:
+            fails.append(f"「{f}」預期{'要' if want else '不'}觸發、實際"
+                         f"{'觸發' if hit else '不觸發'}({why})")
+
+    # 交叉斷言:兩支治理工具各自持有一份名單(刻意不 import,兩者須能獨立執行),
+    # 所以名單漂移必須有東西攔。這裡就是那個東西。
+    peer = Path(__file__).resolve().parent.parent / "scripts" / "skill_inventory_check.py"
+    if peer.is_file():
+        m = re.search(r"^TOP_TOOL_FILES\s*=\s*\{([^}]*)\}",
+                      peer.read_text(encoding="utf-8"), re.M)
+        if not m:
+            fails.append(f"在 {peer.name} 找不到 TOP_TOOL_FILES——交叉斷言失效")
+        else:
+            peer_set = {x.strip().strip('"\'') for x in m.group(1).split(",") if x.strip()}
+            if peer_set != TOP_TOOL_FILES:
+                fails.append(f"TOP_TOOL_FILES 兩邊不一致:本檔 {sorted(TOP_TOOL_FILES)} vs "
+                             f"{peer.name} {sorted(peer_set)}——名單漂移")
+    else:
+        fails.append(f"找不到 {peer}——交叉斷言無法執行,等於沒有")
+
+    if fails:
+        for f in fails:
+            print(f"  ❌ {f}")
+        print("\n✗ self-test 未通過。")
+        return 1
+    print(f"✅ self-test:--since 觸發條件 {len(BUMP_CASES)} 案全對"
+          f"(含未列名的 plugins/ 頂層檔仍觸發),"
+          f"且 TOP_TOOL_FILES 與 skill_inventory_check 一致。")
+    return 0
+
+
 def main(argv) -> int:
+    if "--self-test" in argv:
+        return self_test()
     ap = argparse.ArgumentParser()
     ap.add_argument("--repo", default=".")
     ap.add_argument("--check", action="store_true", help="靜態:semver + entry==plugin.json")

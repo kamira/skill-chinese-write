@@ -48,6 +48,7 @@ quiet python3 tools/autopilot/scripts/doc_integrity_check.py --repo .
 quiet python3 tools/autopilot/scripts/static_check.py --repo . --paths skills plugins
 quiet python3 plugins/build_suite.py --self-test
 quiet python3 plugins/build_suite.py --check
+quiet python3 plugins/catalog_check.py --self-test
 quiet python3 plugins/catalog_check.py --repo . --check
 
 echo "✅ 實際操作驗收通過"
