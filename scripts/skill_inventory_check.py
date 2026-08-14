@@ -84,7 +84,16 @@ EXCLUDE_ANYWHERE = {"__pycache__", ".DS_Store"}
 TOP_TOOL_FILES = {"build_suite.py", "catalog_check.py"}
 # plugin 目錄的登記結構。值是**型別**——同名異型(例如 skills 是一個檔)要判得出來,
 # 這是審議席 codex 在收斂時補的一刀。
-PLUGIN_TOP_ALLOWED = {".claude-plugin": "dir", "skills": "dir",
+# `commands` 於 CHG-20260814-03 加入:使用者要的目標形狀是
+# 「一個大類 plugin + 每個細項一個 slash command」(`/fiction:long`),
+# 而 slash command 的載體就是 plugin 頂層的 `commands/`(平面 .md,`/plugin:command` 呼叫)。
+#
+# **這份白名單不是「平台允許什麼」的鏡像,是「本 repo 治理了什麼」的登記簿。**
+# 實測:現行運作中的 `ai-sdlc-suite` plugin 頂層還有 `ci-templates` / `hooks` / `mcp`,
+# 平台全都吃。所以擋下它們的理由不是「平台不支援」,是「本 repo 未登記」——
+# 理由變了,要不要擋沒變。未來真要用 hooks,那是一次**登記變更**(開 CHG 加進本表、
+# 補同步、補夾具),不是拆閘。
+PLUGIN_TOP_ALLOWED = {".claude-plugin": "dir", "skills": "dir", "commands": "dir",
                       "README.md": "file", "THIRD-PARTY-NOTICES.md": "file"}
 
 
@@ -145,9 +154,14 @@ def plugin_tree_shape(tree: dict, packaged: dict[str, tuple[str, ...]]) -> list[
             want = PLUGIN_TOP_ALLOWED.get(name)
             if want is None:
                 problems.append(
-                    f"`plugins/{plug}/{name}` 不在 plugin 的登記結構裡"
-                    f"({'、'.join(sorted(PLUGIN_TOP_ALLOWED))})——build_suite 只同步 "
-                    f"`skills/` 底下已宣告的路徑,走不到這裡,它會靜靜地漂")
+                    f"`plugins/{plug}/{name}` **未登記**在 plugin 的登記結構裡"
+                    f"({'、'.join(sorted(PLUGIN_TOP_ALLOWED))})。"
+                    f"\n    build_suite 只同步 `skills/` 與 `commands/` 底下**已宣告**的路徑,"
+                    f"走不到這裡,它會靜靜地漂。"
+                    f"\n    **未登記 ≠ 非法**——平台可能吃這個目錄(實測 ai-sdlc-suite 有 "
+                    f"`hooks/`、`mcp/`、`ci-templates/`);本表管的是**本 repo 治理了什麼**。"
+                    f"\n    要放行:開 CHG 把它加進 `PLUGIN_TOP_ALLOWED`、補同步邏輯、補紅端夾具"
+                    f"——那是一次**登記變更**,不是拆閘。")
             elif want != kind:
                 problems.append(
                     f"`plugins/{plug}/{name}` 應該是{want}卻是{kind}——同名異型")
@@ -314,6 +328,13 @@ SHAPE_CASES = [
                 "catalog_check.py": "file", "stray-orphan.md": "file"})),
     ("同名異型:skills 是一個檔",
      _tree(node=_mut(_OK_NODE, "top", skills="file"))),
+    # 以下兩條測的是**兩個不同的逃逸類別**,都要(CHG-20260814-03 A-2 / A-3)。
+    ("目錄名拼錯:command/(少了 s)",
+     _tree(node=_mut(_OK_NODE, "top", **{"command": "dir"}))),
+    ("平台合法但本 repo 未登記:hooks/",
+     _tree(node=_mut(_OK_NODE, "top", hooks="dir"))),
+    ("同名異型:commands 是一個檔",
+     _tree(node=_mut(_OK_NODE, "top", commands="file"))),
 ]
 
 
