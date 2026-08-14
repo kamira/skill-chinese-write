@@ -68,6 +68,7 @@ metadata:
 
 ```
 python3 skills/writing/scripts/style_check.py 稿件.md
+python3 scripts/fixture_coupling_check.py --repo . --draft 稿件.md
 ```
 
 它報五組:

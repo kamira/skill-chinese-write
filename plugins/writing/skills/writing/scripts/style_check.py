@@ -217,7 +217,11 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
     total_chars = sum(lengths)
     # 短稿不放大密度:1000 字以下,「每千字上限」直接當絕對次數上限。否則一篇 400 字的稿子
     # 出現一次軟限詞就會被判超標,警告變雜訊。
-    per_k = max(total_chars, 1000) / 1000
+    # 分母用真實字數。原本是 max(total_chars, 1000)/1000——實測 repo 內 24/24 份夾具
+    # 全部短於 1000 字,於是每一條 per_1000 規則都被系統性低報(129 字的稿被除以 1000,
+    # 低報近 8 倍),密度類規則從來沒有一次用對過分母(CHG-20260813-01 D-1)。
+    per_k = total_chars / 1000 if total_chars else 0.0
+    density_verifiable = total_chars >= rules.get("min_sample_chars", 300)
 
     r = rules.get("rhythm", {})
     sym_cfg = rules.get("symmetry", {})
@@ -226,6 +230,13 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
 
     res = {"file": str(path), "chars": total_chars, "sentences": len(sentences),
            "hard": [], "warnings": [], "metrics": {}}
+
+    # 樣本過短時**明說未驗到**。規則檔的 min_sample_chars_reason 白紙黑字承諾了
+    # 「並明說未驗到」,而初版只是靜默跳過——同一個逃生門在這裡沒堵(V5 審議)。
+    if not density_verifiable:
+        res["warnings"].append(
+            f"樣本只有 {total_chars} 字(低於 {rules.get('min_sample_chars', 300)} 字),密度類規則 **未驗到**"
+            "——短樣本的密度沒有統計意義,不判定也不冒充判過")
 
     # 1. 硬性:禁用詞
     res["hard"] = find_hard(all_text, rules, allow)
@@ -248,7 +259,7 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
                                    f"(門檻 {p_cfg.get('first_hit_within_chars', 200)})")
 
     hedge_n = sum(joined.count(h) for h in p_cfg.get("hedges", []))
-    if hedge_n / per_k > p_cfg.get("max_hedge_per_1000", 3):
+    if density_verifiable and hedge_n / per_k > p_cfg.get("max_hedge_per_1000", 3):
         res["warnings"].append(f"「我認為/我覺得」太密({hedge_n} 次 / {total_chars} 字)——判斷句直接講就好")
 
     # 2. 節奏
@@ -365,7 +376,10 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
     soft_over = []
     for rule in rules.get("soft_limits", []):
         label, n = count_rule(all_text, rule)
-        if n >= 2 and n / per_k > rule["per_1000"]:
+        # min_count 預設 2:字面詞出現一次不算問題(KN-002 防誤報)。
+        # 句型殼不一樣——出現一次就是那個殼,所以那類條目自己設 min_count: 1。
+        if (density_verifiable and n >= rule.get("min_count", 2)
+                and n / per_k > rule["per_1000"]):
             soft_over.append(f"{label}×{n}(上限 {rule['per_1000']}/千字)")
     res["metrics"]["soft_over"] = soft_over
     if soft_over:
@@ -405,7 +419,7 @@ def analyse(path: Path, rules: dict, allow: set) -> dict:
                                "——評論是散文,論證用文字推")
     dashes = raw.count("——")
     res["metrics"]["em_dash"] = dashes
-    if dashes / per_k > l_cfg.get("max_em_dash_per_1000", 4):
+    if density_verifiable and dashes / per_k > l_cfg.get("max_em_dash_per_1000", 4):
         res["warnings"].append(f"破折號 {dashes} 個 / {total_chars} 字——太多代表你不會用句號")
     # 4c. 條列:只放扼要重點,禁止完整說明
     b_cfg = rules.get("bullets", {})
@@ -460,12 +474,85 @@ def report(res: dict) -> None:
         print("\n✓ 無提醒")
 
 
+# 句型殼規則的紅綠端測資。**這一組是使用者實測給的反例。**
+# 「生造的帶勁口語」這條腳本判不準,斷言只抓最有把握的形狀;收窄之後如果有人把
+# regex 放寬,下面五個合法句會重新被誤殺——所以把它們釘成 self-test,
+# 誤殺即紅。收窄本身也要有斷言,否則它就是一次沒人守得住的修正(KN-001)。
+SHELL_CASES = [
+    # (句子, 該不該被抓, 為什麼)
+    ("鑽石是自然界最硬的礦物", False, "物性比較,「硬」是字面義"),
+    ("這是我遇過最硬的材質", False, "同上"),
+    ("他不想把話講死", False, "台灣口語,意思是不留餘地"),
+    ("我不想把話講這麼死", False, "同上"),
+    ("這件事還不能說死", False, "同上"),
+    ("我知道最硬的反駁在哪裡", True, "拿強度詞修飾論述性名詞"),
+    ("最狠的批評來自他自己", True, "同上"),
+    ("還有一件事我想講死", True, "拿它當「最重要的是」在用"),
+]
+SHELL_LABELS = ("生造強度形容", "生造動詞加碼")
+
+# 條列長度的紅綠端測資。**只驗「明顯過長」這個兜底門檻(16 字)。**
+# 曾經有一版把門檻收到 8 字,理由是 agent 寫出 9/10/10 字的句子而使用者改成 4/6/6;
+# 使用者指出那是過度一般化——一篇文章的合適值不是所有文章的規則,已撤回。
+# 「壓縮夠不夠」現在靠人讀,不在這裡假裝有閘(見 style_rules.bullets)。
+BULLET_CASES = [
+    # 只驗**明顯過長**的兜底。一度把「一餐的成本壓得下來」(9 字)也釘成該擋,
+    # 依據只有單一實例;使用者指出那是過度一般化——不同文章的條列該多長不一樣。
+    # 「壓縮夠不夠」現在靠人讀,不在這裡假裝有閘(見 style_rules.bullets)。
+    ("這一項寫得又臭又長還把整段說明全部塞進來當作條列", True),
+    ("降低成本", False),
+    ("單一稽核單位", False),
+    ("校方不需廚工", False),
+    ("一餐的成本壓得下來", False),   # 寫成句子,但不由機器判——靠人
+]
+
+
+def self_test(rules) -> int:
+    """句型殼規則的紅綠端可達自檢。"""
+    pats = [re.compile(e["pattern"]) for e in rules.get("soft_limits", [])
+            if any(e.get("label", "").startswith(x) for x in SHELL_LABELS)]
+    if not pats:
+        print("  ❌ 找不到句型殼規則——規則被刪掉了,這道自檢等於沒跑")
+        return 1
+    fails = []
+    for s, want, why in SHELL_CASES:
+        hit = any(rx.search(s) for rx in pats)
+        if hit != want:
+            fails.append(f"「{s}」預期{'該抓' if want else '不該抓'}、實際"
+                         f"{'抓到' if hit else '沒抓'}({why})")
+    if fails:
+        for f in fails:
+            print(f"  ❌ {f}")
+        print("\n✗ self-test 未通過:句型殼規則誤殺了合法用法,或漏掉了該抓的形狀。")
+        return 1
+    b_max = rules.get("bullets", {}).get("max_chars", 0)
+    if not b_max:
+        fails.append("條列長度上限沒有設定——這條規則等於沒有")
+    for s, want in BULLET_CASES:
+        hit = b_max and char_len(s) > b_max
+        if bool(hit) != want:
+            fails.append(f"條列「{s}」({char_len(s)} 字)預期"
+                         f"{'該擋' if want else '該過'}、實際"
+                         f"{'擋下' if hit else '放行'}(上限 {b_max})")
+    if fails:
+        for f in fails:
+            print(f"  ❌ {f}")
+        print("\n✗ self-test 未通過。")
+        return 1
+    print(f"✅ self-test:句型殼 {len(SHELL_CASES)} 個測資全對"
+          f"(5 個合法用法不誤殺、3 個生造形狀抓得到);"
+          f"條列 {len(BULLET_CASES)} 個測資全對(兜底 {b_max} 字;壓縮夠不夠靠人讀)。")
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="評論文章風格 lint")
     ap.add_argument("files", nargs="+", help="要檢查的稿件(.md / .txt)")
     ap.add_argument("--rules", default=str(DEFAULT_RULES), help="規則檔路徑")
     ap.add_argument("--allow", default="", help="個案放行的禁用詞,逗號分隔(限引用原文)")
     ap.add_argument("--json", action="store_true", help="輸出 JSON")
+    ap.add_argument("--self-test", action="store_true",
+                    help="句型殼規則的紅綠端自檢(使用者實測給的合法用法不得被誤殺)")
     args = ap.parse_args(argv)
 
     rules_path = Path(args.rules)
@@ -477,6 +564,9 @@ def main(argv=None) -> int:
     except json.JSONDecodeError as e:
         print(f"ERROR: 規則檔不是合法 JSON — {e}", file=sys.stderr)
         return 2
+
+    if args.self_test:
+        return self_test(rules)
 
     allow = {a.strip() for a in args.allow.split(",") if a.strip()}
     results, failed = [], False

@@ -31,10 +31,22 @@ fi
 cp /tmp/verify_drift.bak tools/autopilot/scripts/static_check.py
 python3 tools/tools_drift_check.py > /dev/null
 
+# 成功時安靜、失敗時**把原因印出來**。
+# CHG-20260810-07 把「hook 的輸出蓋掉自己的錯誤訊息」列為觀察項,並寫明第二次發生就改;
+# CHG-20260813-01 施工時第二次發生:[5/5] 靜默 exit 1,一個字都沒印,查不出是哪一支擋的。
+quiet() {
+  local out
+  if ! out=$("$@" 2>&1); then
+    echo "    ❌ 失敗:$*"
+    echo "$out" | sed 's/^/    /'
+    return 1
+  fi
+}
+
 echo "[5/5] 其餘治理閘"
-python3 tools/autopilot/scripts/doc_integrity_check.py --repo . > /dev/null
-python3 tools/autopilot/scripts/static_check.py --repo . --paths skills plugins > /dev/null
-python3 plugins/build_suite.py --check > /dev/null
-python3 plugins/catalog_check.py --repo . --check > /dev/null
+quiet python3 tools/autopilot/scripts/doc_integrity_check.py --repo .
+quiet python3 tools/autopilot/scripts/static_check.py --repo . --paths skills plugins
+quiet python3 plugins/build_suite.py --check
+quiet python3 plugins/catalog_check.py --repo . --check
 
 echo "✅ 實際操作驗收通過"

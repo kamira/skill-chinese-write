@@ -104,11 +104,25 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     chapters, paragraphs = parse(raw, chapter_re)
     body = "".join(t for _, lines, _ in paragraphs for t in lines)
     total = char_len(body)
-    per_k = max(total, 1000) / 1000
+    # 分母用**真實字數**。原本寫 max(total, 1000)/1000,任何短於 1000 字的稿件密度都被
+    # 系統性低報——武俠 good 夾具 8 次 / 536 字(真實 14.9/千字,超過上限 14)被印成
+    # 「8.0/千字」綠燈放行,而六份小說夾具全部短於 1000 字,於是成語密度這條規則
+    # 從來沒有被任何輸入真正跑到過(CHG-20260813-01 D-1;KN-001 第九次)。
+    # 樣本太短時**明說未驗到**,不拿一個扭曲的數字冒充判過。
+    per_k = total / 1000 if total else 0.0
+    # 兩個門檻**分開判**。初版用 min() 併成一個:日後把 idioms.min_sample_chars 調到 600
+    # 而擬聲詞留 300,min() 取 300,成語密度照樣在 400 字樣本上判定——調高的旋鈕
+    # 靜默無效;而且一則警告同時替兩個指標宣告未驗到,實際可能只有一個沒過(V5 審議)。
+    idiom_min = i_cfg.get("min_sample_chars", 300)
+    ono_min = o_cfg.get("min_sample_chars", 300)
+    idiom_short = total < idiom_min
+    ono_short = total < ono_min
+    min_chars = min(idiom_min, ono_min)
+    too_short = idiom_short
 
     res = {"file": str(path), "mode": mode, "genre": genre, "chars": total,
            "paragraphs": len(paragraphs), "chapters": len(chapters),
-           "hard": [], "warnings": [], "metrics": {}}
+           "hard": [], "warnings": [], "notices": [], "metrics": {}}
 
     # ---- 1. 硬性:段落長度(原文列為「分段鐵律」,且完全可判定)
     cap = m_cfg["max_paragraph_chars"]
@@ -179,7 +193,9 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     ono_n = sum(body.count(w) for w in o_cfg.get("words", []))
     res["metrics"]["onomatopoeia_count"] = ono_n
     ono_cap = o_cfg.get("max_per_1000", 3)
-    if ono_n >= 2 and ono_n / per_k > ono_cap:
+    if ono_short:
+        res["metrics"]["onomatopoeia_per_1000"] = None
+    elif ono_n >= 2 and ono_n / per_k > ono_cap:
         res["warnings"].append(
             f"擬聲詞 {ono_n} 次 / {total} 字(上限 {ono_cap}/千字):{'、'.join(ono_hits[:8])}"
             "——能不用就不用,滿篇「啪、轟、啊」會顯得幼稚")
@@ -187,9 +203,21 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     # ---- 3. 成語密度(需 --genre;沒指定就只報數,不判定)
     idiom_n = sum(body.count(w) for w in i_cfg.get("list", []))
     res["metrics"]["idiom_count"] = idiom_n
-    res["metrics"]["idiom_per_1000"] = round(idiom_n / per_k, 2)
+    res["metrics"]["idiom_per_1000"] = None if too_short else round(idiom_n / per_k, 2)
     genres = i_cfg.get("genres", {})
-    if genre:
+    # 兩個指標**各自宣告**。先前只掛在 idiom_short 上,而且一則通知同時替兩者宣告未驗到——
+    # 若日後 ono_min > idiom_min,擬聲詞未驗到會完全靜默(A 項複審抓到的潛伏缺口)。
+    # 放 notices 不放 warnings:這是**通知**不是**提醒**——--strict 只該把
+    # 「文章有問題」打紅,不該把「這項沒驗到」也打紅(V5 審議)。
+    for _short, _min, _what in ((idiom_short, idiom_min, "成語"),
+                                (ono_short, ono_min, "擬聲詞")):
+        if _short:
+            res["notices"].append(
+                f"樣本只有 {total} 字(低於 {_min} 字),{_what}密度 **未驗到**"
+                "——短樣本的密度沒有統計意義,不判定也不冒充判過")
+    if too_short:
+        pass
+    elif genre:
         band = genres.get(genre, {}).get("per_1000")
         if band:
             lo, hi = band
@@ -202,9 +230,22 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
                     f"成語密度 {d:.1f}/千字,高於 {label} 的上限 {hi}"
                     "——密集用典會把細節的獨特性抹掉")
     else:
-        res["warnings"].append(
+        res["notices"].append(
             f"未指定 --genre,成語密度 {res['metrics']['idiom_per_1000']}/千字 **只報數不判定**"
             f"(可選:{'、'.join(genres)})")
+
+    # ---- 3. markdown 強調記號(CHG-20260813-01 D-5)
+    f_cfg = rules.get("formatting", {})
+    emph = f_cfg.get("emphasis_pattern")
+    if emph:
+        # 注意用 raw 不用 body:parse() 會先 strip_md(),body 裡的記號早就被拿掉了。
+        # 這正是這條規則以前抓不到東西的原因之一——它要查的東西在解析階段就被清掉。
+        n_emph = len(re.findall(emph, raw))
+        res["metrics"]["emphasis_marks"] = n_emph
+        if n_emph:
+            res["warnings"].append(
+                f"敘事文裡有 {n_emph} 處 markdown 強調記號(**…** / __…__)"
+                "——小說靠句子本身給重音,粗體是寫文件的殘留")
 
     # ---- 4. 章節字數
     lo, hi = m_cfg["chapter_chars"]
@@ -230,8 +271,18 @@ def report(res: dict) -> None:
         print("\n✓ 硬性違規:無")
 
     m = res["metrics"]
+    # 樣本過短時 idiom_per_1000 是 None——印「未驗到」,不要印 None,更不要印一個假數字。
+    per_k_txt = ("未驗到" if m.get("idiom_per_1000") is None
+                 else f"{m.get('idiom_per_1000')}/千字")
     print(f"\n密度:擬聲詞 {m.get('onomatopoeia_count')} 次 · 成語 {m.get('idiom_count')} 次"
-          f"({m.get('idiom_per_1000')}/千字) · 最長純對話 {m.get('max_pure_dialogue_run')} 段")
+          f"({per_k_txt}) · 最長純對話 {m.get('max_pure_dialogue_run')} 段")
+
+    # 通知與提醒分開印。notices 是「這項沒驗到」這類資訊,--strict 不打紅;
+    # 先前只收集不印,等於「明說未驗到」這件事對使用者完全不可見(A 項複審後補)。
+    if res.get("notices"):
+        print(f"\nℹ 通知 {len(res['notices'])} 則(不影響判定,--strict 也不打紅):")
+        for nt in res["notices"]:
+            print(f"  · {nt}")
 
     if res["warnings"]:
         print(f"\n⚠ 提醒 {len(res['warnings'])} 則:")
@@ -249,6 +300,10 @@ def main(argv=None) -> int:
     ap.add_argument("--genre", default=None,
                     help="流派,用於成語密度判定:wuxia / scifi / mystery / romance / flash / long")
     ap.add_argument("--json", action="store_true", help="輸出 JSON")
+    ap.add_argument("--strict", action="store_true",
+                    help="把提醒也當成失敗(exit 1)。CI 用:密度這類規則只出提醒,"
+                         "沒有這個旗標就沒有任何辦法讓它在 CI 裡變成紅燈——"
+                         "規則存在但閘不可達,等於沒有(CHG-20260813-01 D-1)")
     args = ap.parse_args(argv)
 
     rules_path = Path(args.rules)
@@ -275,14 +330,18 @@ def main(argv=None) -> int:
             return 2
         res = analyse(p, rules, args.mode, args.genre)
         results.append(res)
-        failed = failed or not res["ok"]
+        res["strict_failed"] = args.strict and bool(res["warnings"])
+        failed = failed or not res["ok"] or res["strict_failed"]
 
     if args.json:
         print(json.dumps(results, ensure_ascii=False, indent=2))
     else:
         for res in results:
             report(res)
-        print("\n" + ("✗ 有硬性違規,回去改。" if failed else "✓ 過。剩下的提醒自己判斷。"))
+        if failed and args.strict and all(r["ok"] for r in results):
+            print("\n✗ --strict:有提醒即視為失敗。")
+        else:
+            print("\n" + ("✗ 有硬性違規,回去改。" if failed else "✓ 過。剩下的提醒自己判斷。"))
     return 1 if failed else 0
 
 
