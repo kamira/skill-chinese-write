@@ -2,7 +2,7 @@
 """
 skill_inventory_check.py — 全部 skill 的一致性清點(唯讀;不改任何檔)
 
-拆成一文體一支之後,一致性不能再靠人記。查六件事:
+拆成一文體一支之後,一致性不能再靠人記。查七件事:
 
   1. 每支 skill 的 SKILL.md 存在,且 `name:` 與目錄名一致
   2. `PLUGINS` 打包的每一支 skill 都存在
@@ -13,14 +13,26 @@ skill_inventory_check.py — 全部 skill 的一致性清點(唯讀;不改任何
      ——KN-001 的第二條路;缺這一節就是空頭規則
   6. `plugins/` 底下的**目錄集合** == `PLUGINS` 的鍵集合 == marketplace 的 plugin 名單
      ——三者必須完全相等(CHG-20260814-02)
+  7. `plugins/` 的**樹形**只能長名冊登記過的形狀:頂層不收散檔、plugin 底下不收
+     登記結構以外的條目、`plugins/<p>/skills/` 的子目錄集合 == `PLUGINS[p]`
+     ——連節點型別一起驗,擋同名異型(CHG-20260814-02,審議席複審後補)
 
 版本三處同步由 `plugins/catalog_check.py` 負責,本檔不重複。
+
+**第 7 項與 `build_suite --check` 的分工**(兩席審議席合意的邊界):
+本檔第 7 項只斷言**登記形狀**——哪些節點可以存在、是什麼型別;
+`build_suite --check` 管**已宣告路徑內的內容**(它的 added / updated / removed 三個
+分支都會 exit 1)。兩閘相接,不重疊:對已宣告的 `plugins/<p>/skills/<name>/` 再做
+一次遞迴內容比對,是重複造閘。而 build_suite 只走訪**已宣告**的路徑,所以第 7 項
+補的正是它走不到的三類:plugin 內未宣告的 skill 目錄、plugin 頂層多出來的條目、
+`plugins/` 頂層的散檔。
 
 **第 6 項為什麼在這裡而不是在 `catalog_check.py`**:方向相反。既有的三道閘全部是
 **名冊 → 磁碟**(catalog_check 走訪 marketplace 條目、build_suite 與本檔第 2 項走訪
 `PLUGINS`),所以**不在任何名冊裡的目錄,三道閘都走不到**。`plugins/bizdoc/` 與
 `plugins/techdoc/` 就是這樣在 main 上活了四天:被 git 追蹤、不被 build_suite 同步、
-與單一真相分岔 11 個檔(含半形標點的夾具),而 CI 全綠。第 6 項補的是
+與單一真相分岔(對 46331e8 為 11 檔、對 268d404 為 13 檔——單一真相在動而孤兒
+不動,缺口只會擴大;含半形標點的夾具),而 CI 全綠。第 6 項補的是
 **磁碟 → 名冊**這一條;本檔的職責是「齊備與可達」,這正好是它。
 
 **紅燈可達內建**:`--self-test` 拿嵌在檔案裡的好壞兩份樣本各跑一次判定,
@@ -64,11 +76,97 @@ def load_market_names(repo: Path) -> set[str]:
     return {str(e.get("name", "")) for e in mk.get("plugins", [])}
 
 
+# `__pycache__` 在每一層都排除:它是執行殘留,`.gitignore` 已經忽略它,
+# 拿它報紅只會製造假紅。兩席審議席就這一點合意——要靠它繞過治理得 `git add -f`。
+EXCLUDE_ANYWHERE = {"__pycache__", ".DS_Store"}
+# `plugins/` 頂層唯二不是 plugin 的東西。多一個散檔就是沒人管的檔:
+# `.py` 還有 py_compile 兜底、`.json` 有 JSON 可解析那一步,`.md` 完全無人管。
+TOP_TOOL_FILES = {"build_suite.py", "catalog_check.py"}
+# plugin 目錄的登記結構。值是**型別**——同名異型(例如 skills 是一個檔)要判得出來,
+# 這是審議席 codex 在收斂時補的一刀。
+PLUGIN_TOP_ALLOWED = {".claude-plugin": "dir", "skills": "dir",
+                      "README.md": "file", "THIRD-PARTY-NOTICES.md": "file"}
+
+
+def _entries(d: Path) -> dict[str, str]:
+    """一層目錄的 {名稱: 型別}。型別只分 dir / file。"""
+    return {p.name: ("dir" if p.is_dir() else "file")
+            for p in d.iterdir() if p.name not in EXCLUDE_ANYWHERE}
+
+
 def plugin_dirs_on_disk(repo: Path) -> set[str]:
     """`plugins/` 底下的目錄名。只走訪目錄——build_suite.py 與 catalog_check.py
-    是工具檔,不是 plugin,不參與判定。"""
+    是工具檔,不是 plugin,不參與第 6 項的判定(散檔由第 7 項管)。"""
     base = repo / "plugins"
-    return {p.name for p in base.iterdir() if p.is_dir() and p.name != "__pycache__"}
+    return {n for n, k in _entries(base).items() if k == "dir"}
+
+
+def scan_plugin_tree(repo: Path) -> dict:
+    """走訪磁碟,產生 `plugin_tree_shape` 判得動的樹形描述。
+
+    **磁碟走訪與判定刻意分開**:判定寫成對這個 dict 的純函式,self-test 才餵得進
+    合成的樹,不必在檔案系統上造假目錄。
+    """
+    base = repo / "plugins"
+    top = _entries(base)
+    plugins: dict[str, dict] = {}
+    for name, kind in top.items():
+        if kind != "dir":
+            continue
+        pdir = base / name
+        skills = pdir / "skills"
+        plugins[name] = {"top": _entries(pdir),
+                         "skills": _entries(skills) if skills.is_dir() else {}}
+    return {"top": top, "plugins": plugins}
+
+
+def plugin_tree_shape(tree: dict, packaged: dict[str, tuple[str, ...]]) -> list[str]:
+    """第 7 項:`plugins/` 的樹形只能長名冊登記過的形狀。
+
+    不比對內容——已宣告路徑內的漂移歸 `build_suite --check`(見模組 docstring 的
+    分工說明)。這裡補的是 build_suite **走不到**的三類逃逸路徑。
+
+    孤兒 plugin 本身不在這裡報:那是第 6 項 `catalog_consistency` 的事,
+    重複報同一件事會讓人以為是兩個問題。
+    """
+    problems: list[str] = []
+
+    for name, kind in sorted(tree["top"].items()):
+        if kind == "dir" or name in TOP_TOOL_FILES:
+            continue
+        problems.append(
+            f"`plugins/{name}` 是沒有登記的散檔——`plugins/` 底下只收 plugin 目錄與 "
+            f"{'、'.join(sorted(TOP_TOOL_FILES))}。沒有任何閘會讀它,放著必然腐爛")
+
+    for plug, node in sorted(tree["plugins"].items()):
+        if plug not in packaged:
+            continue
+        for name, kind in sorted(node["top"].items()):
+            want = PLUGIN_TOP_ALLOWED.get(name)
+            if want is None:
+                problems.append(
+                    f"`plugins/{plug}/{name}` 不在 plugin 的登記結構裡"
+                    f"({'、'.join(sorted(PLUGIN_TOP_ALLOWED))})——build_suite 只同步 "
+                    f"`skills/` 底下已宣告的路徑,走不到這裡,它會靜靜地漂")
+            elif want != kind:
+                problems.append(
+                    f"`plugins/{plug}/{name}` 應該是{want}卻是{kind}——同名異型")
+
+        declared, found = set(packaged[plug]), set()
+        for name, kind in sorted(node["skills"].items()):
+            if kind == "dir":
+                found.add(name)
+            else:
+                problems.append(f"`plugins/{plug}/skills/{name}` 是檔案,不是 skill 目錄")
+        for name in sorted(found - declared):
+            problems.append(
+                f"`plugins/{plug}/skills/{name}/` 沒有在 `PLUGINS['{plug}']` 裡宣告"
+                f"——**與 CHG-20260814-02 那兩個孤兒目錄同構**,只是藏在合法的 plugin 裡")
+        for name in sorted(declared - found):
+            problems.append(
+                f"`PLUGINS['{plug}']` 宣告要打包 skill「{name}」,"
+                f"但 `plugins/{plug}/skills/{name}/` 不存在——裝了跑不動")
+    return problems
 
 
 def catalog_consistency(on_disk: set[str], packaged: set[str], market: set[str]) -> list[str]:
@@ -85,9 +183,9 @@ def catalog_consistency(on_disk: set[str], packaged: set[str], market: set[str])
         d, p, m = where
         if d and not p and not m:
             problems.append(
-                f"`plugins/{name}/` 兩份名冊都沒有它——**孤兒目錄**。被 git 追蹤但 "
-                f"build_suite 不同步、治理閘掃不到,必然與 skills/ 分岔。要嘛登記進 "
-                f"PLUGINS 與 marketplace,要嘛從 plugins/ 底下移走")
+                f"`plugins/{name}/` 兩份名冊都沒有它——**孤兒目錄**(不論是否被 git "
+                f"追蹤)。build_suite 不同步、治理閘掃不到,一旦被追蹤就必然與 skills/ "
+                f"分岔。要嘛登記進 PLUGINS 與 marketplace,要嘛從 plugins/ 底下移走")
             continue
         missing = ", ".join(n for n, ok in
                             (("`plugins/` 目錄", d), ("PLUGINS", p), ("marketplace 名冊", m))
@@ -151,6 +249,7 @@ def check(repo: Path) -> list[str]:
 
     problems += catalog_consistency(plugin_dirs_on_disk(repo), set(plugins),
                                     load_market_names(repo))
+    problems += plugin_tree_shape(scan_plugin_tree(repo), plugins)
     return problems
 
 
@@ -181,6 +280,43 @@ TRIO_CASES = [
 ]
 
 
+# 第 7 項的合成樹。`official` 打包 ('official', 'bizdoc', 'zh-style') 是真實的形狀。
+SHAPE_PLUGINS = {"official": ("official", "bizdoc", "zh-style")}
+_OK_NODE = {"top": {".claude-plugin": "dir", "skills": "dir", "README.md": "file",
+                    "THIRD-PARTY-NOTICES.md": "file"},
+            "skills": {"official": "dir", "bizdoc": "dir", "zh-style": "dir"}}
+
+
+def _tree(top=None, node=None) -> dict:
+    """合成樹的小工廠。預設是現況那種合法形狀。"""
+    return {"top": top if top is not None else {"official": "dir",
+                                                "build_suite.py": "file",
+                                                "catalog_check.py": "file"},
+            "plugins": {"official": node if node is not None else _OK_NODE}}
+
+
+def _mut(node: dict, key: str, **changes) -> dict:
+    """複製一個節點,改掉其中一層。"""
+    out = {k: dict(v) for k, v in node.items()}
+    out[key].update(changes)
+    return out
+
+
+SHAPE_CASES = [
+    ("plugin 內未宣告的 skill 目錄(與本次事故同構)",
+     _tree(node=_mut(_OK_NODE, "skills", rogue="dir"))),
+    ("PLUGINS 宣告了、但 skill 目錄不存在",
+     _tree(node={"top": _OK_NODE["top"], "skills": {"official": "dir", "bizdoc": "dir"}})),
+    ("plugin 頂層多出登記結構以外的條目",
+     _tree(node=_mut(_OK_NODE, "top", **{"rogue-dir": "dir"}))),
+    ("plugins/ 頂層的散檔",
+     _tree(top={"official": "dir", "build_suite.py": "file",
+                "catalog_check.py": "file", "stray-orphan.md": "file"})),
+    ("同名異型:skills 是一個檔",
+     _tree(node=_mut(_OK_NODE, "top", skills="file"))),
+]
+
+
 def self_test() -> int:
     """紅燈可達:每一項判定的綠燈與紅燈都要各走一次。"""
     fails = []
@@ -196,11 +332,18 @@ def self_test() -> int:
         if not catalog_consistency(*trio):
             fails.append(f"第 6 項:「{label}」竟然通過——**這個方向的紅燈不可達**")
 
+    if plugin_tree_shape(_tree(), SHAPE_PLUGINS):
+        fails.append("合法的樹形竟然被判紅——第 7 項判定過嚴,會誤殺")
+    for label, tree in SHAPE_CASES:
+        if not plugin_tree_shape(tree, SHAPE_PLUGINS):
+            fails.append(f"第 7 項:「{label}」竟然通過——**這條逃逸路徑的紅燈不可達**")
+
     if fails:
         for f in fails:
             print(f"  ❌ {f}")
         return 1
-    print("✅ self-test:明標節與三向相等(含三種偏離)的綠燈與紅燈皆可達")
+    print(f"✅ self-test:明標節、三向相等({len(TRIO_CASES)} 種偏離)、"
+          f"樹形登記({len(SHAPE_CASES)} 條逃逸路徑)的綠燈與紅燈皆可達")
     return 0
 
 
