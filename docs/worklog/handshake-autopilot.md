@@ -88,18 +88,19 @@ Actions 權限正常、repo 是 public,但**完全沒有為 `claude/version-sync
   「中/高風險 CHG 要有設計圖」。加新治理規則時,順手問它有沒有對應的閘
 
 <!-- autopilot:begin -->
-branch/role/scope: build / claude/fixture-cross-review
-doing: CHG-20260813-01 施工完成,ACC-20260813-01 已寫。11 個 commit,ci_local **17 步**全綠
-review: fable 拆成 V1-V6 分項審完(整份送審三度撞 API 529,改一次一項才跑完)。
-  V1 通過;V2 抓骨架同構;V3 抓我改壞三處;V4 抓四個實作缺口;V5 抓九條新缺陷(含我自己造的後門);
-  V6 審 ACC 本身,判「結案框架搶跑」——證據三處不實、判詞縮水一處、未達標缺五條,全部已更正
-next: **不要直接 merge。** V2-V6 之後的十六處修正無人複審,ACC 結論已改為
-  「驗收條件通過;驗收程序未完結」。要先送一輪外部複審,通過才改記驗收完成
+branch/role/scope: build / claude/fixture-cross-review(23 commit,未 push)
+doing: CHG-20260814-01 **已收尾**(ACC-20260814-01,單方)。CHG-20260813-01 已驗收但
+  ACC 維持「驗收程序未完結」
+review: 使用者已把決議、下一動、AI 味評分全部交審議席(DIR-002),並宣布不再人審。
+  fable 跑完 V1-V6 分項審議 + 路線裁決 + 分歧裁決;codex 給四題判定後 MCP 斷線缺席
+next(**兩件都等 codex 恢復**):
+  1. codex 覆核 fable 推翻其一、二題的理由
+  2. fable 對「V2-V6 之後十六處修正」的逐項具名複審 → 通過才准把 ACC-20260813-01 改記完成
+  3. 之後才談 merge / PR——不可逆,不歸單席,也不歸審議席
 known:
-  - 骨架同構的**章法層**未解決:要換一種論證形狀,不是改句子
-  - bizdoc 成語密度至今沒有任何夾具跑得到([10d] 釘死三份未驗到,缺口還在)
-  - codex 兩條意見未做:逐體裁密度門檻、每條提醒規則的 --strict 正反例對、per_k helper
-  - **DIR-002 不在 knowledge INDEX 裡**(只有 DIR-001),單方不可用條款也還沒寫成常駐規則
-  - D-7 上游 doc_integrity 兩個洞尚未送回上游
+  - **BL-001/002/003** 三項後續已編號待做(--strict 正反例對、per_k helper、近似比對評估案)
+  - 章法層同構機器判不了;R1/R2/R4 三篇議題型骨架完全同模
+  - R5 五個指紋零命中,但它是唯一跑過 G-2 才交稿的,**不足以推論 skill 變好**
+  - 閘上線後抓到主 agent 兩次(19 片段、8 片段),兩次都是「寫規則時把文字搬過去」
 last-updated: 2026-08-14 (UTC+0)
 <!-- autopilot:end -->
