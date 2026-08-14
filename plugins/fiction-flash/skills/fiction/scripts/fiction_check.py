@@ -205,13 +205,18 @@ def analyse(path: Path, rules: dict, mode: str, genre: str | None) -> dict:
     res["metrics"]["idiom_count"] = idiom_n
     res["metrics"]["idiom_per_1000"] = None if too_short else round(idiom_n / per_k, 2)
     genres = i_cfg.get("genres", {})
+    # 兩個指標**各自宣告**。先前只掛在 idiom_short 上,而且一則通知同時替兩者宣告未驗到——
+    # 若日後 ono_min > idiom_min,擬聲詞未驗到會完全靜默(A 項複審抓到的潛伏缺口)。
+    # 放 notices 不放 warnings:這是**通知**不是**提醒**——--strict 只該把
+    # 「文章有問題」打紅,不該把「這項沒驗到」也打紅(V5 審議)。
+    for _short, _min, _what in ((idiom_short, idiom_min, "成語"),
+                                (ono_short, ono_min, "擬聲詞")):
+        if _short:
+            res["notices"].append(
+                f"樣本只有 {total} 字(低於 {_min} 字),{_what}密度 **未驗到**"
+                "——短樣本的密度沒有統計意義,不判定也不冒充判過")
     if too_short:
-        # 明說未驗到,而不是印一個被鉗位分母算出來的假數字。
-        # 放 notices 不放 warnings:這是**通知**不是**提醒**——--strict 只該把
-        # 「文章有問題」打紅,不該把「這項沒驗到」也打紅(V5 審議)。
-        res["notices"].append(
-            f"樣本只有 {total} 字(低於 {min_chars} 字),成語與擬聲詞密度 **未驗到**"
-            "——短樣本的密度沒有統計意義,不判定也不冒充判過")
+        pass
     elif genre:
         band = genres.get(genre, {}).get("per_1000")
         if band:
@@ -271,6 +276,13 @@ def report(res: dict) -> None:
                  else f"{m.get('idiom_per_1000')}/千字")
     print(f"\n密度:擬聲詞 {m.get('onomatopoeia_count')} 次 · 成語 {m.get('idiom_count')} 次"
           f"({per_k_txt}) · 最長純對話 {m.get('max_pure_dialogue_run')} 段")
+
+    # 通知與提醒分開印。notices 是「這項沒驗到」這類資訊,--strict 不打紅;
+    # 先前只收集不印,等於「明說未驗到」這件事對使用者完全不可見(A 項複審後補)。
+    if res.get("notices"):
+        print(f"\nℹ 通知 {len(res['notices'])} 則(不影響判定,--strict 也不打紅):")
+        for nt in res["notices"]:
+            print(f"  · {nt}")
 
     if res["warnings"]:
         print(f"\n⚠ 提醒 {len(res['warnings'])} 則:")
