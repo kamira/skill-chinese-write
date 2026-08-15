@@ -299,6 +299,47 @@ def resolve_base(repo: Path, ref: str) -> str | None:
     return mb.stdout.decode().strip()
 
 
+def is_vacuous(repo: Path, ref: str) -> bool:
+    """基準就是 HEAD 自己 → `REF..HEAD` 恆空 → 本閘在這個觸發上沒有判定力。
+
+    CHG-20260816-01。`governance.yml` 的觸發含 `push: branches:[main]`,
+    而那個情境下 `origin/main` 解析出來就是 HEAD 自己:
+
+        HEAD = origin/main = merge-base = be9f55e
+
+    於是每一條規則對每一個檔案都判「沒變」,**而輸出與真通過一字不差**。
+    這是 `CHG-20260814-06` 那句「未 commit 的 `--since` 綠燈沒有意義」
+    的第三次現身:前兩次的軸是時機(改動還沒進 commit),這次是**載體**
+    (main-push 這個觸發本身讓兩端重合)。
+
+    分兩層修,這是第一層(**治謊**):把「判定不出來」講出來,別冒充通過。
+    第二層(治空)在載體上——`ci_local.sh` 收 `CI_SINCE_REF`,
+    push 情境由 workflow 傳 `github.event.before` 進來,那才有真基準。
+
+    審議席(fable)裁定不採 `HEAD^`:它除了依賴 merge 策略
+    (squash 與 merge commit 的父數不同,而本 repo 沒有任何斷言在管 merge 策略),
+    對**直推多個 commit** 也是盲的——`HEAD^..HEAD` 只看得見最後一個,
+    而直推 main 恰好是唯一沒有 PR 載體兜底的路徑。
+    """
+    h = git(repo, "rev-parse", "HEAD")
+    return h.returncode == 0 and h.stdout.decode().strip() == ref
+
+
+def vacuous_report(ref: str) -> str:
+    """空轉時要印的話。**抽成函式是為了讓 self-test 打得到它。**
+
+    這段邏輯原本會寫在 `main()` 裡,而 self-test 打的是 `check()`——
+    那樣寫出來的規則沒有紅端,正是 KN-001 的原型:
+    「修好的 bug 在夾具裡不可再現」。
+    """
+    return (f"⚠️  基準即 HEAD({ref[:7]})——`--since` 的語意是 `REF..HEAD`,"
+            "兩端是同一個 commit 時 diff 恆空,\n"
+            "  本閘在這個觸發上**沒有判定力**。這是**未驗到**,不是通過。\n"
+            "  要在 push 事件上取得真基準,請傳 `--since <push 之前的 tip>`"
+            "(workflow 用 `github.event.before`,\n"
+            "  由 `ci_local.sh` 的 `CI_SINCE_REF` 轉進來)。")
+
+
 def exclude_drift(repo: Path) -> list[str]:
     """EXCLUDE 名單的交叉斷言——兩份名單分岔,就有檔案在某一支眼裡不存在。
 
@@ -712,6 +753,48 @@ def divergent_history_test() -> list[str]:
     return out
 
 
+def vacuous_base_test() -> list[str]:
+    """38/39/40:**基準即 HEAD 時,不准冒充通過。**
+
+    這一案打的是 `is_vacuous` 與 `vacuous_report`,不是 `check`——
+    病灶不在規則判錯,而在「規則無事可判時說了什麼」。拿寫死的 base
+    去跑 `check` 永遠重現不出來,因為 `check` 那時是對的:diff 真的是空的。
+
+    三端:
+      38 空轉端——base == HEAD 必須認出來
+      39 判別端——base != HEAD(真有分岔)不得誤判成空轉,否則本規則會
+         把每一次正常執行都變成「未驗到」,那比原病更糟(規則對正確輸入恆假)
+      40 措辭端——空轉的話**不得含通過措辭、必須含未驗到標記**。
+         這一端才是真正釘住病灶的那個:原病不是判錯,是**輸出與真通過一字不差**。
+    """
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+        _seed(repo)
+        head = git(repo, "rev-parse", "HEAD").stdout.decode().strip()
+
+        if not is_vacuous(repo, head):
+            out.append("38 base == HEAD 竟然沒被認出來是空轉")
+
+        _mk(repo, "docs/note.md", "再一個 commit,讓 HEAD 前進\n")
+        _run(repo, "add", "-A")
+        _run(repo, "commit", "-q", "-m", "前進")
+        if is_vacuous(repo, head):
+            out.append("39 真有分岔卻被誤判成空轉——那會讓每次正常執行都變成"
+                       "「未驗到」,規則對正確輸入恆假")
+
+    msg = vacuous_report(head)
+    if "未驗到" not in msg:
+        out.append("40 空轉訊息沒有「未驗到」標記")
+    # **綠燈措辭一個都不准出現。** 這是本案的承重斷言:原病的形狀是
+    # 「輸出與真通過一字不差」,所以斷言要打在措辭上,不是只打在回傳值上。
+    for w in ("✅", "沒有漏掉", "都有對應的版號"):
+        if w in msg:
+            out.append(f"40 空轉訊息含通過措辭「{w}」——那正是本規則要修的病")
+    return out
+
+
 def self_test() -> int:
     import tempfile
     fails: list[str] = []
@@ -1004,13 +1087,22 @@ def self_test() -> int:
                        + 'RETIRED = {\n    "beta": "CHG-TEST",\n}\n'),
          "具名了卻沒真的退役")
 
-    fails += revival_test()
-    fails += aggregation_test()
-    fails += divergent_history_test()
-    # **加了獨立測試就要登記在這裡。** 動態計數只保證「數對了 ran 的長度」,
-    # 保證不了「EXTRA 名單與實際呼叫一致」——這一行漏了 revival_test,
-    # 橫幅就少算一案,而那正是寫死數字的病換了個位置。
-    EXTRA = ("理由聚合", "分岔歷史", "退役復活")
+    # **名單與呼叫是同一份,不是兩份。**
+    #
+    # 上一版這裡是「三行呼叫 + 一份寫死的 EXTRA 名單」,而註解自己承認漏過一次
+    # (`revival_test` 加了但沒登記,橫幅就少算一案)。那是本 repo 反覆出現的同一個病:
+    # **兩份重複的東西,靠人記得同步**——名冊 vs 磁碟、三處版號、兩份 EXCLUDE、
+    # 兩個 CI 載體,而 CHG-20260816-01 整張就是在治它。
+    #
+    # 治法不是再加一道斷言去比對那兩份,是**讓第二份不存在**:
+    # 名單由呼叫序推導,漏登記在結構上不可能發生。
+    EXTRA_TESTS = (("理由聚合", aggregation_test),
+                   ("分岔歷史", divergent_history_test),
+                   ("退役復活", revival_test),
+                   ("基準空轉", vacuous_base_test))
+    for _label, _fn in EXTRA_TESTS:
+        fails += _fn()
+    EXTRA = tuple(label for label, _ in EXTRA_TESTS)
 
     if fails:
         for f in fails:
@@ -1073,6 +1165,11 @@ def main(argv: list[str]) -> int:
               "  但要下的是 `git fetch --deepen=200 origin main`(或 --unshallow)。\n"
               "  本地要略過請顯式加 --allow-missing-ref。")
         return 1
+    if is_vacuous(repo, ref):
+        # **不是 return 1。** 每次 merge 進 main 都紅,就是 KN-002 那種
+        # 「紅得與程式碼無關」的閘,教會人的是忽略它。這裡要的是誠實,不是攔阻。
+        print(vacuous_report(ref))
+        return 0
     bad = check(repo, ref)
     if bad:
         print(f"✗ 版號影響閘(基準 {ref}):")
