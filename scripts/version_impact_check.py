@@ -329,9 +329,14 @@ def own_files_delta(repo: Path, ref: str, head: str, plugin: str) -> list[str]:
             except (json.JSONDecodeError, UnicodeDecodeError):
                 out.append(f"{p} 解析不了(視為內容變更)")
                 continue
-            a.pop("version", None)
-            b.pop("version", None)
-            if a == b:
+            va, vb = a.pop("version", None), b.pop("version", None)
+            # **只有在 version 值真的變了時才豁免。**
+            # 複審 probe P5:初版寫 `if a == b: continue`,於是 plugin.json
+            # 的**純格式重排**(byte 變、JSON 語意相同、version 沒動)
+            # 也被一併豁免——出貨的 byte 變了卻不觸發任何規則,
+            # 違反「以 byte 為準」那條裁決。JSON 比對本來只該替 version 鍵開口,
+            # 不該替所有語意等價的 byte 噪音開口。
+            if a == b and va != vb:
                 continue                   # 只有頂層 version 鍵不同 = 戳記
         out.append(p)
     return out
@@ -351,7 +356,13 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
     P_new, C_new = load_registries(repo, head)
     old_e, new_e = entry_versions(repo, ref), entry_versions(repo, head)
     bad: list[str] = exclude_drift(repo)
-    reasons: dict[str, list[str]] = {p: [] for p in P_new}
+    # **席位從兩張名冊的聯集種,不是只從 PLUGINS。**
+    # 複審 probe P1:只出現在 COMMANDS、不出現在 PLUGINS 的 plugin,
+    # 進不了下面的 R4 迴圈,於是「驅動源全靜止卻動版號」對它**永遠不會紅**。
+    # 今天 COMMANDS 的鍵剛好是 PLUGINS 的子集所以打不到正式樹,
+    # 但名冊格式允許那個形狀——**對一類合法輸入紅端不可達**,
+    # 正是本張自己立的病名。
+    reasons: dict[str, list[str]] = {p: [] for p in set(P_new) | set(C_new)}
 
     def why(plugin: str, msg: str) -> None:
         reasons.setdefault(plugin, []).append(msg)
@@ -501,20 +512,23 @@ def _seed(repo: Path) -> None:
     _run(repo, "config", "user.name", "t")
     # 合成樹裡的 build_suite 必須帶著**與正式檔相同**的 EXCLUDE,
     # 否則交叉斷言會在每一案都紅,把真正要驗的東西蓋掉。
+    # `solo` **只在 COMMANDS、不在 PLUGINS**。這個形狀是刻意的:
+    # 席位若只從 PLUGINS 種,它就進不了 R4 的視野,而名冊格式允許它存在。
     _mk(repo, "plugins/build_suite.py", _registry(
         {"alpha": ("alpha", "shared"), "beta": ("beta", "shared")},
-        {"alpha": ("hello.md",)}))
+        {"alpha": ("hello.md",), "solo": ("hello.md",)}))
     _mk(repo, "commands/hello.md", "---\ndescription: 打招呼\n---\n內容\n")
     for s in ("alpha", "beta", "shared"):
         _mk(repo, f"skills/{s}/SKILL.md", _SKILL.format(n=s, v="1.0.0", body="原文"))
     _mk(repo, "skills/shared/assets/rules.json", '{"a": 1}\n')
-    for p in ("alpha", "beta"):
+    for p in ("alpha", "beta", "solo"):
         _mk(repo, f"plugins/{p}/.claude-plugin/plugin.json",
             json.dumps({"name": p, "version": "1.0.0"}, ensure_ascii=False) + "\n")
     _mk(repo, ".claude-plugin/marketplace.json", json.dumps({
         "metadata": {"version": "1.0.0"},
         "plugins": [{"name": "alpha", "version": "1.0.0"},
-                    {"name": "beta", "version": "1.0.0"}]}, ensure_ascii=False) + "\n")
+                    {"name": "beta", "version": "1.0.0"},
+                    {"name": "solo", "version": "1.0.0"}]}, ensure_ascii=False) + "\n")
     _run(repo, "add", "-A")
     _run(repo, "commit", "-q", "-m", "base")
 
@@ -609,7 +623,10 @@ def self_test() -> int:
     import tempfile
     fails: list[str] = []
 
+    ran: list[str] = []      # 案數用數的,不用寫死的
+
     def case(label: str, mutate, want: str | None):
+        ran.append(label)
         # 變更必須**先 commit** 再驗——`--since` 的語意是 REF..HEAD,
         # 兩端都是 committed 狀態。拿工作樹去比 blob 會在 Windows 上
         # 因 eol 轉換全樹假陽性(初版就是這樣爆的)。
@@ -840,15 +857,37 @@ def self_test() -> int:
             "---\nname: shared\nversion: 0.2\nmetadata:\n  version: 1.0.0\n---\n\n# shared\n")
     case("31 frontmatter 頂層 version 鍵算內容", m31, "metadata.version 沒有遞增")
 
+    # ---- 32、33:複審 probe 打到的兩處,各自的紅端。
+
+    # 32 P1:只在 COMMANDS、不在 PLUGINS 的 plugin,R4 也必須看得到它。
+    #    席位若只從 PLUGINS 種,這個形狀的紅端永遠不可達。
+    def m32(r):
+        _bump_plugin(r, "solo", "1.1.0")     # 驅動源全靜止,只動版號
+    case("32 只在 COMMANDS 的 plugin,R4 也要看得到", m32, "驅動源")
+
+    # 33 P5:plugin.json 的**純格式重排**——byte 變、JSON 語意同、version 沒動。
+    #    初版的 JSON 比對把所有語意等價的 byte 噪音一併豁免,不只 version 鍵。
+    def m33(r):
+        p = r / "plugins/alpha/.claude-plugin/plugin.json"
+        d = json.loads(p.read_text(encoding="utf-8"))
+        p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    case("33 plugin.json 純格式重排也算內容", m33, "自己的手寫檔變了")
+
     fails += aggregation_test()
     fails += divergent_history_test()
+    EXTRA = ("理由聚合", "分岔歷史")   # 兩支不走 case() 的獨立測試
 
     if fails:
         for f in fails:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:版號影響閘的紅綠端不可達。")
         return 1
-    print("✅ self-test:30 案全過\n"
+    # **案數是數出來的,不是寫死的。**
+    # 寫死的數字每加一案就要記得改,而漏改的後果不是少報——是
+    # 「橫幅說 30、實際 31」,然後那個數字被抄進 ACC 當引文。
+    # 這個 repo 已經為「宣稱沒有對過量測」付過三次代價。
+    print(f"✅ self-test:{len(ran) + len(EXTRA)} 案全過"
+          f"({len(ran)} 個 case + {len(EXTRA)} 支獨立測試:{'、'.join(EXTRA)})\n"
           "  [skill 層]\n"
           "   真洞五條:隨附內容變 / 只 bump 一個宿主 / assets 變 / 刪檔 / 新增檔\n"
           "   綠端四條:無變動 / 全員 bump / 版號分岔但內容沒變(刻意放行) / 非宿主不牽連\n"
