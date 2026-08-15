@@ -86,18 +86,75 @@ PCT = re.compile(r"(\d+)\s*%\s*[-–~]\s*(\d+)\s*%")
 IDIOM = re.compile(r"(\d+)\s*[-–~]\s*(\d+)\s*次\s*/\s*千字")
 
 # 誠實欄:文案一旦報出成語區間,就必須同時說清楚下限沒有機器在管。
-# 措辭不寫死成單一句子(那會變成關鍵字遊戲),而是要求兩個語義成分同時在場。
-HONEST_FLOOR = (re.compile(r"下限"), re.compile(r"不(?:會|被)?(?:檢查|檢驗|管|擋)|沒有(?:程式|引擎|lint)"))
-HONEST_RHETORIC = (re.compile(r"修辭比例"), re.compile(r"靠人判斷|沒有機器真相|沒有程式量得出"))
+# 措辭不寫死成單一句子(那會變成關鍵字遊戲),而是要求兩個語義成分同時在場——
+# **而且必須在同一個單元裡**,見 units()。
+#
+# 第二成分原本寫 `不(?:會|被)?(?:檢查|…)`,配不上「不**會被**檢查」
+# ——`(?:會|被)?` 只吃得下一個字。閘自己的綠端範例用的正是那個措辭,
+# 於是綠端一直靠跨單元污染成立。複審(fable)用合成 probe 打出來的。
+HONEST_FLOOR = (
+    re.compile(r"下限"),
+    re.compile(r"不(?:會)?(?:被)?(?:檢查|檢驗|驗|管|擋|查)"
+               r"|沒有(?:程式|引擎|機器|lint)"),
+)
+HONEST_RHETORIC = (
+    re.compile(r"修辭比例"),
+    re.compile(r"靠人判斷|沒有機器真相|沒有程式量得出"),
+)
+
+
+def units(text: str) -> list[str]:
+    """把文件切成判定單元。**誠實欄的兩個成分必須落在同一個單元裡。**
+
+    為什麼需要這個:整份文件當一個單元時,誠實欄是一場關鍵字賓果。
+    複審實測兩個方向都能穿——
+      - 成語那列正面說謊「上限與下限都會擋」,卻被**修辭那列**的
+        「沒有程式量得出」滿足了第二成分 → 綠燈。
+      - 修辭那列說謊「lint 會量」,卻被**成語那列**的「靠人判斷」滿足 → 綠燈,
+        而且還誤掛了一條下限的罪名。
+    那正是審議席裁決 5「禁止合寫」要擋的形狀,而閘擋不住。
+
+    單元的切法:
+      - 表格列(`|` 開頭)**各自成一個單元**——同一張表的兩列不得互相支援
+      - 其餘:空行分隔的段落
+    兩種都要,因為配比可能寫成表格(舊 SKILL.md)也可能寫成分段(新 command)。
+    """
+    out: list[str] = []
+    buf: list[str] = []
+
+    def flush():
+        if buf:
+            out.append("\n".join(buf))
+            buf.clear()
+
+    for ln in text.splitlines():
+        s = ln.strip()
+        if s.startswith("|"):
+            flush()
+            out.append(ln)
+        elif not s:
+            flush()
+        else:
+            buf.append(ln)
+    flush()
+    return out
 
 
 def scan_doc(path: Path) -> dict:
     t = path.read_text(encoding="utf-8", errors="ignore")
+    us = units(t)
+    # 有報數字的單元,才被要求誠實。沒提到配比的段落不必附免責。
+    idiom_units = [u for u in us if IDIOM.search(u)]
+    pct_units = [u for u in us if PCT.search(u)]
     return {
         "pct": PCT.findall(t),
         "idiom": IDIOM.findall(t),
-        "honest_floor": all(r.search(t) for r in HONEST_FLOOR),
-        "honest_rhetoric": all(r.search(t) for r in HONEST_RHETORIC),
+        # all(...) over an empty list is True——沒報數字就沒有誠實義務,
+        # 這與「報了卻沒說清楚」是兩回事,由呼叫端的 idioms/pcts 判斷分開。
+        "honest_floor": all(all(r.search(u) for r in HONEST_FLOOR)
+                            for u in idiom_units),
+        "honest_rhetoric": all(all(r.search(u) for r in HONEST_RHETORIC)
+                               for u in pct_units),
         "text": t,
     }
 
@@ -348,9 +405,12 @@ def self_test() -> int:
     full = {g: {"per_1000": [0, hi]} for g, (_, _, _, hi) in FROZEN.items()}
     fails: list[str] = []
 
-    def run(rules, docs, want, label):
+    def run(rules, docs, want, label, forbid=None):
         # 合成樹裡沒有引擎,[D] 由 probe_self_test 另外驗——那條斷言的紅端
         # 必須打真引擎才有意義,拿假樹跑等於自己跟自己對答案。
+        #
+        # forbid:**不得誤掛的罪名**。只驗「有沒有紅」不夠——複審實測的兩個穿孔
+        # 裡,有一個是修辭說謊時閘去掛了一條下限的罪名。抓錯人和沒抓到一樣壞。
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _tree(root, rules, docs)
@@ -358,6 +418,8 @@ def self_test() -> int:
             hit = any(want in x for x in got) if want else not got
             if not hit:
                 fails.append(f"{label}:want={want!r} got={got}")
+            if forbid and any(forbid in x for x in got):
+                fails.append(f"{label}:誤掛罪名 {forbid!r} got={got}")
 
     all_docs = {}
     for g, (lo_p, hi_p, lo_i, hi_i) in FROZEN.items():
@@ -414,6 +476,29 @@ def self_test() -> int:
     two["commands/fiction-long.md"] = _GOOD_DOC.replace("4-8 次", "5-8 次")
     run(full, two, "commands/fiction-long.md", "12 並存住址其一漂移")
 
+    # ---- 16、17 由複審(fable)的合成 probe 打出來:**兩個方向都能穿**。
+    # 舊實作把整份文件當一個單元,於是一列說謊、另一列的用字替它擔保。
+    # 這兩案各自把一列改成謊話、另一列保持誠實,所以跨列支援一旦復活就會紅。
+
+    # 16:成語那列**正面說謊**(說下限也會擋)。修辭列維持誠實,
+    #     所以舊實作會被它跨列滿足而放行——實測綠燈。
+    lie_floor = dict(all_docs)
+    lie_floor["commands/fiction-long.md"] = _GOOD_DOC.replace(
+        "lint 只擋上限;**下限不會被檢查**(引擎值為 0)",
+        "上限與下限都會擋,低於下限一樣紅")
+    run(full, lie_floor, "沒說「下限沒有機器在管」",
+        "16 成語列對下限說謊(修辭列誠實,不得替它擔保)",
+        forbid="修辭比例卻沒說")                                              # 16
+
+    # 17:修辭那列說謊。成語列維持誠實。除了要紅,**還不得誤掛下限的罪名**
+    #     ——舊實作在這個方向上不但沒抓到謊,反而掛錯了人。
+    lie_rh = dict(all_docs)
+    lie_rh["commands/fiction-long.md"] = _GOOD_DOC.replace(
+        "靠人判斷——沒有程式量得出一段文字有幾成是譬喻", "lint 會量")
+    run(full, lie_rh, "修辭比例卻沒說",
+        "17 修辭列說謊(成語列誠實,不得替它擔保)",
+        forbid="沒說「下限沒有機器在管」")                                     # 17
+
     fails += probe_self_test()
 
     if fails:
@@ -421,10 +506,11 @@ def self_test() -> int:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:配比凍結閘的紅綠端不可達。")
         return 1
-    print("✅ self-test:15 案全過——設定四條(上限漂移/下限復活/缺流派/多流派)、"
+    print("✅ self-test:17 案全過——設定四條(上限漂移/下限復活/缺流派/多流派)、"
           "文案四條(整支不見/成語漂移/修辭漂移/並存住址其一漂移)、"
-          "誠實欄三條(下限、修辭、豁免)、綠端一條,"
-          "以及 [D] 執法探針三條(原封綠端 / 上限被架空 / 下限被注回引擎)。")
+          "誠實欄五條(下限、修辭、豁免,加上**兩個方向的說謊**且不得誤掛罪名)、"
+          "綠端一條,以及 [D] 執法探針三條"
+          "(原封綠端 / 上限被架空 / 下限被注回引擎)。")
     return 0
 
 
