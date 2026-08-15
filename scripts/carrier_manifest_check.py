@@ -57,6 +57,17 @@ import re
 import sys
 from pathlib import Path
 
+# **十支閘裡只有本檔漏了這一行。**(CHG-20260816-02 二讀,審議席實測)
+# cp950 主控台下,`✅` 與 `✗` 都不是可編碼字元——成功與失敗兩條路徑都會
+# UnicodeEncodeError,於是本閘在那個環境**永遠 rc=1**。一個恆紅、且紅得
+# 與程式碼無關的閘,教會人的是忽略它(KN-002)。而它崩在 print 上,
+# 訊息長得像規則失效,不像環境問題。
+for _s in (sys.stdout, sys.stderr):
+    try:
+        _s.reconfigure(encoding="utf-8")
+    except (AttributeError, ValueError):
+        pass
+
 # ── MANIFEST:workflow 裡每一步的具名與理由 ─────────────────────────────
 # key = (workflow 檔名, 步驟識別)  value = 為什麼這一步必須在載體上,而不能進 ci_local
 MANIFEST: dict[tuple[str, str], str] = {
