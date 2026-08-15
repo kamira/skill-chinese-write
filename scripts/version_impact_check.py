@@ -112,8 +112,23 @@ def strip_version_line(data: bytes) -> bytes:
         end = next(i for i in range(1, len(lines)) if lines[i].strip() == b"---")
     except StopIteration:
         return data
-    head = [ln for ln in lines[1:end] if not VERSION_LINE.match(ln)]
-    return b"\n".join([lines[0], *head, *lines[end:]])
+    # **只剝 `metadata:` 區塊底下那一行**,不是 frontmatter 裡任何一行。
+    # CHG-20260814-07:二讀複審實測,剝「frontmatter 內任何 version:」
+    # 會讓 frontmatter 頂層的 `version:` 鍵被判成戳記——訊息會說
+    # 「metadata.version 從 1.0.0 動到 1.0.0」這種胡話,而且那個形狀
+    # 怎麼 bump 都過不了(案 19 死鎖的 frontmatter 版)。
+    out, in_meta = [], False
+    for ln in lines[1:end]:
+        if re.match(rb"^metadata:\s*$", ln):
+            in_meta = True
+            out.append(ln)
+            continue
+        if in_meta and re.match(rb"^\S", ln):    # 回到頂層鍵 = 離開 metadata 區塊
+            in_meta = False
+        if in_meta and VERSION_LINE.match(ln):
+            continue                             # 這才是要剝的那一行
+        out.append(ln)
+    return b"\n".join([lines[0], *out, *lines[end:]])
 
 
 def skill_files(repo: Path, skill: str) -> list[str]:
@@ -124,20 +139,49 @@ def skill_files(repo: Path, skill: str) -> list[str]:
                   if p.is_file() and not any(x in p.parts for x in EXCLUDE_PARTS))
 
 
-def load_plugins(repo: Path) -> dict[str, tuple[str, ...]]:
-    """從 build_suite.py 讀 PLUGINS——**單一登記簿,不另抄一份**。
-
-    抄一份就會分岔,而「兩份名冊分岔」正是這個 repo 出過孤兒事故的原因。
-    """
-    src = (repo / "plugins" / "build_suite.py").read_text(encoding="utf-8")
-    m = re.search(r"^PLUGINS[^=]*=\s*\{(.*?)^\}", src, re.S | re.M)
-    if not m:
-        raise SystemExit("讀不到 build_suite.py 的 PLUGINS——名冊形狀變了,本閘失效")
+def _parse_registry(src: str, name: str, where: str) -> dict[str, tuple[str, ...]]:
+    m = re.search(rf"^{name}[^=]*=\s*\{{(.*?)^\}}", src, re.S | re.M)
+    if m is None:
+        raise SystemExit(f"讀不到 build_suite.py 的 {name}({where})"
+                         "——名冊形狀變了,本閘失效。**不 skip**:"
+                         "讀不到名冊時放行,等於名冊一改形狀規則就全部消失")
     out: dict[str, tuple[str, ...]] = {}
-    for e in re.finditer(r'"([\w.-]+)"\s*:\s*\(([^)]*)\)', m.group(1)):
+    # key 兩種引號都認。初版只認雙引號,於是單引號的名冊會 **parse 成空 dict**
+    # 而不是報錯——「解析不出來」與「真的沒有 plugin」長得一模一樣,
+    # 那是本閘自己的靜默 fail-open。
+    for e in re.finditer(r"""["']([\w.-]+)["']\s*:\s*\(([^)]*)\)""", m.group(1)):
         out[e.group(1)] = tuple(x.strip().strip("'\"")
                                 for x in e.group(2).split(",") if x.strip())
+    if not out and re.search(r"\S", m.group(1)):
+        raise SystemExit(f"{name} 的區塊有內容卻一個條目都 parse 不出來({where})"
+                         "——名冊寫法變了。**空 dict 不得與『解析失敗』同義**")
     return out
+
+
+def load_registries(repo: Path, ref: str) -> tuple[dict, dict]:
+    """從**某個 ref 的 blob** 讀 PLUGINS 與 COMMANDS。
+
+    兩件事在 CHG-20260814-07 改掉:
+
+    1. **從 blob 讀,不從工作樹讀。** 初版 `load_plugins` 只讀工作樹,
+       所以「成分變更」這條規則若沿用它,等於**拿 HEAD 跟 HEAD 比**——空話。
+    2. **COMMANDS 也要讀。** 初版完全不碰它,於是 `COMMANDS` 增刪一個命令
+       對本閘完全隱形,而批量搬遷要改它五次。
+
+    任一端 parse 不出形狀就 `SystemExit`,不 skip。
+    """
+    raw = blob_at(repo, ref, "plugins/build_suite.py")
+    if raw is None:
+        raise SystemExit(f"{ref} 當時沒有 plugins/build_suite.py——無法比對名冊")
+    src = raw.decode("utf-8", "replace")
+    return (_parse_registry(src, "PLUGINS", ref),
+            _parse_registry(src, "COMMANDS", ref))
+
+
+def load_plugins(repo: Path) -> dict[str, tuple[str, ...]]:
+    """工作樹版本,保留給不需要兩端比較的呼叫者。"""
+    src = (repo / "plugins" / "build_suite.py").read_text(encoding="utf-8")
+    return _parse_registry(src, "PLUGINS", "工作樹")
 
 
 def hosts_of(plugins: dict[str, tuple[str, ...]], skill: str) -> list[str]:
@@ -250,11 +294,102 @@ def exclude_drift(repo: Path) -> list[str]:
     return []
 
 
+GEN_SPACES = ("skills", "commands")   # plugin 目錄裡的生成空間
+
+
+def own_files_delta(repo: Path, ref: str, head: str, plugin: str) -> list[str]:
+    """R3:plugin **自己的手寫檔**有沒有變。**補集定義,不是列舉。**
+
+    範圍 = `plugins/<p>/**` 扣除 `skills/**` 與 `commands/**` 兩塊生成空間,
+    再扣除 `plugin.json` 的頂層 `version` 鍵。
+
+    審議席(fable)否掉了草案的列舉式寫法(「plugin.json、README 等」):
+    **列舉會讓下一個手寫檔靜默漏網,正是這個 repo 的孤兒事故形狀。**
+    補集定義下,未知的檔落進「算」,不是落進「不算」。
+
+    `version` 鍵用 **JSON 解析後刪鍵**比對,不對文字做 regex 剝行——
+    CHG-20260814-06 的案 19 死鎖有 JSON 雙胞胎:巢狀物件裡的 `"version"`、
+    README 裡恰好長那樣的一行,剝掉任何一個都是重演同一個 bug。
+    """
+    pj = f"plugins/{plugin}/.claude-plugin/plugin.json"
+    paths = (tree_files(repo, ref, f"plugins/{plugin}/")
+             | tree_files(repo, head, f"plugins/{plugin}/"))
+    out: list[str] = []
+    for p in sorted(paths):
+        parts = p.split("/")
+        if len(parts) > 2 and parts[2] in GEN_SPACES:
+            continue                       # 生成空間,由它的驅動源負責
+        old, new = blob_at(repo, ref, p), blob_at(repo, head, p)
+        if old == new:
+            continue
+        if p == pj and old is not None and new is not None:
+            try:
+                a = json.loads(old.decode("utf-8"))
+                b = json.loads(new.decode("utf-8"))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                out.append(f"{p} 解析不了(視為內容變更)")
+                continue
+            va, vb = a.pop("version", None), b.pop("version", None)
+            # **只有在 version 值真的變了時才豁免。**
+            # 複審 probe P5:初版寫 `if a == b: continue`,於是 plugin.json
+            # 的**純格式重排**(byte 變、JSON 語意相同、version 沒動)
+            # 也被一併豁免——出貨的 byte 變了卻不觸發任何規則,
+            # 違反「以 byte 為準」那條裁決。JSON 比對本來只該替 version 鍵開口,
+            # 不該替所有語意等價的 byte 噪音開口。
+            if a == b and va != vb:
+                continue                   # 只有頂層 version 鍵不同 = 戳記
+        out.append(p)
+    return out
+
+
 def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
-    plugins = load_plugins(repo)
+    """**理由聚合,不是規則抑制。**
+
+    同一件事會讓多條規則開火(掛一支新 skill → 成分變了,同時新 skill 樹
+    從無到有讓 skill→宿主規則也火)。兩發要的是同一個動作。
+
+    審議席(fable)畫的線:「絕對不要寫成『R2 已觸發就跳過 R1』——
+    **抑制邏輯的 bug 是靜默綠**,fail-open 的形狀;
+    聚合邏輯的 bug 最多是理由列少一條,verdict 不變。」
+    """
+    P_old, C_old = load_registries(repo, ref)
+    P_new, C_new = load_registries(repo, head)
     old_e, new_e = entry_versions(repo, ref), entry_versions(repo, head)
     bad: list[str] = exclude_drift(repo)
+    # **席位從兩張名冊的聯集種,不是只從 PLUGINS。**
+    # 複審 probe P1:只出現在 COMMANDS、不出現在 PLUGINS 的 plugin,
+    # 進不了下面的 R4 迴圈,於是「驅動源全靜止卻動版號」對它**永遠不會紅**。
+    # 今天 COMMANDS 的鍵剛好是 PLUGINS 的子集所以打不到正式樹,
+    # 但名冊格式允許那個形狀——**對一類合法輸入紅端不可達**,
+    # 正是本張自己立的病名。
+    reasons: dict[str, list[str]] = {p: [] for p in set(P_new) | set(C_new)}
 
+    def why(plugin: str, msg: str) -> None:
+        reasons.setdefault(plugin, []).append(msg)
+
+    # ---- R2:名冊成分變更。**兩端各自從 blob parse**,否則是拿 HEAD 跟 HEAD 比。
+    for p in sorted(set(P_old) | set(P_new) | set(C_old) | set(C_new)):
+        if p not in P_new and p not in C_new:
+            continue          # 整個消失的 plugin:diff 式的閘看不見,見 CHG 的停點 2
+        if P_old.get(p, ()) != P_new.get(p, ()):
+            why(p, f"PLUGINS 成分變了 {P_old.get(p, ())} → {P_new.get(p, ())}")
+        if C_old.get(p, ()) != C_new.get(p, ()):
+            why(p, f"COMMANDS 成分變了 {C_old.get(p, ())} → {C_new.get(p, ())}")
+
+    # ---- R1:頂層 command 的內容變 → 宣告它的每個 plugin
+    for c in sorted({c for cs in C_new.values() for c in cs}):
+        path = f"commands/{c}"
+        if blob_at(repo, ref, path) != blob_at(repo, head, path):
+            for p in sorted(h for h, cs in C_new.items() if c in cs):
+                why(p, f"它宣告的 command「{c}」內容變了")
+
+    # ---- R3:plugin 自己的手寫檔(補集定義)
+    for p in sorted(P_new):
+        if changed := own_files_delta(repo, ref, head, p):
+            why(p, "自己的手寫檔變了:" + "、".join(changed[:4])
+                + (f" 等 {len(changed)} 檔" if len(changed) > 4 else ""))
+
+    plugins = P_new
     for s in sorted({s for sk in plugins.values() for s in sk}):
         kind = classify(repo, ref, head, s)
         sv_old, sv_new = skill_version(repo, ref, s), skill_version(repo, head, s)
@@ -295,19 +430,45 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
             # 新 plugin 沒有「遞增」可言(舊值缺席),但它照樣得是合法 semver。
             # 二讀 probe 實測:新 plugin 帶 `"banana"` 全綠——skill 那半連新 skill
             # 都驗格式,宿主這半卻把格式也綁在舊值存在上,兩半不對稱。
-            for label, old_v, new_v in (("entry", e_old, e_new),
-                                        ("plugin.json", j_old, j_new)):
-                if semver(new_v) is None:
-                    bad.append(f"plugin「{h}」的 {label} 版號「{new_v or '(空)'}」"
-                               "不是合法 semver——「有沒有遞增」在非 semver 上判不出來,"
-                               "而 advanced() 會退回只比「不同」,倒退與打錯字都會過")
-            e_ok = advanced(e_old, e_new)
-            j_ok = advanced(j_old, j_new)
-            if not (e_ok and j_ok):
-                bad.append(f"skill「{s}」的內容變了,而它被 plugin「{h}」打包出貨,"
-                           f"但 {h} 的版號沒有遞增"
-                           f"(entry {old_e.get(h, '?')} → {new_e.get(h, '?')})"
-                           f"——已安裝 {h} 的使用者拿不到這個變更")
+            why(h, f"它打包的 skill「{s}」內容變了")
+
+    # ---- 統一判定:**每個 plugin 只判一次版號**,紅時把全部理由列出來。
+    for p in sorted(reasons):
+        rs = reasons[p]
+        e_old, e_new_v = old_e.get(p, ""), new_e.get(p, "")
+        j_old = plugin_json_version(repo, ref, p)
+        j_new = plugin_json_version(repo, head, p)
+        if not rs:
+            # ---- R4 驅動源全靜止,而版號動了 → **禁止**。
+            #
+            # 草案原本以「整棵出貨樹沒變」定義,而 plugin.json 自己就在樹裡,
+            # 於是 version 一動樹就變,「樹沒變」永假,**這條規則永遠不火**
+            # ——紅端不可達的禁令,實效等於 fail-open。審議席稱它是
+            # 「規則在自己的定義裡自我取消」,比措辭寫鬆更難看出來。
+            #
+            # 改以**驅動源集合**定義之後才有紅端:名冊成分、成分指向的頂層
+            # skill/command、以及自己的手寫檔(扣掉 version 鍵)——全部靜止。
+            if (e_old and e_old != e_new_v) or (j_old and j_old != j_new):
+                bad.append(f"plugin「{p}」的驅動源自 {ref} 起全部靜止"
+                           "(名冊成分沒動、打包的 skill 與 command 內容沒動、"
+                           "自己的手寫檔也沒動),"
+                           f"但版號動了(entry {e_old} → {e_new_v}、"
+                           f"plugin.json {j_old} → {j_new})"
+                           "——無內容的版本會污染歷史,"
+                           "也讓「先動版號、再動內容」變成兩個全綠的 diff")
+            continue
+
+        for label, old_v, new_v in (("entry", e_old, e_new_v),
+                                    ("plugin.json", j_old, j_new)):
+            if semver(new_v) is None:
+                bad.append(f"plugin「{p}」的 {label} 版號「{new_v or '(空)'}」"
+                           "不是合法 semver——「有沒有遞增」在非 semver 上判不出來,"
+                           "而 advanced() 會退回只比「不同」,倒退與打錯字都會過")
+        if not (advanced(e_old, e_new_v) and advanced(j_old, j_new)):
+            bad.append(f"plugin「{p}」的版號沒有遞增"
+                       f"(entry {e_old or '(缺)'} → {e_new_v or '(缺)'})"
+                       f",但它有 {len(rs)} 個變更理由:" + ";".join(rs)
+                       + "——已安裝的使用者拿不到這些變更")
     return bad
 
 
@@ -327,6 +488,19 @@ def _mk(repo: Path, rel: str, body: str) -> None:
 _SKILL = "---\nname: {n}\nmetadata:\n  version: {v}\n---\n\n# {n}\n\n{body}\n"
 
 
+def _registry(plugins: dict, commands: dict) -> str:
+    """合成樹的 build_suite.py。**兩張名冊都要有**——閘現在兩張都讀。"""
+    def blk(name, d):
+        # **用雙引號,和正式的 build_suite.py 一致。** 合成夾具與真實格式不同,
+        # 會讓自檢驗到一種正式樹裡不存在的形狀——這次就是這樣才發現解析器
+        # 對單引號回空 dict 而非報錯。
+        body = "".join(f'    "{k}": ({", ".join(repr(x) for x in v)},),\n'
+                       for k, v in d.items())
+        return f"{name} = {{\n{body}}}\n"
+    return (f"EXCLUDE = {EXCLUDE_PARTS!r}\n"
+            + blk("PLUGINS", plugins) + blk("COMMANDS", commands))
+
+
 def _seed(repo: Path) -> None:
     """造一棵最小的合成樹:兩個 plugin 共用一支隨附 skill。
 
@@ -338,20 +512,23 @@ def _seed(repo: Path) -> None:
     _run(repo, "config", "user.name", "t")
     # 合成樹裡的 build_suite 必須帶著**與正式檔相同**的 EXCLUDE,
     # 否則交叉斷言會在每一案都紅,把真正要驗的東西蓋掉。
-    _mk(repo, "plugins/build_suite.py",
-        f"EXCLUDE = {EXCLUDE_PARTS!r}\n"
-        'PLUGINS = {\n    "alpha": (\'alpha\', \'shared\'),\n'
-        '    "beta": (\'beta\', \'shared\'),\n}\n')
+    # `solo` **只在 COMMANDS、不在 PLUGINS**。這個形狀是刻意的:
+    # 席位若只從 PLUGINS 種,它就進不了 R4 的視野,而名冊格式允許它存在。
+    _mk(repo, "plugins/build_suite.py", _registry(
+        {"alpha": ("alpha", "shared"), "beta": ("beta", "shared")},
+        {"alpha": ("hello.md",), "solo": ("hello.md",)}))
+    _mk(repo, "commands/hello.md", "---\ndescription: 打招呼\n---\n內容\n")
     for s in ("alpha", "beta", "shared"):
         _mk(repo, f"skills/{s}/SKILL.md", _SKILL.format(n=s, v="1.0.0", body="原文"))
     _mk(repo, "skills/shared/assets/rules.json", '{"a": 1}\n')
-    for p in ("alpha", "beta"):
+    for p in ("alpha", "beta", "solo"):
         _mk(repo, f"plugins/{p}/.claude-plugin/plugin.json",
             json.dumps({"name": p, "version": "1.0.0"}, ensure_ascii=False) + "\n")
     _mk(repo, ".claude-plugin/marketplace.json", json.dumps({
         "metadata": {"version": "1.0.0"},
         "plugins": [{"name": "alpha", "version": "1.0.0"},
-                    {"name": "beta", "version": "1.0.0"}]}, ensure_ascii=False) + "\n")
+                    {"name": "beta", "version": "1.0.0"},
+                    {"name": "solo", "version": "1.0.0"}]}, ensure_ascii=False) + "\n")
     _run(repo, "add", "-A")
     _run(repo, "commit", "-q", "-m", "base")
 
@@ -367,6 +544,37 @@ def _bump_plugin(repo: Path, plugin: str, v: str) -> None:
     d = json.loads(pj.read_text(encoding="utf-8"))
     d["version"] = v
     pj.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def aggregation_test() -> list[str]:
+    """30:**聚合而非抑制**——同一 plugin 命中兩條規則時,只出一則訊息、列兩個理由。
+
+    審議席(fable)畫的線:「絕對不要寫成『R2 已觸發就跳過 R1』——
+    抑制邏輯的 bug 是**靜默綠**,fail-open 的形狀;
+    聚合邏輯的 bug 最多是理由列少一條,verdict 不變。」
+
+    案 29 只驗「有紅」,這一案驗**形狀**:alpha 的訊息必須是一則,
+    而且同時含 skill 與手寫檔兩個理由。抑制式實作在這裡會露餡——
+    它只會列出先觸發的那一個。
+    """
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+        _seed(repo)
+        base = git(repo, "rev-parse", "HEAD").stdout.decode().strip()
+        _mk(repo, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了"))
+        _mk(repo, "plugins/alpha/NOTICE", "同時也改了手寫檔\n")
+        _run(repo, "add", "-A")
+        _run(repo, "commit", "-q", "-m", "兩條規則")
+        got = check(repo, base, "HEAD")
+        mine = [g for g in got if "plugin「alpha」的版號沒有遞增" in g]
+        if len(mine) != 1:
+            out.append(f"30 聚合:alpha 應只出一則版號訊息,實際 {len(mine)} 則:{mine}")
+        elif not ("它打包的 skill" in mine[0] and "自己的手寫檔" in mine[0]):
+            out.append(f"30 聚合:兩個理由沒有同時出現在同一則訊息裡——"
+                       f"這是抑制式實作的樣子:{mine[0]}")
+    return out
 
 
 def divergent_history_test() -> list[str]:
@@ -415,7 +623,10 @@ def self_test() -> int:
     import tempfile
     fails: list[str] = []
 
+    ran: list[str] = []      # 案數用數的,不用寫死的
+
     def case(label: str, mutate, want: str | None):
+        ran.append(label)
         # 變更必須**先 commit** 再驗——`--since` 的語意是 REF..HEAD,
         # 兩端都是 committed 狀態。拿工作樹去比 blob 會在 Windows 上
         # 因 eol 轉換全樹假陽性(初版就是這樣爆的)。
@@ -437,13 +648,13 @@ def self_test() -> int:
     # 2 **真洞的紅端**:隨附 skill 內容變,兩個宿主都沒 bump
     def m2(r):
         _mk(r, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了規則"))
-    case("2 隨附內容變、宿主未 bump", m2, "plugin「alpha」打包出貨")
+    case("2 隨附內容變、宿主未 bump", m2, "plugin「alpha」的版號沒有遞增")
 
     # 3 只 bump 其中一個宿主,另一個仍要紅——「有 bump 就算過」是常見的鬆脫
     def m3(r):
         m2(r)
         _bump_plugin(r, "alpha", "1.1.0")
-    case("3 只 bump 一個宿主", m3, "plugin「beta」打包出貨")
+    case("3 只 bump 一個宿主", m3, "plugin「beta」的版號沒有遞增")
 
     # 4 綠端:內容變且兩個宿主都 bump、skill 自己也 bump
     def m4(r):
@@ -469,31 +680,40 @@ def self_test() -> int:
     # 7 assets/ 也算內容——它沒有 metadata.version 可言
     def m7(r):
         _mk(r, "skills/shared/assets/rules.json", '{"a": 2}\n')
-    case("7 assets 變也算內容", m7, "plugin「alpha」打包出貨")
+    case("7 assets 變也算內容", m7, "plugin「alpha」的版號沒有遞增")
 
     # 8 刪掉一份 reference 也是內容變更(只看「現存檔有沒有改」會漏掉)
     def m8(r):
         (r / "skills/shared/assets/rules.json").unlink()
-    case("8 刪檔也算內容", m8, "plugin「alpha」打包出貨")
+    case("8 刪檔也算內容", m8, "plugin「alpha」的版號沒有遞增")
 
     # 9 新增檔案同理
     def m9(r):
         _mk(r, "skills/shared/references/new.md", "新的參考\n")
-    case("9 新增檔也算內容", m9, "plugin「alpha」打包出貨")
+    case("9 新增檔也算內容", m9, "plugin「alpha」的版號沒有遞增")
 
     # 10 空白變更也算——審議席明裁不做語意寬容
     def m10(r):
         _mk(r, "skills/shared/SKILL.md",
             _SKILL.format(n="shared", v="1.1.0", body="原文 "))   # 尾隨一個空格
-    case("10 空白變更也算內容", m10, "plugin「alpha」打包出貨")
+    case("10 空白變更也算內容", m10, "plugin「alpha」的版號沒有遞增")
 
     # 11 **6b:三處版號分岔但內容沒變 → 刻意放行**
     #    舊的三處同步斷言會擋這個形狀;本張刻意改變不變量。
     #    寫成綠端案例,是為了讓後來的人看得出這是決定不是疏忽。
+    # 11 的**機制**在 CHG-20260814-07 換過。原本靠「bump plugin 但無內容變更」
+    # 來示範分岔合法,而 R4(plugin 層戳記凍結)正好禁止那個動作——
+    # 案子的意圖(分岔合法)仍成立,示範它的手法不能再用被禁的那一種。
+    #
+    # 新機制:`shared` 內容變 → 兩個宿主都正確 bump 到 1.1.0;
+    # 而 `skills/alpha/SKILL.md` 自己沒變,版號留在 1.0.0。
+    # 於是 skill 1.0.0 vs plugin 1.1.0 **分岔且完全合法**,正是退役那條斷言
+    # 會擋、而新規則組刻意放行的形狀。
     def m11(r):
-        _bump_plugin(r, "alpha", "1.4.0")      # plugin 跳到 1.4.0
-        # skills/alpha/SKILL.md 仍停在 1.0.0 —— 正是 writing 那次的形狀
-    case("11 綠端:版號分岔但內容沒變(刻意放行)", m11, None)
+        _mk(r, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了規則"))
+        _bump_plugin(r, "alpha", "1.1.0")
+        _bump_plugin(r, "beta", "1.1.0")
+    case("11 綠端:skill 版號與 plugin 版號分岔(刻意放行)", m11, None)
 
     # 12 非宿主的 plugin 不該被牽連
     def m12(r):
@@ -540,7 +760,7 @@ def self_test() -> int:
             if e["name"] == "alpha":
                 e["version"] = "1.1.0"
         p.write_text(json.dumps(mk, ensure_ascii=False) + "\n", encoding="utf-8")
-    case("18 entry 與 plugin.json 單邊 bump", m18, "plugin「alpha」打包出貨")
+    case("18 entry 與 plugin.json 單邊 bump", m18, "plugin「alpha」的版號沒有遞增")
 
     # 19 **正文裡的 version: 行是內容,不是戳記。**
     #    初版剝的是全檔任何符合的行,於是正文改一行 `version:` 會被判成
@@ -557,11 +777,13 @@ def self_test() -> int:
         _mk(r, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了規則"))
         _bump_plugin(r, "alpha", "1.1.0")
         _bump_plugin(r, "beta", "1.1.0")
-        # gamma 是這一趟才出現的新 plugin,版號非 semver
-        p = r / "plugins/build_suite.py"
-        p.write_text(p.read_text(encoding="utf-8").replace(
-            '"beta": (\'beta\', \'shared\'),',
-            '"beta": (\'beta\', \'shared\'),\n    "gamma": (\'shared\',),'), encoding="utf-8")
+        # gamma 是這一趟才出現的新 plugin,版號非 semver。
+        # 名冊直接重寫,不做字串替換——替換目標一改格式就靜默打不中,
+        # 而打不中的後果是「案子還在、但它驗的東西不見了」。
+        _mk(r, "plugins/build_suite.py", _registry(
+            {"alpha": ("alpha", "shared"), "beta": ("beta", "shared"),
+             "gamma": ("shared",)},
+            {"alpha": ("hello.md",), "solo": ("hello.md",)}))
         _mk(r, "plugins/gamma/.claude-plugin/plugin.json",
             json.dumps({"name": "gamma", "version": "banana"}, ensure_ascii=False) + "\n")
         mk = r / ".claude-plugin/marketplace.json"
@@ -570,14 +792,103 @@ def self_test() -> int:
         mk.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
     case("21 新 plugin 的非 semver 版號", m21, "不是合法 semver")
 
+    # ---- 22~29:CHG-20260814-07 的 plugin 層規則。
+
+    # 22 R2:從 PLUGINS 的 tuple 移除一支 skill(宿主出貨樹少一整支)
+    def m22(r):
+        _mk(r, "plugins/build_suite.py", _registry(
+            {"alpha": ("alpha",), "beta": ("beta", "shared")},
+            {"alpha": ("hello.md",), "solo": ("hello.md",)}))
+    case("22 R2:PLUGINS 移除一支 skill", m22, "PLUGINS 成分變了")
+
+    # 23 R2:把既有 skill 掛進新宿主
+    def m23(r):
+        _mk(r, "plugins/build_suite.py", _registry(
+            {"alpha": ("alpha", "shared"), "beta": ("beta", "shared", "alpha")},
+            {"alpha": ("hello.md",), "solo": ("hello.md",)}))
+    case("23 R2:既有 skill 掛進新宿主", m23, "PLUGINS 成分變了")
+
+    # 24 R2:COMMANDS 成分變更——批量搬遷要改它五次,而它原本完全沒被讀
+    def m24(r):
+        _mk(r, "commands/bye.md", "---\ndescription: 道別\n---\n內容\n")
+        _mk(r, "plugins/build_suite.py", _registry(
+            {"alpha": ("alpha", "shared"), "beta": ("beta", "shared")},
+            {"alpha": ("hello.md", "bye.md"), "solo": ("hello.md",)}))
+    case("24 R2:COMMANDS 成分變更", m24, "COMMANDS 成分變了")
+
+    # 25 R1:頂層 command 的內容變 → 宣告它的 plugin 必須遞增
+    def m25(r):
+        _mk(r, "commands/hello.md", "---\ndescription: 打招呼\n---\n改過的內容\n")
+    case("25 R1:command 內容變", m25, "它宣告的 command「hello.md」內容變了")
+
+    # 26 R3:plugin 自己的手寫檔。用一個**沒被任何列舉提過**的檔名,
+    #    證明範圍是補集而不是白名單——列舉式會讓它靜默漏網。
+    def m26(r):
+        _mk(r, "plugins/alpha/NOTICE", "第三方聲明\n")
+    case("26 R3:未列舉過的手寫檔(NOTICE)", m26, "自己的手寫檔變了")
+
+    # 27 **R4 的紅端。這一案是本張最不可妥協的一條。**
+    #    草案以「整棵出貨樹沒變」定義 R4,而 plugin.json 自己就在樹裡,
+    #    於是 version 一動樹就變,條件永假、規則永遠不火——
+    #    紅端不可達的禁令,實效等於 fail-open。改以驅動源定義才打得出這一案。
+    def m27(r):
+        _bump_plugin(r, "alpha", "1.4.0")     # 驅動源全靜止,只有版號動
+    case("27 R4:驅動源全靜止而版號動(plugin 層戳記凍結)", m27, "驅動源")
+
+    # 28 R4 的綠端:驅動源有變時 R4 不得開火
+    def m28(r):
+        _mk(r, "plugins/alpha/NOTICE", "新檔\n")
+        _bump_plugin(r, "alpha", "1.1.0")
+    case("28 R4 綠端:驅動源有變就不是戳記", m28, None)
+
+    # 29 **理由聚合**:同一個 plugin 同時命中兩條規則,版號只判一次,
+    #    而且兩個理由都要出現在同一則訊息裡。
+    def m29(r):
+        _mk(r, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了"))
+        _mk(r, "plugins/alpha/NOTICE", "同時也改了手寫檔\n")
+    case("29 理由聚合:兩條規則命中同一 plugin", m29, "它打包的 skill")
+
+    # 31 frontmatter **頂層**的 version 鍵是內容,不是戳記。
+    #    複審實測:剝「frontmatter 內任何 version:」會讓這個形狀被判成戳記,
+    #    訊息說「metadata.version 從 1.0.0 動到 1.0.0」——胡話,而且怎麼 bump
+    #    都過不了(案 19 死鎖的 frontmatter 版)。
+    def m31(r):
+        _mk(r, "skills/shared/SKILL.md",
+            "---\nname: shared\nversion: 0.2\nmetadata:\n  version: 1.0.0\n---\n\n# shared\n")
+    case("31 frontmatter 頂層 version 鍵算內容", m31, "metadata.version 沒有遞增")
+
+    # ---- 32、33:複審 probe 打到的兩處,各自的紅端。
+
+    # 32 P1:只在 COMMANDS、不在 PLUGINS 的 plugin,R4 也必須看得到它。
+    #    席位若只從 PLUGINS 種,這個形狀的紅端永遠不可達。
+    def m32(r):
+        _bump_plugin(r, "solo", "1.1.0")     # 驅動源全靜止,只動版號
+    case("32 只在 COMMANDS 的 plugin,R4 也要看得到", m32, "驅動源")
+
+    # 33 P5:plugin.json 的**純格式重排**——byte 變、JSON 語意同、version 沒動。
+    #    初版的 JSON 比對把所有語意等價的 byte 噪音一併豁免,不只 version 鍵。
+    def m33(r):
+        p = r / "plugins/alpha/.claude-plugin/plugin.json"
+        d = json.loads(p.read_text(encoding="utf-8"))
+        p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    case("33 plugin.json 純格式重排也算內容", m33, "自己的手寫檔變了")
+
+    fails += aggregation_test()
     fails += divergent_history_test()
+    EXTRA = ("理由聚合", "分岔歷史")   # 兩支不走 case() 的獨立測試
 
     if fails:
         for f in fails:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:版號影響閘的紅綠端不可達。")
         return 1
-    print("✅ self-test:21 案全過\n"
+    # **案數是數出來的,不是寫死的。**
+    # 寫死的數字每加一案就要記得改,而漏改的後果不是少報——是
+    # 「橫幅說 30、實際 31」,然後那個數字被抄進 ACC 當引文。
+    # 這個 repo 已經為「宣稱沒有對過量測」付過三次代價。
+    print(f"✅ self-test:{len(ran) + len(EXTRA)} 案全過"
+          f"({len(ran)} 個 case + {len(EXTRA)} 支獨立測試:{'、'.join(EXTRA)})\n"
+          "  [skill 層]\n"
           "   真洞五條:隨附內容變 / 只 bump 一個宿主 / assets 變 / 刪檔 / 新增檔\n"
           "   綠端四條:無變動 / 全員 bump / 版號分岔但內容沒變(刻意放行) / 非宿主不牽連\n"
           "   戳記凍結一條、skill 自身版號一條、空白不寬容一條、版號倒退一條\n"
@@ -586,7 +897,14 @@ def self_test() -> int:
           "   entry 與 plugin.json 單邊 bump 一條\n"
           "   正文的 version 行算內容一條\n"
           "   分岔歷史下無關分支不得被牽連一條\n"
-          "   新 plugin 的非 semver 版號一條")
+          "   新 plugin 的非 semver 版號一條\n"
+          "  [plugin 層,CHG-20260814-07]\n"
+          "   R2 成分變更三條(PLUGINS 移除 / 掛進新宿主 / COMMANDS 變更)\n"
+          "   R1 command 內容變一條\n"
+          "   R3 未列舉過的手寫檔一條(補集定義,不是白名單)\n"
+          "   R4 兩條(驅動源全靜止而版號動必紅 / 驅動源有變不得誤判為戳記)\n"
+          "   理由聚合兩條(有紅一條、**同一則訊息含兩個理由**一條)\n"
+          "   frontmatter 頂層 version 鍵算內容一條")
     return 0
 
 
@@ -614,7 +932,11 @@ def main(argv: list[str]) -> int:
             return 0
         print(f"✗ 取不到「{want}」的分岔點(merge-base)——版本紀律全押在本閘上,"
               "取不到基準等於整套規則消失。\n"
-              "  CI 請先 `git fetch origin main`;本地要略過請顯式加 --allow-missing-ref。")
+              "  CI 請先 `git fetch origin main`。\n"
+              "  **若分岔點早於淺 fetch 的深度**(CI 用 --depth=50),"
+              "訊息會長得跟「沒 fetch」一樣,\n"
+              "  但要下的是 `git fetch --deepen=200 origin main`(或 --unshallow)。\n"
+              "  本地要略過請顯式加 --allow-missing-ref。")
         return 1
     bad = check(repo, ref)
     if bad:
@@ -625,7 +947,9 @@ def main(argv: list[str]) -> int:
               "\n  任一 byte 變動即為內容變更,只排除根 SKILL.md 的 version 那一行。"
               "\n  內容變了,打包它的每一個 plugin 都要 bump——包括隨附進去的那些。")
         return 1
-    print(f"✅ 版號影響閘(基準 {ref}):沒有 skill 的內容變更漏掉宿主 bump")
+    print(f"✅ 版號影響閘(基準 {ref}):skill 內容變更沒有漏掉宿主 bump,"
+          "plugin 層的成分變更 / 手寫檔 / command 內容也都有對應的版號,"
+          "且沒有無驅動源的版號移動")
     return 0
 
 

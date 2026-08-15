@@ -172,11 +172,20 @@ def check_since(repo: Path, ref: str) -> list[str]:
         print("(--since:base marketplace.json 解析失敗,略過)")
         return []
     cur_mv = market_version(load_marketplace(repo))
-    if old_mv == cur_mv:
+    # **「遞增」不是「不同」。** 本行原本寫 `old_mv == cur_mv`,於是
+    # 1.2.0 → 1.1.0 這種倒退照過——正是 CHG-20260814-06 在 version_impact_check
+    # 那半被糾正過的同一型病,原樣活在這裡。CHG-20260814-07 一併修。
+    a, b = _semver(old_mv), _semver(cur_mv)
+    advanced = (b > a) if (a and b) else (old_mv != cur_mv)
+    if not advanced:
         sample = ", ".join(content_changed[:5])
-        return [f"plugins/skills 內容自 {ref} 起有變動但 marketplace metadata.version 未 bump"
-                f"(仍為 {cur_mv})——每次 plugin 變動須同步 bump catalog(觸發檔:{sample} …)"
+        how = "未 bump" if old_mv == cur_mv else f"沒有遞增({old_mv} → {cur_mv})"
+        return [f"plugins/skills 內容自 {ref} 起有變動但 marketplace metadata.version {how}"
+                f"(現為 {cur_mv})——每次 plugin 變動須同步 bump catalog(觸發檔:{sample} …)"
                 f"\n    修正:python3 plugins/catalog_check.py --bump {ref}(自動推導,不必人挑版號)"]
+    if a is None or b is None:
+        return [f"marketplace metadata.version「{cur_mv}」不是合法 semver"
+                "——「有沒有遞增」在非 semver 上判不出來,會退回只比「不同」"]
     return []
 
 
@@ -269,6 +278,7 @@ def self_test() -> int:
         fails.append(f"找不到 {peer}——交叉斷言無法執行,等於沒有")
 
     fails += static_self_test()
+    fails += since_version_self_test()
 
     if fails:
         for f in fails:
@@ -278,9 +288,60 @@ def self_test() -> int:
     print(f"✅ self-test:--since 觸發條件 {len(BUMP_CASES)} 案全對"
           f"(含未列名的 plugins/ 頂層檔仍觸發),"
           f"TOP_TOOL_FILES 與 skill_inventory_check 一致,"
-          f"且 check_static 兩案(entry≠plugin.json 必紅、"
-          f"SKILL.md 與 plugin.json 分岔必綠)。")
+          f"check_static 兩案(entry≠plugin.json 必紅、"
+          f"SKILL.md 與 plugin.json 分岔必綠),"
+          f"且總版號遞增兩案(倒退必紅、正確遞增必綠)。")
     return 0
+
+
+def since_version_self_test() -> list[str]:
+    """總版號的「遞增」有沒有紅端。
+
+    這條規則原本寫的是「不同」,所以 `1.2.0 → 1.1.0` 照過。改成遞增之後
+    必須有一個案例證明倒退真的會紅——否則就是又一條沒有紅端的規則。
+    """
+    import json as _json
+    import subprocess
+    import tempfile
+
+    def run(repo, *a):
+        return subprocess.run(["git", *a], cwd=repo, capture_output=True)
+
+    def mk(repo, rel, body):
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(body, encoding="utf-8")
+
+    def catalog(v):
+        return _json.dumps({"metadata": {"version": v}, "plugins": []},
+                           ensure_ascii=False)
+
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+        run(repo, "init", "-q", "-b", "main")
+        run(repo, "config", "user.email", "t@t")
+        run(repo, "config", "user.name", "t")
+        mk(repo, ".claude-plugin/marketplace.json", catalog("1.2.0"))
+        mk(repo, "skills/solo/SKILL.md", "---\nname: solo\n---\n原文\n")
+        run(repo, "add", "-A")
+        run(repo, "commit", "-q", "-m", "base")
+        base = run(repo, "rev-parse", "HEAD").stdout.decode().strip()
+
+        mk(repo, "skills/solo/SKILL.md", "---\nname: solo\n---\n改過\n")
+        mk(repo, ".claude-plugin/marketplace.json", catalog("1.1.0"))   # 倒退
+        run(repo, "add", "-A")
+        run(repo, "commit", "-q", "-m", "regress")
+        if not any("沒有遞增" in p for p in check_since(repo, base)):
+            out.append("總版號倒退(1.2.0 → 1.1.0)竟然沒紅"
+                       "——「遞增」這條規則的紅端不可達")
+
+        mk(repo, ".claude-plugin/marketplace.json", catalog("1.3.0"))   # 正確遞增
+        run(repo, "add", "-A")
+        run(repo, "commit", "-q", "-m", "ok")
+        if got := check_since(repo, base):
+            out.append(f"總版號正確遞增卻被擋:{got}")
+    return out
 
 
 def static_self_test() -> list[str]:
