@@ -55,7 +55,7 @@ $PY skills/fiction/scripts/fiction_check.py skills/fiction/assets/sample-good.md
 
 echo "[4/13] 小說子層四支夾具:各以自己的流派跑"
 for G in scifi mystery romance flash; do
-  $PY skills/fiction/scripts/fiction_check.py "skills/fiction-$G/assets/sample-good.md" --genre $G > /dev/null
+  $PY skills/fiction/scripts/fiction_check.py "skills/fiction/assets/sample-good-$G.md" --genre $G > /dev/null
 done
 
 echo "[5/13] techdoc lint 夾具:兩份 good 要過、bad 在兩種 kind 都要被擋"
@@ -141,13 +141,13 @@ rm -f "$EMPTY"
 echo "[10d/13] 未驗到名單必須釘死(門檻不得悄悄變成逃生門)"
 # 實測值,不是憑印象填的。
 # 這三份的密度規則目前沒有任何輸入跑得到,是已知且具名的缺口,不是通過。
-EXPECT_UNVERIFIED="skills/bizdoc/assets/sample-gov-good.md skills/fiction-flash/assets/sample-good.md skills/zh-style/assets/sample-good.md"
+EXPECT_UNVERIFIED="skills/bizdoc/assets/sample-gov-good.md skills/fiction/assets/sample-good-flash.md skills/zh-style/assets/sample-good.md"
 ACTUAL_UNVERIFIED=""
 probe_unverified() {   # $1=腳本 $2=檔案 $3...=額外參數
   local s="$1"; shift; local f="$1"; shift
   if $PY "$s" "$f" "$@" 2>&1 | grep -q "未驗到"; then echo "$f"; fi
 }
-for F in skills/fiction/assets/sample-*.md skills/fiction-*/assets/sample-*.md; do
+for F in skills/fiction/assets/sample-*.md; do
   ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $(probe_unverified skills/fiction/scripts/fiction_check.py "$F")"
 done
 for F in skills/writing/assets/sample-*.md skills/prose/assets/sample-*.md \

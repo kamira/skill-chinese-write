@@ -158,6 +158,30 @@ def _parse_registry(src: str, name: str, where: str) -> dict[str, tuple[str, ...
     return out
 
 
+def load_retired(repo: Path, ref: str) -> dict[str, str]:
+    """讀 `RETIRED` 名冊——**退役過的 plugin id**(CHG-20260814-10)。
+
+    這張名冊在的理由:現存全部閘只斷言「名冊↔磁碟一致」,而把 plugin 目錄與
+    名冊條目**一起**刪掉,兩邊同時消失就「一致」——**對每一道閘都是不可見事件**。
+
+    舊 ref 沒有這張名冊是正常的(它是本張才加的),回空 dict;
+    但**格式壞掉**要炸,與另外兩張名冊同一口徑。
+    """
+    raw = blob_at(repo, ref, "plugins/build_suite.py")
+    if raw is None:
+        return {}
+    src = raw.decode("utf-8", "replace")
+    m = re.search(r"^RETIRED[^=]*=\s*\{(.*?)^\}", src, re.S | re.M)
+    if m is None:
+        return {}                      # 名冊還沒出生 ≠ 名冊壞了
+    out = {k: v for k, v in re.findall(
+        r"""["']([\w.-]+)["']\s*:\s*["']([^"']*)["']""", m.group(1))}
+    if not out and re.search(r"\S", m.group(1)):
+        raise SystemExit(f"RETIRED 區塊有內容卻一個條目都 parse 不出來({ref})"
+                         "——**空 dict 不得與『解析失敗』同義**")
+    return out
+
+
 def load_registries(repo: Path, ref: str) -> tuple[dict, dict]:
     """從**某個 ref 的 blob** 讀 PLUGINS 與 COMMANDS。
 
@@ -376,6 +400,37 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
         if C_old.get(p, ()) != C_new.get(p, ()):
             why(p, f"COMMANDS 成分變了 {C_old.get(p, ())} → {C_new.get(p, ())}")
 
+    # ---- R5/R6/R7:**消失也要看得見**(CHG-20260814-10)。
+    #
+    # 現存全部閘只斷言「名冊↔磁碟一致」,而把 plugin 目錄與名冊條目**一起**刪掉,
+    # 兩邊同時消失就「一致」——對每一道閘都是不可見事件。R2 的那句
+    # `if p not in P_new and p not in C_new: continue` 就是這個盲區的所在。
+    R_old, R_new = load_retired(repo, ref), load_retired(repo, head)
+    live_old = set(P_old) | set(C_old)
+    live_new = set(P_new) | set(C_new)
+
+    # R5 縮水必須具名
+    for p in sorted(live_old - live_new):
+        if p not in R_new:
+            bad.append(f"plugin「{p}」自 {ref} 起從名冊消失,但沒有列進 RETIRED"
+                       "——目錄與名冊一起刪掉的話,每一道閘看到的都是「一致」,"
+                       "縮水因此要具名才看得見")
+
+    # R6 名冊與現實雙向一致
+    for p in sorted(R_new):
+        if p in live_new:
+            bad.append(f"plugin「{p}」列在 RETIRED,卻仍在 PLUGINS/COMMANDS 裡"
+                       "——具名了卻沒真的退役")
+        if (repo / "plugins" / p).exists():
+            bad.append(f"plugin「{p}」列在 RETIRED,但 plugins/{p}/ 還在磁碟上")
+        if p in new_e:
+            bad.append(f"plugin「{p}」列在 RETIRED,但 marketplace 還有它的 entry")
+
+    # R7 復活必須先從名冊移除,而那個移除在 diff 裡看得見
+    for p in sorted(set(R_old) & live_new):
+        bad.append(f"plugin「{p}」在 {ref} 是退役狀態,現在又出現在名冊裡"
+                   "——要復活得先把它從 RETIRED 拿掉,那一步才看得見")
+
     # ---- R1:頂層 command 的內容變 → 宣告它的每個 plugin
     for c in sorted({c for cs in C_new.values() for c in cs}):
         path = f"commands/{c}"
@@ -544,6 +599,44 @@ def _bump_plugin(repo: Path, plugin: str, v: str) -> None:
     d = json.loads(pj.read_text(encoding="utf-8"))
     d["version"] = v
     pj.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def revival_test() -> list[str]:
+    """37:**復活必須先從名冊移除**,而那個移除在 diff 裡看得見。
+
+    這一案要三個時點(退役前 → 退役 → 復活),`case()` 的兩點模型做不到,
+    所以自成一支:base 有 beta、mid 退役它、head 又把它放回名冊而 RETIRED 沒動。
+    """
+    import shutil
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+        _seed(repo)
+        _run(repo, "add", "-A"); _run(repo, "commit", "-q", "--allow-empty", "-m", "base")
+
+        keep = {"alpha": ("alpha", "shared")}
+        cmds = {"alpha": ("hello.md",), "solo": ("hello.md",)}
+        _mk(repo, "plugins/build_suite.py",
+            _registry(keep, cmds) + 'RETIRED = {\n    "beta": "CHG-TEST",\n}\n')
+        shutil.rmtree(repo / "plugins" / "beta", ignore_errors=True)
+        mk = repo / ".claude-plugin/marketplace.json"
+        d = json.loads(mk.read_text(encoding="utf-8"))
+        d["plugins"] = [e for e in d["plugins"] if e["name"] != "beta"]
+        mk.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+        _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "退役 beta")
+        mid = git(repo, "rev-parse", "HEAD").stdout.decode().strip()
+
+        # 復活:名冊放回 beta,但 RETIRED 沒動
+        _mk(repo, "plugins/build_suite.py",
+            _registry({"alpha": ("alpha", "shared"), "beta": ("beta", "shared")}, cmds)
+            + 'RETIRED = {\n    "beta": "CHG-TEST",\n}\n')
+        _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "復活 beta")
+
+        got = check(repo, mid, "HEAD")
+        if not any("又出現在名冊裡" in g for g in got):
+            out.append(f"37 復活未被偵測——RETIRED 裡的名字回到名冊應該紅:{got}")
+    return out
 
 
 def aggregation_test() -> list[str]:
@@ -873,9 +966,51 @@ def self_test() -> int:
         p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     case("33 plugin.json 純格式重排也算內容", m33, "自己的手寫檔變了")
 
+    # ---- 34~37:**消失也要看得見**(CHG-20260814-10)。
+    #
+    # 審議席的警告寫在這裡:綠端的合成樹**必須把 plugin 目錄與 marketplace 條目
+    # 一起刪乾淨**,否則 R6 會讓綠端不可達——而「綠端不可達」會用最難看的方式
+    # 被發現(整批案子永遠紅,而你以為是規則太嚴)。
+    import shutil
+
+    def _retire(r, names, tombstone=True, wipe=True):
+        keep = {k: v for k, v in
+                {"alpha": ("alpha", "shared"), "beta": ("beta", "shared")}.items()
+                if k not in names}
+        cmds = {k: v for k, v in
+                {"alpha": ("hello.md",), "solo": ("hello.md",)}.items()
+                if k not in names}
+        src = _registry(keep, cmds)
+        if tombstone:
+            src += ("RETIRED = {\n" + "".join(
+                f'    "{n}": "CHG-TEST",\n' for n in names) + "}\n")
+        _mk(r, "plugins/build_suite.py", src)
+        if wipe:
+            for n in names:
+                shutil.rmtree(r / "plugins" / n, ignore_errors=True)
+                mk = r / ".claude-plugin/marketplace.json"
+                d = json.loads(mk.read_text(encoding="utf-8"))
+                d["plugins"] = [e for e in d["plugins"] if e["name"] != n]
+                mk.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    case("34 R5:刪了卻沒列進 RETIRED",
+         lambda r: _retire(r, ["beta"], tombstone=False), "沒有列進 RETIRED")
+    case("35 R5 綠端:刪了且具名(目錄與 marketplace 都清乾淨)",
+         lambda r: _retire(r, ["beta"]), None)
+    case("36 R6:列進 RETIRED 卻沒真的退役",
+         lambda r: _mk(r, "plugins/build_suite.py",
+                       _registry({"alpha": ("alpha", "shared"), "beta": ("beta", "shared")},
+                                 {"alpha": ("hello.md",), "solo": ("hello.md",)})
+                       + 'RETIRED = {\n    "beta": "CHG-TEST",\n}\n'),
+         "具名了卻沒真的退役")
+
+    fails += revival_test()
     fails += aggregation_test()
     fails += divergent_history_test()
-    EXTRA = ("理由聚合", "分岔歷史")   # 兩支不走 case() 的獨立測試
+    # **加了獨立測試就要登記在這裡。** 動態計數只保證「數對了 ran 的長度」,
+    # 保證不了「EXTRA 名單與實際呼叫一致」——這一行漏了 revival_test,
+    # 橫幅就少算一案,而那正是寫死數字的病換了個位置。
+    EXTRA = ("理由聚合", "分岔歷史", "退役復活")
 
     if fails:
         for f in fails:
