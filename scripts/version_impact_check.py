@@ -291,10 +291,13 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
             # 具名報錯。複審實測三案全綠:宿主 1.0.0 → "banana"、→ "0.0.1-rollback"
             # (實質倒退)、→ "1.1"(誠實打錯字)。而 catalog_check 只驗 marketplace
             # 總版號的 semver 格式,entry / plugin.json 無人驗——沒有別的閘兜底。
-            # 舊值缺席不報:那是**新 plugin**,它沒有「遞增」可言。
+            # **格式檢查不看舊值,遞增檢查才看。** 兩者的例外不一樣:
+            # 新 plugin 沒有「遞增」可言(舊值缺席),但它照樣得是合法 semver。
+            # 二讀 probe 實測:新 plugin 帶 `"banana"` 全綠——skill 那半連新 skill
+            # 都驗格式,宿主這半卻把格式也綁在舊值存在上,兩半不對稱。
             for label, old_v, new_v in (("entry", e_old, e_new),
                                         ("plugin.json", j_old, j_new)):
-                if old_v and semver(new_v) is None:
+                if semver(new_v) is None:
                     bad.append(f"plugin「{h}」的 {label} 版號「{new_v or '(空)'}」"
                                "不是合法 semver——「有沒有遞增」在非 semver 上判不出來,"
                                "而 advanced() 會退回只比「不同」,倒退與打錯字都會過")
@@ -547,6 +550,26 @@ def self_test() -> int:
             _SKILL.format(n="shared", v="1.0.0", body="用法:\n  version: v2"))
     case("19 正文的 version 行算內容不算戳記", m19, "metadata.version 沒有遞增")
 
+    # 21 **新 plugin 也要是合法 semver**。二讀 probe 實測這裡原本全綠:
+    #    格式檢查被綁在「舊值存在」上,而新 plugin 的舊值當然不存在。
+    #    遞增檢查對新 plugin 豁免是對的,格式檢查跟著豁免就不對了。
+    def m21(r):
+        _mk(r, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了規則"))
+        _bump_plugin(r, "alpha", "1.1.0")
+        _bump_plugin(r, "beta", "1.1.0")
+        # gamma 是這一趟才出現的新 plugin,版號非 semver
+        p = r / "plugins/build_suite.py"
+        p.write_text(p.read_text(encoding="utf-8").replace(
+            '"beta": (\'beta\', \'shared\'),',
+            '"beta": (\'beta\', \'shared\'),\n    "gamma": (\'shared\',),'), encoding="utf-8")
+        _mk(r, "plugins/gamma/.claude-plugin/plugin.json",
+            json.dumps({"name": "gamma", "version": "banana"}, ensure_ascii=False) + "\n")
+        mk = r / ".claude-plugin/marketplace.json"
+        d = json.loads(mk.read_text(encoding="utf-8"))
+        d["plugins"].append({"name": "gamma", "version": "banana"})
+        mk.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+    case("21 新 plugin 的非 semver 版號", m21, "不是合法 semver")
+
     fails += divergent_history_test()
 
     if fails:
@@ -554,7 +577,7 @@ def self_test() -> int:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:版號影響閘的紅綠端不可達。")
         return 1
-    print("✅ self-test:20 案全過\n"
+    print("✅ self-test:21 案全過\n"
           "   真洞五條:隨附內容變 / 只 bump 一個宿主 / assets 變 / 刪檔 / 新增檔\n"
           "   綠端四條:無變動 / 全員 bump / 版號分岔但內容沒變(刻意放行) / 非宿主不牽連\n"
           "   戳記凍結一條、skill 自身版號一條、空白不寬容一條、版號倒退一條\n"
@@ -562,7 +585,8 @@ def self_test() -> int:
           "   宿主 semver 三條(非 semver 字串 / 打錯字 1.1 / 非 semver 的實質倒退)\n"
           "   entry 與 plugin.json 單邊 bump 一條\n"
           "   正文的 version 行算內容一條\n"
-          "   分岔歷史下無關分支不得被牽連一條")
+          "   分岔歷史下無關分支不得被牽連一條\n"
+          "   新 plugin 的非 semver 版號一條")
     return 0
 
 
