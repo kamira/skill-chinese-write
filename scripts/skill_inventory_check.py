@@ -389,10 +389,20 @@ def main(argv=None) -> int:
 
     plugins = load_plugins(repo)
     n_skill = len([p for p in (repo / "skills").iterdir() if p.is_dir()])
-    engines = sorted({s for tup in plugins.values() for s in tup[1:]})
+    # `tup[1:]` 是「被當**隨附**帶進某個 plugin 的 skill」,不是「引擎」。
+    # 這一行原本把它印成「引擎 N 支」,於是 `writing` 永遠不見——它自己就是引擎,
+    # 但它在自己的 plugin 裡永遠排第一位,`tup[1:]` 切不到。
+    # 執法沒錯,**報表的數字錯了**;而治理閘印一個錯的數字,正是 ACC-20260814-04
+    # 在修的那一類。所以兩個數分開印,各自標明是怎麼數出來的。
+    companions = sorted({s for tup in plugins.values() for s in tup[1:]})
+    engines = sorted(p.name for p in (repo / "skills").iterdir()
+                     if p.is_dir() and any((p / "scripts").glob("*.py")))
     n_dir = len(plugin_dirs_on_disk(repo))
     print(f"skill 清點 — {n_skill} 支 skill / {len(plugins)} 個 plugin"
-          f"(磁碟上 {n_dir} 個目錄)/ 引擎 {len(engines)} 支({'、'.join(engines) or '無'})")
+          f"(磁碟上 {n_dir} 個目錄)")
+    print(f"  引擎 {len(engines)} 支(有 scripts/*.py):{'、'.join(engines) or '無'}")
+    print(f"  隨附 {len(companions)} 支(被別的 plugin 帶入):"
+          f"{'、'.join(companions) or '無'}")
     if problems:
         print(f"\n✗ {len(problems)} 處不一致:")
         for p in problems:

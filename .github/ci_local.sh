@@ -173,8 +173,15 @@ if [ "$ACTUAL_UNVERIFIED" != "$EXPECT_UNVERIFIED" ]; then
   exit 1
 fi
 
+echo "[10e/13] 配比凍結閘(搬遷期間流派數值與執法狀態不准漂)"
+# 兩趟都要跑:self-test 證明紅端可達,--repo 證明現況一致。
+# 只跑後者的話,「六支全對」與「閘壞掉」看起來一樣。
+$PY scripts/genre_ratio_freeze.py --self-test > /dev/null
+$PY scripts/genre_ratio_freeze.py --repo . > /dev/null
+
 echo "[11/13] py_compile"
-$PY -m py_compile $(find skills plugins tools -name '*.py' -not -path '*/plugins/*/skills/*')
+# scripts/ 原本不在這行的搜尋範圍裡——治理閘自己反而沒被 py_compile 過。
+$PY -m py_compile $(find skills plugins tools scripts -name '*.py' -not -path '*/plugins/*/skills/*')
 
 echo "[12/13] JSON 可解析"
 for f in $(find . -name '*.json' -not -path './.git/*'); do
