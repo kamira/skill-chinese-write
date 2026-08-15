@@ -783,7 +783,7 @@ def self_test() -> int:
         _mk(r, "plugins/build_suite.py", _registry(
             {"alpha": ("alpha", "shared"), "beta": ("beta", "shared"),
              "gamma": ("shared",)},
-            {"alpha": ("hello.md",)}))
+            {"alpha": ("hello.md",), "solo": ("hello.md",)}))
         _mk(r, "plugins/gamma/.claude-plugin/plugin.json",
             json.dumps({"name": "gamma", "version": "banana"}, ensure_ascii=False) + "\n")
         mk = r / ".claude-plugin/marketplace.json"
@@ -798,14 +798,14 @@ def self_test() -> int:
     def m22(r):
         _mk(r, "plugins/build_suite.py", _registry(
             {"alpha": ("alpha",), "beta": ("beta", "shared")},
-            {"alpha": ("hello.md",)}))
+            {"alpha": ("hello.md",), "solo": ("hello.md",)}))
     case("22 R2:PLUGINS 移除一支 skill", m22, "PLUGINS 成分變了")
 
     # 23 R2:把既有 skill 掛進新宿主
     def m23(r):
         _mk(r, "plugins/build_suite.py", _registry(
             {"alpha": ("alpha", "shared"), "beta": ("beta", "shared", "alpha")},
-            {"alpha": ("hello.md",)}))
+            {"alpha": ("hello.md",), "solo": ("hello.md",)}))
     case("23 R2:既有 skill 掛進新宿主", m23, "PLUGINS 成分變了")
 
     # 24 R2:COMMANDS 成分變更——批量搬遷要改它五次,而它原本完全沒被讀
@@ -813,7 +813,7 @@ def self_test() -> int:
         _mk(r, "commands/bye.md", "---\ndescription: 道別\n---\n內容\n")
         _mk(r, "plugins/build_suite.py", _registry(
             {"alpha": ("alpha", "shared"), "beta": ("beta", "shared")},
-            {"alpha": ("hello.md", "bye.md")}))
+            {"alpha": ("hello.md", "bye.md"), "solo": ("hello.md",)}))
     case("24 R2:COMMANDS 成分變更", m24, "COMMANDS 成分變了")
 
     # 25 R1:頂層 command 的內容變 → 宣告它的 plugin 必須遞增
