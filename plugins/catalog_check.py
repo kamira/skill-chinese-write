@@ -89,16 +89,28 @@ def check_static(repo: Path) -> list[str]:
             continue
         if ev != pjv:
             problems.append(f"plugin「{name}」marketplace entry.version={ev} ≠ plugin.json version={pjv}(版本分岔)")
-        # 第三處:skill 本體的 metadata.version。CHANGELOG 明訂三處同步,而本檢查
-        # 原本只比對其中兩處——writing 因此在 SKILL.md 停在 1.3.0、另外兩處是 1.4.0,
-        # 全綠地活了一輪。規則寫三處、斷言只查兩處,和「規則沒有斷言」是同一個毛病。
-        for skill in skills_of(repo, name):
-            sv = skill_version(skill)
-            if sv is None:
-                problems.append(f"plugin「{name}」的 {skill.relative_to(repo)} 讀不到 metadata.version")
-            elif sv != pjv:
-                problems.append(
-                    f"plugin「{name}」{skill.relative_to(repo)} version={sv} ≠ plugin.json version={pjv}(版本分岔)")
+        # ---- 第三處(skill 本體的 metadata.version)已於 CHG-20260814-06 **退役**。
+        #
+        # 它曾抓到真東西:writing 在 SKILL.md 停在 1.3.0、另外兩處是 1.4.0,
+        # 全綠地活了一輪。但它把 **skill 版號**與 **plugin 版號**綁死,而那個綁定
+        # 兩個方向都錯:
+        #   - plugin 因為多了一個 command 而 bump 時,skill 版號被迫跟跳
+        #     (CHG-20260814-05:fiction skill 內容一個字沒改,戳記卻從 1.0.0 跳到
+        #      1.1.0,再被 byte-sync 灌進六個宿主副本,逼出六個無內容版本)
+        #   - 反過來,skill 內容真的變時,打包它的其他宿主 plugin 卻**不必動**
+        #     ——zh-style 被全部 21 個 plugin 打包,那才是 A(a) 級的傷害,
+        #       而這條斷言完全看不見
+        #
+        # **這不是嚴格更強的替換,是刻意改變不變量**(審議席 codex 的原話)。
+        # 「三處分岔」從此合法。接手的是 scripts/version_impact_check.py:
+        #   內容變   → skill 自己與**全部宿主**都必須 semver 遞增
+        #   內容沒變 → 版號**禁止**移動(戳記凍結)
+        # 副本一致性則由 build_suite --check 的 byte 比對接手。
+        #
+        # 殘餘風險,白紙黑字記著:**base 上已經存在的分岔,任何 diff 式的閘都看不見。**
+        # writing 那次若發生在新閘上線之前,新規則組同樣抓不到。這是有意識接受的,
+        # 靠戳記凍結保證它從此無法被**引入**。
+        _ = (skills_of, skill_version)     # 保留兩支工具,供 version_impact_check 之外的用途
     return problems
 
 
