@@ -73,7 +73,7 @@ jobs:
       - name: genre sample fixtures
         run: |
           for G in scifi mystery romance flash; do
-            python3 skills/fiction/scripts/fiction_check.py "skills/fiction-$G/assets/sample-good.md" --genre $G
+            python3 skills/fiction/scripts/fiction_check.py "skills/fiction/assets/sample-good-$G.md" --genre $G
           done
 
       # CHG 標頭欄位不得留佔位字串。doc_integrity 查欄位存在,不查欄位有內容——

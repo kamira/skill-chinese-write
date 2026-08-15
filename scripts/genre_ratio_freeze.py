@@ -301,6 +301,22 @@ def check(root: Path, engine: bool = True) -> list[str]:
     for g in sorted(set(genres) - set(FROZEN)):
         bad.append(f"[A] 規則檔多了凍結表沒有的流派 {g}——名冊與現實分岔")
 
+    # ---- [G] 相位切換:舊住址**存在即紅**(CHG-20260814-10)。
+    #
+    # 退役之前 `skills/fiction-<g>/SKILL.md` 是「可選住址」——`live_docs()` 只收
+    # 存在的路徑,少一處不報錯。退役之後那個寬容變成盲區:有人手動放回一份,
+    # 凍結閘看不見,而 `[E]` 的「缺席豁免」還會替它背書。
+    #
+    # 通用層(`skill_inventory_check` 第 3 項:沒有任何 plugin 打包它 → 紅)已經
+    # 擋得住;這裡是具名層,理由與 `[E]` 相同:誰擁有流派名冊誰管。
+    for g in sorted(FROZEN):
+        old = root / "skills" / f"fiction-{g}" / "SKILL.md"
+        if old.is_file():
+            bad.append(f"[G] {old.relative_to(root).as_posix()} 又出現了"
+                       "——六支子層 skill 已於 CHG-20260814-10 退役,"
+                       "前門是 `/fiction:fiction-" + g + "`;"
+                       "舊住址復活會讓同一份配比有兩個真相")
+
     # ---- D:執法狀態不是用讀的,是用跑的
     if engine:
         bad += enforcement_probe(root)
@@ -467,9 +483,13 @@ def self_test() -> int:
 
     all_docs = {}
     for g, (lo_p, hi_p, lo_i, hi_i) in FROZEN.items():
-        all_docs[f"skills/fiction-{g}/SKILL.md"] = (
+        # 合成樹的住址在 CHG-20260814-10 從 skills/fiction-<g>/SKILL.md 改成
+        # command——舊住址退役後**存在即紅**([G]),夾具不能再住在那裡。
+        # 而 command 住址要滿足 [E] 的在場性,所以基底要帶上 lint 呼叫行。
+        all_docs[f"commands/fiction-{g}.md"] = (
             _GOOD_DOC.replace("25%-35%", f"{lo_p}%-{hi_p}%")
-                     .replace("4-8 次/千字", f"{lo_i}-{hi_i} 次/千字"))
+                     .replace("4-8 次/千字", f"{lo_i}-{hi_i} 次/千字")
+            + f"\n```\npython3 skills/fiction/scripts/fiction_check.py 稿件.md --genre {g}\n```\n")
 
     run(full, all_docs, None, "1 綠端:六支齊全且誠實")                       # 1
 
@@ -489,11 +509,11 @@ def self_test() -> int:
     run(full, gone, "[B] flash: 三處住址都找不到", "6 文案整支不見")           # 6
 
     drift = dict(all_docs)
-    drift["skills/fiction-long/SKILL.md"] = _GOOD_DOC.replace("4-8 次", "4-9 次")
+    drift["commands/fiction-long.md"] = _GOOD_DOC.replace("4-8 次", "4-9 次")
     run(full, drift, "成語密度", "7 文案數字漂移")                            # 7
 
     pdrift = dict(all_docs)
-    pdrift["skills/fiction-long/SKILL.md"] = _GOOD_DOC.replace("25%-35%", "25%-36%")
+    pdrift["commands/fiction-long.md"] = _GOOD_DOC.replace("25%-35%", "25%-36%")
     run(full, pdrift, "修辭比例", "8 修辭比例漂移")                           # 8
 
     _DISHONEST = _GOOD_DOC.replace(
@@ -511,9 +531,12 @@ def self_test() -> int:
     # 11:**同一段不誠實的文字,住址決定紅綠。** 這案同時證明兩件事:
     # 誠實欄真的只綁 command(裁決 4 的線),以及它不是靠關鍵字碰運氣
     # ——內容一字未改,只換了住址。
+    # 11 的語意在 CHG-20260814-10 翻面。舊住址退役之前,「同一段不誠實的文字
+    #    放在待刪的 SKILL.md 應豁免」;退役之後,那個住址**存在即紅**([G]),
+    #    豁免因對象消滅而壽終。案子不刪——改成驗新的相位。
     ex = dict(all_docs)
     ex["skills/fiction-long/SKILL.md"] = _DISHONEST
-    run(full, ex, None, "11 同一段文字放在待刪的舊 SKILL.md 應豁免")          # 11
+    run(full, ex, "又出現了", "11 [G] 舊住址退役後存在即紅(豁免已壽終)")     # 11
 
     # 12:同一支流派住在兩處,其中一處漂了也要紅——只驗一處就是下一個孤兒
     two = dict(all_docs)
@@ -560,11 +583,15 @@ def self_test() -> int:
 
     # 18 **舊 SKILL.md 錯置也要紅**——缺席豁免,寫錯不豁免
     g18 = dict(all_docs)
-    g18["skills/fiction-long/SKILL.md"] = _GOOD_LONG.replace("--genre long", "--genre scifi")
-    run(full, g18, "寫著 `--genre scifi`", "18 [E] 舊 SKILL.md 的 genre 錯置也要紅")
+    g18["skills/fiction-long/SKILL.md"] = _GOOD_LONG
+    run(full, g18, "又出現了", "18 [G] 退役後的舊住址,存在即紅")
 
     # 19 綠端:舊 SKILL.md 沒有 token 是合法的(它們寫於本規則之前)
-    run(full, all_docs, None, "19 [E] 綠端:舊 SKILL.md 缺 token 豁免")
+    # 19 的語意也在 CHG-20260814-10 翻面:缺席豁免**因對象消滅而壽終**。
+    #    舊住址現在不論有沒有 token 都紅——11 驗有 token 的那半,19 驗沒有的那半。
+    g19 = dict(all_docs)
+    g19["skills/fiction-long/SKILL.md"] = _GOOD_DOC
+    run(full, g19, "又出現了", "19 [G] 舊住址缺 token 也紅(缺席豁免已壽終)")
 
     # 20 **同檔多處出現,只要有一處錯就紅**——「至少含一個正確的」是漏洞
     g20 = dict(all_docs)
@@ -583,13 +610,13 @@ def self_test() -> int:
     #    ——沒有它,捕獲改回 `\S+` 照樣全綠,而那正是 KN-001 的原型:
     #    修好的 bug 在夾具裡不可再現。
     d1 = dict(all_docs)
-    d1["skills/fiction-long/SKILL.md"] = (
+    d1["commands/fiction-long.md"] = (
         _GOOD_DOC + "\nlint 會數(`--genre long`),但區間是本 skill 自訂。\n")
     run(full, d1, None, "22 [E] 綠端:CJK 緊鄰的正確 token(假紅回歸案)")
 
     # 23 d2:CJK 緊鄰的**錯** token 仍要紅——收邊改對了不能順手放寬。
     d2 = dict(all_docs)
-    d2["skills/fiction-long/SKILL.md"] = (
+    d2["commands/fiction-long.md"] = (
         _GOOD_DOC + "\nlint 會數(`--genre scifi`),但區間是本 skill 自訂。\n")
     run(full, d2, "寫著 `--genre scifi`", "23 [E] CJK 緊鄰的錯 token 仍要紅")
 
@@ -606,10 +633,10 @@ def self_test() -> int:
           "文案四條(整支不見/成語漂移/修辭漂移/並存住址其一漂移)、"
           "誠實欄五條(下限、修辭、豁免,加上**兩個方向的說謊**且不得誤掛罪名)、"
           "綠端一條,"
-          "[E] genre token 八條(command 錯置 / command 缺 token / "
-          "舊 SKILL.md 錯置也紅 / 舊 SKILL.md 缺 token 豁免 / "
-          "正確 token 在場也擋不住旁邊錯貼的 / **等號形 --genre=X** / "
-          "**CJK 緊鄰的正確 token 必綠** / **CJK 緊鄰的錯 token 仍紅**),"
+          "[E] genre token 六條(command 錯置 / command 缺 token / "
+          "正確 token 在場也擋不住旁邊錯貼的 / 等號形 --genre=X / "
+          "CJK 緊鄰的正確 token 必綠 / CJK 緊鄰的錯 token 仍紅),"
+          "[G] 相位切換三條(舊住址有 token 也紅 / 缺 token 也紅 / 退役後真實 repo 必須乾淨),"
           "以及 [D] 執法探針三條"
           "(原封綠端 / 上限被架空 / 下限被注回引擎)。")
     return 0

@@ -14,7 +14,7 @@
 |------|-------|------|
 | 中文正字法(半形標點)+ 收尾(總結殼、光禿短句) | `zh-style` | `zh_style_check.py` |
 
-`zh-style` 沒有前門也沒有 plugin——沒有人會說「幫我寫一篇正字法」。它由 **21 個 plugin 全部打包**,因為它的兩條規則在每個文體的判定完全相同。
+`zh-style` 沒有前門也沒有 plugin——沒有人會說「幫我寫一篇正字法」。它由**所有 plugin 全部打包**,因為它的兩條規則在每個文體的判定完全相同。
 
 ### 有自己引擎的(硬規則與其他文體互斥)
 
@@ -29,18 +29,19 @@
 
 | 文體 | skill | 跑什麼 |
 |------|-------|--------|
-| 微型小說 | `fiction-flash` | `fiction_check.py --genre flash` |
-| 中／長篇 | `fiction-long` | `--genre long` |
-| 武俠 / 仙俠 | `fiction-wuxia` | `--genre wuxia` |
-| 科幻 | `fiction-scifi` | `--genre scifi` |
-| 懸疑 / 推理 / 驚悚 | `fiction-mystery` | `--genre mystery` |
-| 言情 / 都市愛情 | `fiction-romance` | `--genre romance` |
+| 微型小說 | `/fiction:fiction-flash` | `fiction_check.py --genre flash` |
+| 中／長篇 | `/fiction:fiction-long` | `fiction_check.py --genre long` |
+| 武俠 / 仙俠 | `/fiction:fiction-wuxia` | `fiction_check.py --genre wuxia` |
+| 科幻 | `/fiction:fiction-scifi` | `fiction_check.py --genre scifi` |
+| 懸疑 / 推理 / 驚悚 | `/fiction:fiction-mystery` | `fiction_check.py --genre mystery` |
+| 言情 / 都市愛情 | `/fiction:fiction-romance` | `fiction_check.py --genre romance` |
 | 規格書 | `spec` | `techdoc_check.py --kind spec` |
 | 架構說明 / 設計文件 | `architecture` | `--kind arch` |
 | 公文(函、簽、通知、公告) | `official` | `bizdoc_check.py --kind gov` |
 | 新聞稿 / 對外聲明 | `press` | `--kind press` |
 
 每個前門的 plugin 都把引擎一起打包,裝了就跑得動。
+六支小說流派已於 `CHG-20260814-10` 從獨立 skill 退役,前門改為 `fiction` plugin 底下的命令。
 
 ### 明標「本支沒有 lint」的前門
 

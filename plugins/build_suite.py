@@ -27,12 +27,6 @@ SRC = ROOT / "skills"
 PLUGINS = {
     "writing": ('writing', 'zh-style'),
     "fiction": ('fiction', 'zh-style'),
-    "fiction-flash": ('fiction-flash', 'fiction', 'zh-style'),
-    "fiction-long": ('fiction-long', 'fiction', 'zh-style'),
-    "fiction-wuxia": ('fiction-wuxia', 'fiction', 'zh-style'),
-    "fiction-scifi": ('fiction-scifi', 'fiction', 'zh-style'),
-    "fiction-mystery": ('fiction-mystery', 'fiction', 'zh-style'),
-    "fiction-romance": ('fiction-romance', 'fiction', 'zh-style'),
     "spec": ('spec', 'techdoc', 'zh-style'),
     "architecture": ('architecture', 'techdoc', 'zh-style'),
     "official": ('official', 'bizdoc', 'zh-style'),
@@ -62,6 +56,23 @@ COMMANDS: dict[str, tuple[str, ...]] = {
     # 一次只搬一支時看得見,六支一起搬時會互相蓋掉。
     "fiction": ("fiction-long.md", "fiction-flash.md", "fiction-mystery.md", "fiction-romance.md", "fiction-scifi.md", "fiction-wuxia.md"),
 }
+# ---- 第三張登記簿:**退役過的 plugin id**。
+#
+# CHG-20260814-10。現存全部閘只斷言「名冊↔磁碟一致」,而把 plugin 目錄與名冊條目
+# **一起**刪掉,兩邊同時消失就「一致」——對每一道閘都是**不可見事件**。
+#
+# 這張名冊讓消失變成看得見的:縮水必須具名,否則 version_impact_check 的 R5 紅。
+# 它住在這裡而不是 CHG 文件裡,理由是**閘不該 parse 散文**——兩端都 blob-readable,
+# 名冊與現實想分岔就必然有一端紅。
+RETIRED: dict[str, str] = {
+    "fiction-flash":   "CHG-20260814-10",
+    "fiction-long":    "CHG-20260814-10",
+    "fiction-mystery": "CHG-20260814-10",
+    "fiction-romance": "CHG-20260814-10",
+    "fiction-scifi":   "CHG-20260814-10",
+    "fiction-wuxia":   "CHG-20260814-10",
+}
+
 COMMANDS_SRC = "commands"
 # 佔位字串:與 chg_field_check 同一套判準(角括號包住,或明顯的待填字樣)。
 PLACEHOLDER_RE = re.compile(r"^(<[^>]*>|TODO|TBD|待填|說明|description)$", re.I)
