@@ -51,6 +51,25 @@
 使用者要依賴的路徑必須放進兩種載體之一——這把逃逸路徑變成**寫作規範違規**,
 而不是閘的靜默盲區。
 
+**其餘契約外形狀,逐一具名**——複審 probe 找出來的,一律**靜默通過**壞路徑:
+
+| 形狀 | 例 |
+|---|---|
+| 尾隨標點 | `skills/s/x.py;` |
+| `=` 黏著 | `--file=skills/s/x.py` |
+| 反斜線路徑 | `skills\\s\\x.py` |
+| 縮排碼區塊(四空白) | CommonMark 的程式碼載體,本閘不掃 |
+| 角括號連結目標 | `](<skills/s/x.md>)`,合法 CommonMark |
+| 目錄引用 | `skills/s/` —— `is_file()` 判紅(**假紅,方向安全**) |
+
+「載體文法封閉」這句**對 CommonMark 而言是過寬的宣稱**(複審原話)。
+波浪圍籬已收進 `FENCE`,其餘列在此處為**契約外**,由搬遷的寫作規範 rider
+以人工紀律頂著:程式碼載體路徑必須根錨定、POSIX `/`、單 token、
+無尾隨標點、無 `=` 黏著;只用反引號圍籬;目錄要連到具體檔案或用不可抽取形。
+
+**只具名裸文一種是不夠的**——這個 repo 自己的紀律是「不在契約內的東西也要具名」,
+而我初版只具名了其中一種。
+
 `commands/` 裡未登記的檔、名冊裡缺來源的條目,是 `build_suite.sync_commands`
 反向斷言的轄區,本閘只迭代名冊配對。寫在這裡免得兩閘互以為對方在管。
 """
@@ -67,7 +86,7 @@ for _stream in (sys.stdout, sys.stderr):
 # markdown 連結/圖片:整類全收,過濾在下面用判定式
 LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 # 程式碼載體:圍籬與行內 code span
-FENCE = re.compile(r"```.*?```", re.S)
+FENCE = re.compile(r"```.*?```|~~~.*?~~~", re.S)   # 波浪圍籬也是 CommonMark 的程式碼載體
 CODESPAN = re.compile(r"`([^`\n]+)`")
 
 SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
@@ -97,19 +116,29 @@ def extract(text: str) -> tuple[list[str], list[str]]:
     殘餘文字再掃程式碼載體。反過來的話,連結文字裡的路徑狀 code span
     會被當成 token,在一份完全正確的檔案上假紅。
     """
-    links: list[str] = []
-    for m in LINK.finditer(text):
-        t = m.group(1).split("#", 1)[0].strip()
-        if t and not SCHEME.search(t) and not PLACEHOLDER.search(t):
-            links.append(t)
-    rest = LINK.sub(" ", text)          # 連結全文(含文字裡的 code span)整段移除
-
     toks: list[str] = []
-    for blk in FENCE.findall(rest):
+
+    # ① 圍籬**最先**消費。初版讓 LINK 先掃全文(含圍籬),於是圍籬裡的
+    #    連結語法示例 `[例](skills/s/ref.md)` 會被當成真連結、以檔案目錄為基準
+    #    解析、**在一份正確的檔案上假紅**——R4 孿生升了一層。反過來
+    #    `[例](../skills/s/ref.md)` 又會被當連結解析而通過,`../` 條款摸不到它。
+    #    搬遷的五支全是教 markdown 寫作的文件,圍籬裡出現連結語法不是假想情境。
+    for blk in FENCE.findall(text):
         for w in re.split(r"\s+", blk):
             if _is_pathish(w):
                 toks.append(w)
-    for blk in FENCE.sub(" ", rest).split("\n"):
+    rest = FENCE.sub(" ", text)
+
+    # ② 再消費連結(連結全文——含文字裡的路徑狀 code span——整段移出掃描流)
+    links: list[str] = []
+    for m in LINK.finditer(rest):
+        t = m.group(1).split("#", 1)[0].strip()
+        if t and not SCHEME.search(t) and not PLACEHOLDER.search(t):
+            links.append(t)
+    rest = LINK.sub(" ", rest)
+
+    # ③ 殘餘文字才掃行內 code span
+    for blk in rest.split("\n"):
         for m in CODESPAN.finditer(blk):
             # **span 內容要再切詞。** 初版把整段當一個 token,於是
             # `python3 skills/s/run.py` 這種多字 span 因為含空白而被判定式否掉
@@ -147,8 +176,11 @@ def check_one(repo: Path, plugin: str, name: str) -> list[str]:
                 bad.append(f"{name}({where}):連結「{t}」以自身目錄為基準解析不到")
         # (b)(c) 程式碼載體 token 以**兩個根**為基準
         for t in toks:
-            if t.startswith("../"):
-                bad.append(f"{name}({where}):程式碼裡的「{t}」用了 ../"
+            # `..` 出現在**任何位置**都違規,不只開頭。檔頭寫「一律」而實作只擋
+            # 開頭,是措辭與實作漂移;中段的 `skills/s/../s/run.py` 目前只靠
+            # 「目標碰巧不存在」擋得住,那不是斷言。
+            if t.startswith("../") or "/../" in t:
+                bad.append(f"{name}({where}):程式碼裡的「{t}」用了 .."
                            "——指令是從某個根執行的,不是從檔案目錄")
                 continue
             for rname, root in roots.items():
@@ -290,16 +322,31 @@ def self_test() -> int:
     case("G4 綠:角括號佔位不進場",
          "```\npython3 <plugin>/commands/<命令>.md\n```\n", [], [], None)
 
+    # ---- G5 基準判別性綠案:**圍籬裡的連結語法**是示意,不是真連結。
+    # 圍籬若不先消費,這段會被當真連結、以檔案目錄為基準解析、假紅。
+    # 搬遷五支全是教 markdown 寫作的文件,這個形狀不是假想情境。
+    case("G5 綠:圍籬內的連結語法是示意",
+         "```\n[例](skills/s/ref.md)\n```\n", [], [], None)
+
+    # ---- R10:圍籬裡的 `..`(圍籬先消費之後,它才進得了 token 通道)
+    case("R10 紅:圍籬內連結語法帶 ..(不得從連結通道逃逸)",
+         "```\npython3 skills/s/../s/run.py\n```\n", BOTH_TOK, [], "用了 ..")
+
+    # ---- R11:波浪圍籬也是程式碼載體
+    case("R11 紅:波浪圍籬支路",
+         "~~~\npython3 skills/s/gone.py\n~~~\n", BOTH_TOK, [], "程式碼路徑")
+
     if fails:
         for f in fails:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:command 引用路徑閘的紅綠端不可達。")
         return 1
     print(f"✅ self-test:{len(ran)} 案全過——"
-          "基準判別性綠端三條(../ 連結、根錨定 token、連結文字是 code span)、"
+          "基準判別性綠端四條(../ 連結、根錨定 token、連結文字是 code span、"
+          "圍籬內的連結語法)、"
           "雙住址紅端四條(連結×兩住址、token×兩根)、"
-          "抽取支路三條(圍籬 / 行內 code span / 連結)、"
-          "形狀兩條(程式碼裡的 ../、絕對路徑連結)、"
+          "抽取支路四條(圍籬 / 波浪圍籬 / 行內 code span / 連結)、"
+          "形狀三條(程式碼裡的 ..(開頭與中段)、絕對路徑連結)、"
           "不可抽取形一條。")
     return 0
 
