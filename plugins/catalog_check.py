@@ -268,6 +268,8 @@ def self_test() -> int:
     else:
         fails.append(f"找不到 {peer}——交叉斷言無法執行,等於沒有")
 
+    fails += static_self_test()
+
     if fails:
         for f in fails:
             print(f"  ❌ {f}")
@@ -275,8 +277,62 @@ def self_test() -> int:
         return 1
     print(f"✅ self-test:--since 觸發條件 {len(BUMP_CASES)} 案全對"
           f"(含未列名的 plugins/ 頂層檔仍觸發),"
-          f"且 TOP_TOOL_FILES 與 skill_inventory_check 一致。")
+          f"TOP_TOOL_FILES 與 skill_inventory_check 一致,"
+          f"且 check_static 兩案(entry≠plugin.json 必紅、"
+          f"SKILL.md 與 plugin.json 分岔必綠)。")
     return 0
+
+
+def static_self_test() -> list[str]:
+    """`check_static` 的紅綠端。**在 CHG-20260814-06 之前這裡是空的。**
+
+    複審(fable)指出的事實:被退役的第三處斷言,**從被寫下到被拆掉,
+    整個生命週期沒被機器看過一眼**——拆掉它時沒有任何測試轉紅。
+    那正是「閘被無聲拔牙」的機制本身。
+
+    更要緊的是現在式:退役之後,「SKILL.md 與 plugin.json 分岔是合法的」
+    這個新不變量**只釘在 version_impact_check 的 self-test 裡,不在退役現場**。
+    於是 CHG 自己預言的回歸——「下一個人把它當 bug 修回去」——今天就能無聲發生:
+    把第三處斷言加回去,全部測試照綠。
+
+    所以這裡放兩案:保留下來的那條要有紅端,退役掉的那條要有**綠端**。
+    綠端是本次不變量改變的錨,它紅了就代表有人把斷言加回去了。
+    """
+    import json as _json
+    import tempfile
+
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+
+        def build(entry_v: str, pj_v: str, skill_v: str) -> None:
+            (repo / ".claude-plugin").mkdir(parents=True, exist_ok=True)
+            (repo / ".claude-plugin" / "marketplace.json").write_text(_json.dumps({
+                "metadata": {"version": "1.0.0"},
+                "plugins": [{"name": "solo", "source": "./plugins/solo",
+                             "version": entry_v}]}, ensure_ascii=False), encoding="utf-8")
+            d = repo / "plugins" / "solo" / ".claude-plugin"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "plugin.json").write_text(
+                _json.dumps({"name": "solo", "version": pj_v}, ensure_ascii=False),
+                encoding="utf-8")
+            s = repo / "skills" / "solo"
+            s.mkdir(parents=True, exist_ok=True)
+            (s / "SKILL.md").write_text(
+                f"---\nname: solo\nmetadata:\n  version: {skill_v}\n---\n\n# solo\n",
+                encoding="utf-8")
+
+        build("1.0.0", "1.1.0", "1.0.0")          # 紅端:entry ≠ plugin.json
+        if not any("版本分岔" in p for p in check_static(repo)):
+            out.append("check_static 紅端不可達:entry≠plugin.json 竟然沒被抓到"
+                       "——保留下來的那條斷言沒有紅端,等於沒有")
+
+        build("1.4.0", "1.4.0", "1.0.0")          # 綠端:SKILL.md 與 plugin.json 分岔
+        if got := check_static(repo):
+            out.append("check_static 綠端不可達:SKILL.md 與 plugin.json 分岔應**合法**"
+                       f"(CHG-20260814-06 退役第三處同步斷言),卻被擋下:{got}"
+                       "——有人把退役的斷言加回去了")
+    return out
 
 
 def main(argv) -> int:

@@ -93,14 +93,27 @@ def advanced(old: str, new: str) -> bool:
 
 
 def strip_version_line(data: bytes) -> bytes:
-    """只把 frontmatter 裡的 `version:` 那一行拿掉。
+    """只把**frontmatter 區塊裡**的 `version:` 那一行拿掉。
 
     **只拿掉那一行,不做任何其他正規化。** 空白、註解、換行一律保留——
     審議席原話:「以 byte 為準,只要 byte 狀態改變,同一版本就不應指向兩種產物」。
     加任何「聰明」的正規化,就是在替閘開語意層的後門。
+
+    初版剝的是**全檔任何**符合的行,而 docstring 卻寫「只把 frontmatter 裡的」。
+    複審實測那個落差會造成**死鎖**:正文裡一行 `version: v1 → v2` 的真內容變更
+    被判成「一個 byte 都沒變」的戳記紅,而戳記紅無論怎麼 bump 都過不了
+    ——沒有任何一條路能讓它變綠。方向是誤殺不是放行,但死鎖比誤殺更糟。
     """
-    return b"\n".join(ln for ln in data.split(b"\n")
-                      if not VERSION_LINE.match(ln))
+    lines = data.split(b"\n")
+    # frontmatter = 開頭第一個 `---` 到下一個 `---` 之間
+    if not lines or lines[0].strip() != b"---":
+        return data
+    try:
+        end = next(i for i in range(1, len(lines)) if lines[i].strip() == b"---")
+    except StopIteration:
+        return data
+    head = [ln for ln in lines[1:end] if not VERSION_LINE.match(ln)]
+    return b"\n".join([lines[0], *head, *lines[end:]])
 
 
 def skill_files(repo: Path, skill: str) -> list[str]:
@@ -195,6 +208,29 @@ def classify(repo: Path, ref: str, head: str, skill: str) -> str:
     return "stamp" if stamp_only else "none"
 
 
+def resolve_base(repo: Path, ref: str) -> str | None:
+    """把 `--since` 的參照解析成**分岔點**,不是它的 tip。回不了就 None。
+
+    複審實測的誤傷:main 合法前進(某支 skill 內容變 + 全員正確 bump)之後,
+    一條**只動 docs 的無關分支**跑本閘會紅三條,訊息指控它
+    「shared 的版號從 1.1.0 倒退到 1.0.0」——它根本沒碰過那支 skill。
+
+    `catalog_check --since` 同樣是兩點比較,但它只比「不同」所以意外容忍;
+    本閘改成嚴格遞增之後,**任何 skill 內容 PR 合入 main,所有未 rebase 的
+    並行分支都會全紅,而且紅得與自己的程式碼無關**。
+    `ci_local.sh` 開頭自己引的 KN-002 講的就是這種閘:誤報會教人忽略它。
+
+    merge-base 取不到時**回 None(fail-closed)**,不退回 tip——
+    退回 tip 就是把剛修掉的誤傷偷偷放回來。
+    """
+    if git(repo, "rev-parse", "--verify", ref).returncode != 0:
+        return None
+    mb = git(repo, "merge-base", ref, "HEAD")
+    if mb.returncode != 0 or not mb.stdout.strip():
+        return None
+    return mb.stdout.decode().strip()
+
+
 def exclude_drift(repo: Path) -> list[str]:
     """EXCLUDE 名單的交叉斷言——兩份名單分岔,就有檔案在某一支眼裡不存在。
 
@@ -247,9 +283,23 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
 
         # ---- **每一個宿主** plugin 都要遞增。這才是本閘存在的理由。
         for h in hosts_of(plugins, s):
-            e_ok = advanced(old_e.get(h, ""), new_e.get(h, ""))
-            j_ok = advanced(plugin_json_version(repo, ref, h),
+            e_old, e_new = old_e.get(h, ""), new_e.get(h, "")
+            j_old, j_new = (plugin_json_version(repo, ref, h),
                             plugin_json_version(repo, head, h))
+            # **宿主這半的 semver 格式檢查原本是空的。**
+            # `advanced()` 在任一端非 semver 時退回「不同」,而我只對 skill 補了
+            # 具名報錯。複審實測三案全綠:宿主 1.0.0 → "banana"、→ "0.0.1-rollback"
+            # (實質倒退)、→ "1.1"(誠實打錯字)。而 catalog_check 只驗 marketplace
+            # 總版號的 semver 格式,entry / plugin.json 無人驗——沒有別的閘兜底。
+            # 舊值缺席不報:那是**新 plugin**,它沒有「遞增」可言。
+            for label, old_v, new_v in (("entry", e_old, e_new),
+                                        ("plugin.json", j_old, j_new)):
+                if old_v and semver(new_v) is None:
+                    bad.append(f"plugin「{h}」的 {label} 版號「{new_v or '(空)'}」"
+                               "不是合法 semver——「有沒有遞增」在非 semver 上判不出來,"
+                               "而 advanced() 會退回只比「不同」,倒退與打錯字都會過")
+            e_ok = advanced(e_old, e_new)
+            j_ok = advanced(j_old, j_new)
             if not (e_ok and j_ok):
                 bad.append(f"skill「{s}」的內容變了,而它被 plugin「{h}」打包出貨,"
                            f"但 {h} 的版號沒有遞增"
@@ -314,6 +364,48 @@ def _bump_plugin(repo: Path, plugin: str, v: str) -> None:
     d = json.loads(pj.read_text(encoding="utf-8"))
     d["version"] = v
     pj.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def divergent_history_test() -> list[str]:
+    """20:**分岔歷史下,無關的分支不得被牽連。**
+
+    複審實測的誤傷:main 合法前進(某支 skill 內容變 + 全員正確 bump)之後,
+    一條只動 docs 的分支跑本閘會紅三條,指控它「shared 的版號從 1.1.0 倒退到
+    1.0.0」——它根本沒碰過那支 skill。成因是基準取了 ref 的 **tip** 而非分岔點。
+
+    這一案打的是 `resolve_base`,不是 `check`——誤傷發生在基準的選擇上,
+    拿寫死的 base 去跑 check 永遠重現不出來。
+    """
+    import tempfile
+    out: list[str] = []
+    with tempfile.TemporaryDirectory() as td:
+        repo = Path(td)
+        _seed(repo)
+        _run(repo, "branch", "side")
+
+        # main 合法前進:shared 內容變,skill 與兩個宿主全部正確 bump
+        _mk(repo, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了規則"))
+        _bump_plugin(repo, "alpha", "1.1.0")
+        _bump_plugin(repo, "beta", "1.1.0")
+        _run(repo, "add", "-A")
+        _run(repo, "commit", "-q", "-m", "main 前進")
+
+        # 無關分支:只動 docs
+        _run(repo, "checkout", "-q", "side")
+        _mk(repo, "docs/note.md", "與版號無關的一段字\n")
+        _run(repo, "add", "-A")
+        _run(repo, "commit", "-q", "-m", "只動 docs")
+
+        tip = git(repo, "rev-parse", "main").stdout.decode().strip()
+        if not check(repo, tip, "HEAD"):
+            out.append("20 前置不成立:拿 main 的 tip 當基準竟然沒紅,"
+                       "那這一案證明不了 merge-base 修掉了什麼")
+        base = resolve_base(repo, "main")
+        if base is None:
+            out.append("20 resolve_base 回不出分岔點")
+        elif got := check(repo, base, "HEAD"):
+            out.append(f"20 分岔歷史:無關分支被牽連 {got}")
+    return out
 
 
 def self_test() -> int:
@@ -420,16 +512,57 @@ def self_test() -> int:
             f"EXCLUDE = {EXCLUDE_PARTS!r}", "EXCLUDE = ('__pycache__',)"), encoding="utf-8")
     case("14 EXCLUDE 兩份名單分岔", m14, "EXCLUDE 名單分岔")
 
+    # ---- 15~17 由複審(fable)的紅端 probe 打出來:**宿主這半的 semver 檢查是空的**。
+    # advanced() 在任一端非 semver 時退回「不同」,而具名報錯只補在 skill 那半。
+    # 這三案 fable 實測全綠,而 catalog_check 只驗 marketplace 總版號的格式,
+    # entry / plugin.json 無人驗——沒有別的閘兜底。
+    def _host_ver(v):
+        def m(r):
+            _mk(r, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了規則"))
+            _bump_plugin(r, "alpha", v)
+            _bump_plugin(r, "beta", "1.1.0")
+        return m
+    case("15 宿主版號變成非 semver 字串", _host_ver("banana"), "不是合法 semver")
+    case("16 宿主版號打錯字(1.1)", _host_ver("1.1"), "不是合法 semver")
+    case("17 宿主版號實質倒退但非 semver", _host_ver("0.0.1-rollback"), "不是合法 semver")
+
+    # 18 entry 與 plugin.json 單邊 bump——`_bump_plugin` 永遠兩處一起動,
+    #    這一案把它們拆開,釘住「只動一處不算」。
+    def m18(r):
+        _mk(r, "skills/shared/SKILL.md", _SKILL.format(n="shared", v="1.1.0", body="改了規則"))
+        _bump_plugin(r, "beta", "1.1.0")
+        p = r / ".claude-plugin/marketplace.json"      # 只動 entry,不動 plugin.json
+        mk = json.loads(p.read_text(encoding="utf-8"))
+        for e in mk["plugins"]:
+            if e["name"] == "alpha":
+                e["version"] = "1.1.0"
+        p.write_text(json.dumps(mk, ensure_ascii=False) + "\n", encoding="utf-8")
+    case("18 entry 與 plugin.json 單邊 bump", m18, "plugin「alpha」打包出貨")
+
+    # 19 **正文裡的 version: 行是內容,不是戳記。**
+    #    初版剝的是全檔任何符合的行,於是正文改一行 `version:` 會被判成
+    #    「一個 byte 都沒變」的戳記紅——而戳記紅無論怎麼 bump 都過不了,是死鎖。
+    def m19(r):
+        _mk(r, "skills/shared/SKILL.md",
+            _SKILL.format(n="shared", v="1.0.0", body="用法:\n  version: v2"))
+    case("19 正文的 version 行算內容不算戳記", m19, "metadata.version 沒有遞增")
+
+    fails += divergent_history_test()
+
     if fails:
         for f in fails:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:版號影響閘的紅綠端不可達。")
         return 1
-    print("✅ self-test:14 案全過——真洞五條(隨附內容變/只 bump 一個宿主/"
-          "assets 變/刪檔/新增檔)、綠端四條(無變動/全員 bump/"
-          "版號分岔但內容沒變刻意放行/非宿主不牽連)、"
-          "戳記凍結一條、skill 自身版號一條、空白不寬容一條、"
-          "版號倒退一條、EXCLUDE 交叉斷言一條。")
+    print("✅ self-test:20 案全過\n"
+          "   真洞五條:隨附內容變 / 只 bump 一個宿主 / assets 變 / 刪檔 / 新增檔\n"
+          "   綠端四條:無變動 / 全員 bump / 版號分岔但內容沒變(刻意放行) / 非宿主不牽連\n"
+          "   戳記凍結一條、skill 自身版號一條、空白不寬容一條、版號倒退一條\n"
+          "   EXCLUDE 交叉斷言一條\n"
+          "   宿主 semver 三條(非 semver 字串 / 打錯字 1.1 / 非 semver 的實質倒退)\n"
+          "   entry 與 plugin.json 單邊 bump 一條\n"
+          "   正文的 version 行算內容一條\n"
+          "   分岔歷史下無關分支不得被牽連一條")
     return 0
 
 
@@ -439,8 +572,9 @@ def main(argv: list[str]) -> int:
     repo = Path(".").resolve()
     if "--repo" in argv:
         repo = Path(argv[argv.index("--repo") + 1]).resolve()
-    ref = argv[argv.index("--since") + 1] if "--since" in argv else "origin/main"
-    if git(repo, "rev-parse", "--verify", ref).returncode != 0:
+    want = argv[argv.index("--since") + 1] if "--since" in argv else "origin/main"
+    ref = resolve_base(repo, want)
+    if ref is None:
         # **取不到基準預設是紅的,不是綠的。**
         #
         # `catalog_check.check_since` 在同樣情境下 `return []`(「略過此檢查,不誤殺」)。
@@ -451,10 +585,10 @@ def main(argv: list[str]) -> int:
         # 審議席(fable)的裁決:CI 裡必須硬紅,fetch 是 CI 自己的責任;
         # skip 只留給本地,而且要顯式要求。
         if "--allow-missing-ref" in argv:
-            print(f"⚠️  取不到 ref「{ref}」——本閘**未驗到**,不是通過"
+            print(f"⚠️  取不到「{want}」的分岔點——本閘**未驗到**,不是通過"
                   "(--allow-missing-ref 只該用在本地)")
             return 0
-        print(f"✗ 取不到 ref「{ref}」——版本紀律全押在本閘上,"
+        print(f"✗ 取不到「{want}」的分岔點(merge-base)——版本紀律全押在本閘上,"
               "取不到基準等於整套規則消失。\n"
               "  CI 請先 `git fetch origin main`;本地要略過請顯式加 --allow-missing-ref。")
         return 1

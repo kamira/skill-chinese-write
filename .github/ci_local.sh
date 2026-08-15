@@ -180,9 +180,12 @@ $PY scripts/genre_ratio_freeze.py --self-test > /dev/null
 $PY scripts/genre_ratio_freeze.py --repo . > /dev/null
 
 echo "[10f/13] 版號影響閘(skill 內容變 → 全部宿主必 bump;內容沒變 → 戳記凍結)"
-$PY scripts/version_impact_check.py --self-test > /dev/null
+# 輸出**不丟 /dev/null**:這道閘的訊息會具名說出是哪支 skill、哪個宿主、
+# 版號從哪到哪。丟掉之後只剩 exit code,人得自己再跑一次才知道紅在哪
+# ——ACC-20260813-01 第 (4) 條記過這個同型病。
+$PY scripts/version_impact_check.py --self-test
 if git fetch origin main --depth=50 -q 2>/dev/null; then
-  $PY scripts/version_impact_check.py --repo . --since origin/main > /dev/null
+  $PY scripts/version_impact_check.py --repo . --since origin/main
 else
   # **這裡不 fail-open。** 解耦之後版本紀律整套押在這個 diff 式的閘上,
   # 取不到基準等於規則消失,而輸出會長得和通過一樣。
