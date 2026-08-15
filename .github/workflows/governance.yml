@@ -154,6 +154,13 @@ jobs:
       # 注意 fetch **不加 `|| true`**:解耦之後版本紀律整套押在這道 diff 式的閘上,
       # 取不到基準等於規則消失,而輸出會長得跟通過一樣。上一行的 catalog step
       # 容許 fetch 失敗,是因為它只是版本紀律的其中一道;這一行不是。
+      # CHG-20260814-08:command 引用路徑的雙住址斷言。
+      # 這道閘不需要 git 基準,靜態即可判——沒有 fetch 依賴。
+      - name: command reference paths resolve at both addresses
+        run: |
+          python3 scripts/command_path_check.py --self-test
+          python3 scripts/command_path_check.py --repo .
+
       - name: version impact (skill content change → every host plugin must bump)
         run: |
           python3 scripts/version_impact_check.py --self-test
