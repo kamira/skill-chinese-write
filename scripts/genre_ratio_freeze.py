@@ -85,6 +85,27 @@ def live_docs(root: Path, genre: str) -> list[Path]:
 PCT = re.compile(r"(\d+)\s*%\s*[-–~]\s*(\d+)\s*%")
 IDIOM = re.compile(r"(\d+)\s*[-–~]\s*(\d+)\s*次\s*/\s*千字")
 
+# `--genre X` 的交叉錯置:`fiction-romance.md` 裡寫成 `--genre wuxia`,
+# 凍結閘驗數字、路徑閘驗路徑、sync 驗同步——**三道全綠**。
+# 數字整塊錯貼會被 [B] 抓(各流派配比互異),但 lint 呼叫行是獨立的一行,
+# **批量複製貼上最容易錯在這**。
+#
+# 這條斷言住在這裡而不是 command_path_check,判準不是「哪邊加最省」,
+# 是**誰擁有 genre 這個概念**:本檔有流派名冊、genre ↔ 檔名對應、三住址迴圈;
+# 而 command_path_check 是 genre 無知的,將來非 fiction 的 command 也走它,
+# 把流派知識塞進去是污染一道通用閘。
+#
+# 捕獲寫成 `[A-Za-z0-9_-]+` 而不是 `\S+`。`\S+` 在中文語境會吃過頭——
+# CJK 之間沒有空格,所以 ``lint 會數(`--genre flash`),但區間是本 skill``
+# 會被捕成 `` flash`),但區間是本 ``,**在一份完全正確的舊檔上假紅**。
+# 這是「規則對正確輸入恆假」的第三次,而且是真實 repo 跑出來才發現的,
+# 合成夾具全部用純 ASCII 的環境永遠照不到。
+#
+# **等號形也要收。** `fiction_check.py` 走 argparse,`--genre=wuxia` 是**合法呼叫**;
+# 初版只認 `\s+`,於是正確的空格形 token 在場、旁邊錯貼一個等號形錯 token,
+# `[E]` 綠——正是案 20 擋掉的形狀從另一個字元繞回來。複審 probe d3 打穿的。
+GENRE_TOKEN = re.compile(r"--genre(?:=|\s+)([A-Za-z0-9_-]+)")
+
 # 誠實欄:文案一旦報出成語區間,就必須同時說清楚下限沒有機器在管。
 # 措辭不寫死成單一句子(那會變成關鍵字遊戲),而是要求兩個語義成分同時在場——
 # **而且必須在同一個單元裡**,見 units()。
@@ -301,6 +322,24 @@ def check(root: Path, engine: bool = True) -> list[str]:
             if (lo_i, hi_i) not in idioms:
                 bad.append(f"[B] {rel}: 成語密度 {sorted(idioms) or '查無'} "
                            f"不含凍結值 {lo_i}-{hi_i} 次/千字")
+            # ---- [E] `--genre` token 與檔案身分必須相符。
+            #
+            # **正確性:全部出現皆須相等,不是「至少含一個正確的」。**
+            # 後者的漏洞是:正確 token 在場、旁邊多一個錯貼的 wuxia,照樣綠。
+            #
+            # **在場性:只綁 command 住址。** 舊 SKILL.md 缺 token 豁免
+            # (它們寫於本規則之前,而且注定要刪),但**錯置不豁免**
+            # ——缺席與寫錯是兩回事。
+            found = GENRE_TOKEN.findall(s["text"])
+            for got in sorted(set(found)):
+                if got != g:
+                    bad.append(f"[E] {rel}: 寫著 `--genre {got}`,而這份檔是「{g}」"
+                               "——lint 呼叫行是獨立的一行,批量複製貼上最容易錯在這,"
+                               "而配比數字對了不代表這一行也對")
+            if is_command(rel) and not found:
+                bad.append(f"[E] {rel}: 是 command 卻沒有任何 `--genre {g}`"
+                           "——使用者照著跑會落到「未指定 --genre 只報數不判定」")
+
             if is_command(rel) and idioms and not s["honest_floor"]:
                 bad.append(f"[C] {rel}: 報了成語區間卻沒說「下限沒有機器在管」"
                            "——讀者會以為 lint 會擋下限,它不會")
@@ -405,7 +444,12 @@ def self_test() -> int:
     full = {g: {"per_1000": [0, hi]} for g, (_, _, _, hi) in FROZEN.items()}
     fails: list[str] = []
 
+    ran: list[str] = []      # 案數用數的,不用寫死的——寫死的數字遲早與實際脫節,
+                             # 而 CHG-20260814-07 已經為那件事付過一次代價
+                             # (橫幅說 30、實際 31,然後被抄進 ACC 當引文)
+
     def run(rules, docs, want, label, forbid=None):
+        ran.append(label)
         # 合成樹裡沒有引擎,[D] 由 probe_self_test 另外驗——那條斷言的紅端
         # 必須打真引擎才有意義,拿假樹跑等於自己跟自己對答案。
         #
@@ -499,6 +543,56 @@ def self_test() -> int:
         "17 修辭列說謊(成語列誠實,不得替它擔保)",
         forbid="沒說「下限沒有機器在管」")                                     # 17
 
+    # ---- 16~19:[E] `--genre` 與檔案身分。審議席指定四案 + forbid。
+    _GOOD_LONG = (_GOOD_DOC + "\n```\npython3 skills/fiction/scripts/"
+                  "fiction_check.py 稿件.md --genre long\n```\n")
+
+    # 16 command 錯 genre → 紅,且**不得誤掛配比罪名**
+    g16 = dict(all_docs)
+    g16["commands/fiction-long.md"] = _GOOD_LONG.replace("--genre long", "--genre wuxia")
+    run(full, g16, "寫著 `--genre wuxia`", "16 [E] command 的 genre 錯置",
+        forbid="不含凍結值")
+
+    # 17 command 缺 token → 紅(在場性)
+    g17 = dict(all_docs)
+    g17["commands/fiction-long.md"] = _GOOD_DOC
+    run(full, g17, "沒有任何 `--genre long`", "17 [E] command 缺 genre token")
+
+    # 18 **舊 SKILL.md 錯置也要紅**——缺席豁免,寫錯不豁免
+    g18 = dict(all_docs)
+    g18["skills/fiction-long/SKILL.md"] = _GOOD_LONG.replace("--genre long", "--genre scifi")
+    run(full, g18, "寫著 `--genre scifi`", "18 [E] 舊 SKILL.md 的 genre 錯置也要紅")
+
+    # 19 綠端:舊 SKILL.md 沒有 token 是合法的(它們寫於本規則之前)
+    run(full, all_docs, None, "19 [E] 綠端:舊 SKILL.md 缺 token 豁免")
+
+    # 20 **同檔多處出現,只要有一處錯就紅**——「至少含一個正確的」是漏洞
+    g20 = dict(all_docs)
+    g20["commands/fiction-long.md"] = _GOOD_LONG + "\n```\n... --genre romance\n```\n"
+    run(full, g20, "寫著 `--genre romance`", "20 [E] 正確 token 在場也擋不住旁邊錯貼的")
+
+    # ---- 21~23:複審 probe 打出來的三處。**其中兩條是「我修好的 bug 沒有紅端」。**
+
+    # 21 d3:等號形繞過。argparse 吃 `--genre=wuxia`,所以它是合法呼叫,
+    #    而初版只認 `\s+`。正確 token 在場擋不住旁邊的等號形錯貼。
+    d3 = dict(all_docs)
+    d3["commands/fiction-long.md"] = _GOOD_LONG + "\n```\n... --genre=wuxia\n```\n"
+    run(full, d3, "寫著 `--genre wuxia`", "21 [E] 等號形 --genre=X 不得逃出捕獲")
+
+    # 22 d1:**CJK 緊鄰的正確 token 必須綠。** 這是我修掉的那個假紅的回歸案
+    #    ——沒有它,捕獲改回 `\S+` 照樣全綠,而那正是 KN-001 的原型:
+    #    修好的 bug 在夾具裡不可再現。
+    d1 = dict(all_docs)
+    d1["skills/fiction-long/SKILL.md"] = (
+        _GOOD_DOC + "\nlint 會數(`--genre long`),但區間是本 skill 自訂。\n")
+    run(full, d1, None, "22 [E] 綠端:CJK 緊鄰的正確 token(假紅回歸案)")
+
+    # 23 d2:CJK 緊鄰的**錯** token 仍要紅——收邊改對了不能順手放寬。
+    d2 = dict(all_docs)
+    d2["skills/fiction-long/SKILL.md"] = (
+        _GOOD_DOC + "\nlint 會數(`--genre scifi`),但區間是本 skill 自訂。\n")
+    run(full, d2, "寫著 `--genre scifi`", "23 [E] CJK 緊鄰的錯 token 仍要紅")
+
     fails += probe_self_test()
 
     if fails:
@@ -506,10 +600,17 @@ def self_test() -> int:
             print(f"  ❌ {f}")
         print("\n✗ self-test 未通過:配比凍結閘的紅綠端不可達。")
         return 1
-    print("✅ self-test:17 案全過——設定四條(上限漂移/下限復活/缺流派/多流派)、"
+    print(f"✅ self-test:{len(ran) + 3} 案全過"
+          f"({len(ran)} 個文案案 + [D] 執法探針 3 案)——"
+          "設定四條(上限漂移/下限復活/缺流派/多流派)、"
           "文案四條(整支不見/成語漂移/修辭漂移/並存住址其一漂移)、"
           "誠實欄五條(下限、修辭、豁免,加上**兩個方向的說謊**且不得誤掛罪名)、"
-          "綠端一條,以及 [D] 執法探針三條"
+          "綠端一條,"
+          "[E] genre token 八條(command 錯置 / command 缺 token / "
+          "舊 SKILL.md 錯置也紅 / 舊 SKILL.md 缺 token 豁免 / "
+          "正確 token 在場也擋不住旁邊錯貼的 / **等號形 --genre=X** / "
+          "**CJK 緊鄰的正確 token 必綠** / **CJK 緊鄰的錯 token 仍紅**),"
+          "以及 [D] 執法探針三條"
           "(原封綠端 / 上限被架空 / 下限被注回引擎)。")
     return 0
 
