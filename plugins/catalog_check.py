@@ -154,6 +154,24 @@ def check_since(repo: Path, ref: str) -> list[str]:
     if git(repo, "rev-parse", "--verify", "--quiet", ref).returncode != 0:
         print(f"(--since:無法解析 ref「{ref}」——未 fetch base?略過此檢查,不誤殺)")
         return []
+    # **基準即 HEAD → 本閘沒有判定力。**(CHG-20260816-01)
+    #
+    # `governance.yml` 的觸發含 `push: branches:[main]`,而那個情境下 `origin/main`
+    # 就是 HEAD 自己:`ref..HEAD` 恆空 → `content_changed` 為空 → 下面直接 `return []`。
+    # **而且是連一句話都不印的靜默綠**——比 `version_impact_check` 那半更糟,
+    # 它至少還印了一句(內容錯的)✅。
+    #
+    # 判定不出來不等於沒問題(KN-004)。這裡不硬紅:每次 merge 進 main 都紅
+    # 就是 KN-002 那種「紅得與程式碼無關」的閘。要的是誠實,不是攔阻。
+    head = git(repo, "rev-parse", "HEAD")
+    base = git(repo, "rev-parse", ref)
+    if (head.returncode == 0 and base.returncode == 0
+            and head.stdout.strip() == base.stdout.strip()):
+        print(f"(--since:基準即 HEAD({base.stdout.strip()[:7]})——"
+              "`ref..HEAD` 恆空,本閘在這個觸發上**未驗到**,不是通過。\n"
+              "    push 事件請傳 `--since <push 之前的 tip>`"
+              "(workflow 用 `github.event.before`,經 `CI_SINCE_REF` 轉入))")
+        return []
     diff = git(repo, "diff", "--name-only", f"{ref}..HEAD")
     if diff.returncode != 0:
         print(f"(--since:git diff 失敗,略過:{diff.stderr.strip()[:100]})")
@@ -290,7 +308,8 @@ def self_test() -> int:
           f"TOP_TOOL_FILES 與 skill_inventory_check 一致,"
           f"check_static 兩案(entry≠plugin.json 必紅、"
           f"SKILL.md 與 plugin.json 分岔必綠),"
-          f"且總版號遞增兩案(倒退必紅、正確遞增必綠)。")
+          f"總版號遞增兩案(倒退必紅、正確遞增必綠),"
+          f"且基準空轉兩案(基準即 HEAD 必說「未驗到」、真有分岔不得誤說)。")
     return 0
 
 
@@ -341,6 +360,31 @@ def since_version_self_test() -> list[str]:
         run(repo, "commit", "-q", "-m", "ok")
         if got := check_since(repo, base):
             out.append(f"總版號正確遞增卻被擋:{got}")
+
+        # **基準即 HEAD 不准靜默綠。**(CHG-20260816-01)
+        #
+        # 這一案打的不是「判錯」,是「無事可判時說了什麼」。
+        # 兩端都回 `[]`,所以**回傳值分不出來**——斷言只能打在輸出上,
+        # 而那正是病灶所在:原本這條路徑連一句話都不印。
+        import contextlib
+        import io
+        head = run(repo, "rev-parse", "HEAD").stdout.decode().strip()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            vac = check_since(repo, head)
+        said = buf.getvalue()
+        if vac:
+            out.append(f"基準即 HEAD 竟然回了問題:{vac}")
+        if "未驗到" not in said:
+            out.append("基準即 HEAD 時沒說「未驗到」——靜默綠與真通過分不出來,"
+                       "而 `ref..HEAD` 恆空代表本閘在那個觸發上根本沒判定力")
+
+        # **判別端**:真有分岔時不得也印「未驗到」,否則規則對正確輸入恆假。
+        buf2 = io.StringIO()
+        with contextlib.redirect_stdout(buf2):
+            check_since(repo, base)
+        if "未驗到" in buf2.getvalue():
+            out.append("真有分岔卻也印「未驗到」——那會讓每次正常執行都不再判定")
     return out
 
 

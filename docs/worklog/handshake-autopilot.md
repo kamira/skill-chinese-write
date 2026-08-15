@@ -26,6 +26,8 @@
 已解除(使用者授權):在真目錄建 `python3.exe` 複本。PATH 順序上 `Python311` 排在
 `WindowsApps` **前面**,所以真檔一存在就會贏。驗證:`bash .github/ci_local.sh`
 **13 步全綠、exit 0,不掛任何 shim**。
+(那是當時的步數。`CHG-20260816-01` 把兩個 CI 載體合一之後是 18 步——
+上面兩個數字是**事故當時的紀錄**,不是現況;確切步數以實跑輸出為準。)
 
 **(2) `core.hooksPath` 哪一層都沒設。** local / global / 主 repo 查下來全空——本檔先前寫
 「已指向 `.githooks/`」是**錯的**。`scripts/install-hooks.sh` 自己的註解就講明原因:
