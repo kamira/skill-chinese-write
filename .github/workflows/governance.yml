@@ -144,3 +144,18 @@ jobs:
           python3 plugins/catalog_check.py --repo . --check
           git fetch origin main --depth=50 || true
           python3 plugins/catalog_check.py --repo . --since origin/main
+
+      # CHG-20260814-06:版號影響閘的**實跑**必須在這個載體上。
+      #
+      # 複審(fable)指出:修完之後這道閘只活在 ci_local.sh 的 [10f] 裡,
+      # verify.sh 只跑 self-test,而 governance.yml 完全不跑 `--repo --since`
+      # ——「CI 必須硬紅」的裁決在 GitHub 這個載體上是空話。
+      #
+      # 注意 fetch **不加 `|| true`**:解耦之後版本紀律整套押在這道 diff 式的閘上,
+      # 取不到基準等於規則消失,而輸出會長得跟通過一樣。上一行的 catalog step
+      # 容許 fetch 失敗,是因為它只是版本紀律的其中一道;這一行不是。
+      - name: version impact (skill content change → every host plugin must bump)
+        run: |
+          python3 scripts/version_impact_check.py --self-test
+          git fetch origin main --depth=50
+          python3 scripts/version_impact_check.py --repo . --since origin/main
