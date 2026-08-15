@@ -50,5 +50,9 @@ quiet python3 plugins/build_suite.py --self-test
 quiet python3 plugins/build_suite.py --check
 quiet python3 plugins/catalog_check.py --self-test
 quiet python3 plugins/catalog_check.py --repo . --check
+quiet python3 scripts/skill_inventory_check.py --self-test
+quiet python3 scripts/skill_inventory_check.py --repo .
+quiet python3 scripts/genre_ratio_freeze.py --self-test
+quiet python3 scripts/genre_ratio_freeze.py --repo .
 
 echo "✅ 實際操作驗收通過"

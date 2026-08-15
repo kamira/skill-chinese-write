@@ -10,7 +10,7 @@ description: >
   **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句,
   三條對小說都是反的。六個流派各有獨立子層 skill(`fiction-wuxia` / `-scifi` / `-mystery` / `-romance` / `-flash` / `-long`),要寫特定流派請用那些。
 metadata:
-  version: 1.0.0
+  version: 1.1.0
 ---
 
 # fiction — 中文小說
