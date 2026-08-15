@@ -100,7 +100,11 @@ IDIOM = re.compile(r"(\d+)\s*[-–~]\s*(\d+)\s*次\s*/\s*千字")
 # 會被捕成 `` flash`),但區間是本 ``,**在一份完全正確的舊檔上假紅**。
 # 這是「規則對正確輸入恆假」的第三次,而且是真實 repo 跑出來才發現的,
 # 合成夾具全部用純 ASCII 的環境永遠照不到。
-GENRE_TOKEN = re.compile(r"--genre\s+([A-Za-z0-9_-]+)")
+#
+# **等號形也要收。** `fiction_check.py` 走 argparse,`--genre=wuxia` 是**合法呼叫**;
+# 初版只認 `\s+`,於是正確的空格形 token 在場、旁邊錯貼一個等號形錯 token,
+# `[E]` 綠——正是案 20 擋掉的形狀從另一個字元繞回來。複審 probe d3 打穿的。
+GENRE_TOKEN = re.compile(r"--genre(?:=|\s+)([A-Za-z0-9_-]+)")
 
 # 誠實欄:文案一旦報出成語區間,就必須同時說清楚下限沒有機器在管。
 # 措辭不寫死成單一句子(那會變成關鍵字遊戲),而是要求兩個語義成分同時在場——
@@ -567,6 +571,28 @@ def self_test() -> int:
     g20["commands/fiction-long.md"] = _GOOD_LONG + "\n```\n... --genre romance\n```\n"
     run(full, g20, "寫著 `--genre romance`", "20 [E] 正確 token 在場也擋不住旁邊錯貼的")
 
+    # ---- 21~23:複審 probe 打出來的三處。**其中兩條是「我修好的 bug 沒有紅端」。**
+
+    # 21 d3:等號形繞過。argparse 吃 `--genre=wuxia`,所以它是合法呼叫,
+    #    而初版只認 `\s+`。正確 token 在場擋不住旁邊的等號形錯貼。
+    d3 = dict(all_docs)
+    d3["commands/fiction-long.md"] = _GOOD_LONG + "\n```\n... --genre=wuxia\n```\n"
+    run(full, d3, "寫著 `--genre wuxia`", "21 [E] 等號形 --genre=X 不得逃出捕獲")
+
+    # 22 d1:**CJK 緊鄰的正確 token 必須綠。** 這是我修掉的那個假紅的回歸案
+    #    ——沒有它,捕獲改回 `\S+` 照樣全綠,而那正是 KN-001 的原型:
+    #    修好的 bug 在夾具裡不可再現。
+    d1 = dict(all_docs)
+    d1["skills/fiction-long/SKILL.md"] = (
+        _GOOD_DOC + "\nlint 會數(`--genre long`),但區間是本 skill 自訂。\n")
+    run(full, d1, None, "22 [E] 綠端:CJK 緊鄰的正確 token(假紅回歸案)")
+
+    # 23 d2:CJK 緊鄰的**錯** token 仍要紅——收邊改對了不能順手放寬。
+    d2 = dict(all_docs)
+    d2["skills/fiction-long/SKILL.md"] = (
+        _GOOD_DOC + "\nlint 會數(`--genre scifi`),但區間是本 skill 自訂。\n")
+    run(full, d2, "寫著 `--genre scifi`", "23 [E] CJK 緊鄰的錯 token 仍要紅")
+
     fails += probe_self_test()
 
     if fails:
@@ -580,9 +606,10 @@ def self_test() -> int:
           "文案四條(整支不見/成語漂移/修辭漂移/並存住址其一漂移)、"
           "誠實欄五條(下限、修辭、豁免,加上**兩個方向的說謊**且不得誤掛罪名)、"
           "綠端一條,"
-          "[E] genre token 五條(command 錯置 / command 缺 token / "
+          "[E] genre token 八條(command 錯置 / command 缺 token / "
           "舊 SKILL.md 錯置也紅 / 舊 SKILL.md 缺 token 豁免 / "
-          "正確 token 在場也擋不住旁邊錯貼的),"
+          "正確 token 在場也擋不住旁邊錯貼的 / **等號形 --genre=X** / "
+          "**CJK 緊鄰的正確 token 必綠** / **CJK 緊鄰的錯 token 仍紅**),"
           "以及 [D] 執法探針三條"
           "(原封綠端 / 上限被架空 / 下限被注回引擎)。")
     return 0
