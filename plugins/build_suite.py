@@ -60,7 +60,7 @@ COMMANDS: dict[str, tuple[str, ...]] = {
     # CHG-20260814-05:第一批真實搬遷。審議席裁定先做**單支 pilot**,全綠再批量。
     # 理由是搬遷的失敗模式——數值漂移、相對路徑在兩個住址不等價、誠實欄漏寫——
     # 一次只搬一支時看得見,六支一起搬時會互相蓋掉。
-    "fiction": ("fiction-long.md", "fiction-flash.md"),
+    "fiction": ("fiction-long.md", "fiction-flash.md", "fiction-mystery.md"),
 }
 COMMANDS_SRC = "commands"
 # 佔位字串:與 chg_field_check 同一套判準(角括號包住,或明顯的待填字樣)。
