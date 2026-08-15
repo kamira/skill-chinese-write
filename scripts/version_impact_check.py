@@ -467,10 +467,52 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
         if p in new_e:
             bad.append(f"plugin「{p}」列在 RETIRED,但 marketplace 還有它的 entry")
 
-    # R7 復活必須先從名冊移除,而那個移除在 diff 裡看得見
-    for p in sorted(set(R_old) & live_new):
-        bad.append(f"plugin「{p}」在 {ref} 是退役狀態,現在又出現在名冊裡"
-                   "——要復活得先把它從 RETIRED 拿掉,那一步才看得見")
+    # R7 墓碑不可靜默消失,也不可被改寫(CHG-20260816-02,取代舊 R7)
+    #
+    # ## 舊 R7 為什麼整條換掉,而不是加一條
+    #
+    # 舊 R7 寫的是 `for p in set(R_old) & live_new` → 紅,意思是「RETIRED 裡的名字
+    # 回到名冊就紅,要復活得先除名」。但它讀的是 **R_old**,所以**同一個 diff 裡的
+    # 除名它根本看不見**——訊息說「那一步才看得見」是言過其實。
+    #
+    # 審議席(fable)把它的紅集二分,結論是它的獨有貢獻為零:
+    #   p 仍在 R_new(復活了卻沒除名)→ **R6 第一款本來就會紅**,R7 在這半是重複
+    #   p 不在 R_new(同 diff 除名)  → 這正是被誤殺的**合法復活**
+    # 也就是說,舊 R7 唯一獨有的效果是誤報。並存還會讓新規則的綠端再度不可達,
+    # 兩條規則互相咬——這個 repo 有過「規則在自己的定義裡取消自己」的前例。
+    #
+    # ## 它沒守住的洞:兩 PR 洗白
+    #
+    #   PR1 只刪一條 tombstone          → 全綠(該 id 本來就不在 PLUGINS 裡)
+    #   PR2 把該 id 復活回 PLUGINS      → R7 不火(tombstone 已經不在 R_old 裡了)
+    #
+    # 「只刪 tombstone」這個 diff 對**每一條**既有規則都靜默:RETIRED 住在
+    # build_suite.py 裡但不影響 PLUGINS/COMMANDS 的 parse(R2 靜默),不在任何
+    # plugin 的 own-files 範圍(R3 靜默),`live_old - live_new` 為空(R5 靜默),
+    # R6 只迭代 R_new,R7 要求 live_new 有它。**R7 的保證是 per-diff 的,而歷史是跨 diff 的。**
+    #
+    # ## 不變量(兩個析取支,概念上一條規則)
+    #
+    #   對每個 p ∈ R_old:
+    #     要嘛 R_new.get(p) == R_old[p]        原封不動
+    #     要嘛 p ∉ R_new 且 p ∈ live_new       整條移除,且**同一個 diff 裡真的復活**
+    #
+    # 第二半(值不可改寫)不是附贈的另一條規則:集合式的 `R_old - R_new ⊆ live_new`
+    # 是**對 key 的**斷言,改寫既有 id 的 CHG 值時 key 沒動、集合差為空,照樣通過。
+    # **少了它,集合式那半守不住帳本語意。**
+    #
+    # 代價寫明:**CHG id 打錯字一旦合入就永久不可改**。per-diff 的閘沒有逃生口,
+    # 這與「歷史帳本不改寫」一致,但那是決定,不是疏忽。
+    for p in sorted(R_old):
+        if R_new.get(p) == R_old[p]:
+            continue
+        if p in R_new:
+            bad.append(f"plugin「{p}」的 RETIRED 值被改寫({R_old[p]} → {R_new[p]})"
+                       "——墓碑記的是哪一張 CHG 退役了它,那是歷史,不改寫")
+        elif p not in live_new:
+            bad.append(f"plugin「{p}」的 RETIRED 墓碑被移除,卻沒有在同一個 diff 裡復活"
+                       "——除名而不復活,下一個 PR 就能把它放回名冊而不觸發任何規則"
+                       "(兩 PR 洗白)。要復活就在這一個 diff 裡復活")
 
     # ---- R1:頂層 command 的內容變 → 宣告它的每個 plugin
     for c in sorted({c for cs in C_new.values() for c in cs}):
@@ -675,8 +717,130 @@ def revival_test() -> list[str]:
         _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "復活 beta")
 
         got = check(repo, mid, "HEAD")
-        if not any("又出現在名冊裡" in g for g in got):
-            out.append(f"37 復活未被偵測——RETIRED 裡的名字回到名冊應該紅:{got}")
+        # CHG-20260816-02:舊 R7 被取代,**這一案不刪,改指 R6 的訊息**。
+        # 審議席的原話:這正是「互相遮蔽」的具體防線——換規則時最容易發生的事,
+        # 是把舊規則的案子連同舊規則一起刪掉,於是那個形狀從此無人看守。
+        # 這個形狀(復活了而墓碑還在)本來就該紅,只是接手的規則從 R7 變成 R6。
+        if not any("具名了卻沒真的退役" in g for g in got):
+            out.append(f"37 復活而墓碑未除,應由 R6 接手擋下:{got}")
+    return out
+
+
+def tombstone_invariant_test() -> list[str]:
+    """41–46:**墓碑不可靜默消失,也不可被改寫**(CHG-20260816-02)。
+
+    這一組要三個時點(退役前 → 退役 → 動墓碑),`case()` 的兩點模型做不到。
+
+    六端,其中兩端是審議席點名「沒有它整組就對最常見的 bug 形狀全盲」的:
+
+      41 紅  刪墓碑而不復活(兩 PR 洗白的第一步)
+      42 紅  改寫既有 id 的墓碑值(集合式斷言看不見的那半)
+      43 綠  刪墓碑**且同 diff 完整復活**——這是舊 R7 下**不可達**的綠端
+      44 綠  **base 帶非空 RETIRED 的無關變更**
+      45 判別 兩個紅端的訊息不得互相匹配
+      46 基準 43 的夾具在**舊 R7 的規則**下必須紅
+
+    第 44 端的理由(fable):現有全部綠端案的合成樹 base 都**沒有** RETIRED。
+    新規則是對 `R_old` 每一條迭代的迴圈,若寫錯成「R_old 有條目就紅」,
+    在現有夾具下**完全隱形**。
+
+    第 46 端的做法比「人造一份反寫的基準」更有力:直接用舊 R7 的判準跑同一份夾具,
+    紅了就證明「不可達的綠端變可達」——而且不必維護一份假基準。
+    """
+    import shutil
+    import tempfile
+
+    def retire_beta(repo: Path, cmds: dict) -> None:
+        """把 beta 退役到底:名冊、磁碟目錄、marketplace entry 三處都拿掉。"""
+        _mk(repo, "plugins/build_suite.py",
+            _registry({"alpha": ("alpha", "shared")}, cmds)
+            + 'RETIRED = {\n    "beta": "CHG-TEST",\n}\n')
+        shutil.rmtree(repo / "plugins" / "beta", ignore_errors=True)
+        mk = repo / ".claude-plugin/marketplace.json"
+        d = json.loads(mk.read_text(encoding="utf-8"))
+        d["plugins"] = [e for e in d["plugins"] if e["name"] != "beta"]
+        mk.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+
+    out: list[str] = []
+    cmds = {"alpha": ("hello.md",), "solo": ("hello.md",)}
+
+    def staged():
+        """回傳一個已經走到「beta 已退役」那個時點的 repo 與該時點的 SHA。"""
+        td = tempfile.mkdtemp()
+        repo = Path(td)
+        _seed(repo)
+        _run(repo, "add", "-A"); _run(repo, "commit", "-q", "--allow-empty", "-m", "base")
+        retire_beta(repo, cmds)
+        _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "退役 beta")
+        return repo, git(repo, "rev-parse", "HEAD").stdout.decode().strip()
+
+    # 41 紅:刪墓碑而不復活
+    repo, mid = staged()
+    _mk(repo, "plugins/build_suite.py",
+        _registry({"alpha": ("alpha", "shared")}, cmds) + "RETIRED = {\n}\n")
+    _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "偷刪墓碑")
+    got41 = check(repo, mid, "HEAD")
+    if not any("沒有在同一個 diff 裡復活" in g for g in got41):
+        out.append(f"41 刪墓碑而不復活竟然沒紅——兩 PR 洗白路徑仍在:{got41 or '全綠'}")
+
+    # 42 紅:改寫既有 id 的墓碑值
+    repo, mid = staged()
+    _mk(repo, "plugins/build_suite.py",
+        _registry({"alpha": ("alpha", "shared")}, cmds)
+        + 'RETIRED = {\n    "beta": "CHG-別張",\n}\n')
+    _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "改寫墓碑值")
+    got42 = check(repo, mid, "HEAD")
+    if not any("值被改寫" in g for g in got42):
+        out.append(f"42 改寫墓碑值竟然沒紅——集合式斷言對 key 沒動的改寫全盲:{got42 or '全綠'}")
+
+    # 45 判別:兩個紅端的訊息不得互相匹配
+    if any("值被改寫" in g for g in got41):
+        out.append("45 「刪而不復活」的案匹配到了「值被改寫」的訊息——一則訊息餵綠兩案")
+    if any("沒有在同一個 diff 裡復活" in g for g in got42):
+        out.append("45 「值被改寫」的案匹配到了「刪而不復活」的訊息")
+
+    # 43 綠:刪墓碑 **且** 同 diff 完整復活(名冊 + 目錄 + entry + bump 全付清)
+    repo, mid = staged()
+    _mk(repo, "plugins/build_suite.py",
+        _registry({"alpha": ("alpha", "shared"), "beta": ("beta", "shared")}, cmds)
+        + "RETIRED = {\n}\n")
+    # **路徑要跟真檔一樣。** 初版寫成 `plugins/beta/plugin.json`,而真實位置是
+    # `plugins/<p>/.claude-plugin/plugin.json`——夾具不像真的東西,綠端就是假的,
+    # 而它紅的時候看起來像規則有問題。同型的前例:名冊夾具用 `repr()` 產生單引號,
+    # 而真檔是雙引號,於是 parser 對「真實輸入」從來沒被測過。
+    _mk(repo, "plugins/beta/.claude-plugin/plugin.json",
+        json.dumps({"name": "beta", "version": "1.1.0"}, ensure_ascii=False) + "\n")
+    for s in ("beta", "shared"):
+        _mk(repo, f"plugins/beta/skills/{s}/SKILL.md",
+            (repo / "skills" / s / "SKILL.md").read_text(encoding="utf-8"))
+    mk = repo / ".claude-plugin/marketplace.json"
+    d = json.loads(mk.read_text(encoding="utf-8"))
+    d["plugins"] = d["plugins"] + [{"name": "beta", "source": "./plugins/beta",
+                                    "version": "1.1.0"}]
+    mk.write_text(json.dumps(d, ensure_ascii=False) + "\n", encoding="utf-8")
+    _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "同 diff 完整復活 beta")
+    got43 = check(repo, mid, "HEAD")
+    if got43:
+        out.append(f"43 同 diff 完整復活應綠卻紅:{got43}")
+
+    # 46 基準:同一份夾具在**舊 R7** 的判準下必須紅。
+    #    舊 R7 = `for p in set(R_old) & live_new: 紅`。這裡就地重算那個判準,
+    #    紅了才證明本張真的讓一個不可達的綠端變成可達的。
+    R_old_46 = load_retired(repo, mid)
+    P46, C46 = load_registries(repo, "HEAD")
+    if not (set(R_old_46) & (set(P46) | set(C46))):
+        out.append("46 基準判別性不成立:這份夾具在舊 R7 下本來就不會紅,"
+                   "那 43 的綠證明不了「不可達的綠端變可達」")
+
+    # 44 綠:base 帶非空 RETIRED 的無關變更。
+    #    **現有全部綠端案的 base 都沒有 RETIRED**,所以「R_old 有條目就紅」這種寫錯
+    #    在現有夾具下完全隱形。這一端專打那個形狀。
+    repo, mid = staged()
+    _mk(repo, "docs/note.md", "與名冊無關的一段字\n")
+    _run(repo, "add", "-A"); _run(repo, "commit", "-q", "-m", "無關變更")
+    if got44 := check(repo, mid, "HEAD"):
+        out.append(f"44 base 帶非空 RETIRED 的無關變更應綠卻紅:{got44}"
+                   "——這條迴圈把「R_old 有條目」本身當成了問題")
     return out
 
 
@@ -1099,7 +1263,8 @@ def self_test() -> int:
     EXTRA_TESTS = (("理由聚合", aggregation_test),
                    ("分岔歷史", divergent_history_test),
                    ("退役復活", revival_test),
-                   ("基準空轉", vacuous_base_test))
+                   ("基準空轉", vacuous_base_test),
+                   ("墓碑不變量", tombstone_invariant_test))
     for _label, _fn in EXTRA_TESTS:
         fails += _fn()
     EXTRA = tuple(label for label, _ in EXTRA_TESTS)
