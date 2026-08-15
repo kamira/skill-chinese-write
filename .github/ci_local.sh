@@ -193,6 +193,10 @@ else
   exit 1
 fi
 
+echo "[10g/13] command 引用路徑閘(連結以檔案目錄為基準、程式碼路徑以兩個根為基準)"
+$PY scripts/command_path_check.py --self-test
+$PY scripts/command_path_check.py --repo .
+
 echo "[11/13] py_compile"
 # scripts/ 原本不在這行的搜尋範圍裡——治理閘自己反而沒被 py_compile 過。
 $PY -m py_compile $(find skills plugins tools scripts -name '*.py' -not -path '*/plugins/*/skills/*')

@@ -55,5 +55,7 @@ quiet python3 scripts/skill_inventory_check.py --repo .
 quiet python3 scripts/genre_ratio_freeze.py --self-test
 quiet python3 scripts/genre_ratio_freeze.py --repo .
 quiet python3 scripts/version_impact_check.py --self-test
+quiet python3 scripts/command_path_check.py --self-test
+quiet python3 scripts/command_path_check.py --repo .
 
 echo "✅ 實際操作驗收通過"
