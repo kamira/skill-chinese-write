@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "繁體中文寫作技能集:**每個文體一支 skill**,因為它們的硬規則會互相誤殺——同一個詞(如「予以」)在評論裡要改掉、在公文裡是精準用語。涵蓋評論、小說(主層,流派以命令提供)、規格書、架構說明、公文、新聞稿、企劃、散文、詩歌、戲劇、記敘、抒情、說明文、賦駢文、史傳奏啟。有可判定規則的配可跑的 lint(硬性違規 exit 1);判不了的**明標「本支沒有 lint」**,不假裝有把關。Traditional-Chinese writing skills, one per genre.",
-    "version": "3.0.0"
+    "version": "4.0.0"
   },
   "plugins": [
     {
@@ -119,36 +119,6 @@
       ]
     },
     {
-      "name": "prose",
-      "source": "./plugins/prose",
-      "description": "中文散文寫作技能(繁中)。當使用者要寫散文、抒情散文、生活隨筆、遊記式的美文時使用。 形散神聚,藉由人事物抒發真實情感、美感或哲理。修辭比例極高(40%-50%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
-      "author": {
-        "name": "kamira"
-      },
-      "keywords": [
-        "prose",
-        "essay",
-        "chinese",
-        "literary"
-      ]
-    },
-    {
-      "name": "poetry",
-      "source": "./plugins/poetry",
-      "description": "中文詩歌寫作技能(繁中)。當使用者要寫詩、現代詩、新詩、分行的作品時使用。 分行跳躍,用凝練、具音樂性的語言表達強烈情感。修辭比例最高(70%-90%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
-      "author": {
-        "name": "kamira"
-      },
-      "keywords": [
-        "poetry",
-        "poem",
-        "chinese",
-        "literary"
-      ]
-    },
-    {
       "name": "drama",
       "source": "./plugins/drama",
       "description": "中文戲劇 / 劇本寫作技能(繁中)。當使用者要寫劇本、舞台劇、對白為主的作品、獨白時使用。 純對話驅動,僅靠台詞與舞台說明推動劇情、展現衝突。修辭比例低至中(15%-25%),必須符合角色說話的口語習慣。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
@@ -164,75 +134,16 @@
       ]
     },
     {
-      "name": "narrative",
-      "source": "./plugins/narrative",
-      "description": "中文記敘文寫作技能(繁中)。當使用者要寫記敘文、事件記述、遊記、人物側寫時使用。 圍繞六要素(時、地、人、事、因、果)展開事件或景物描寫。修辭比例中高(30%-40%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
-      "author": {
-        "name": "kamira"
-      },
-      "keywords": [
-        "narrative",
-        "chinese",
-        "storytelling"
-      ]
+      "name": "composition",
+      "source": "./plugins/composition",
+      "version": "1.0.0",
+      "description": "中文作文五文體(散文 / 記敘文 / 抒情文 / 說明文 / 詩歌)。每支保留自己的觸發面,本 plugin 只做打包。"
     },
     {
-      "name": "lyric",
-      "source": "./plugins/lyric",
-      "description": "中文抒情文 / 心得文寫作技能(繁中)。當使用者要寫心得、讀後感、觀後感、抒情文、感想時使用。 以主觀情感為核心,或由外在媒介(書、影、事)引發個人反省、體悟與收穫。修辭比例中至高(20%-60%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
-      "author": {
-        "name": "kamira"
-      },
-      "keywords": [
-        "reflection",
-        "review",
-        "chinese",
-        "essay"
-      ]
-    },
-    {
-      "name": "exposition",
-      "source": "./plugins/exposition",
-      "description": "中文說明文寫作技能(繁中)。當使用者要寫說明文、原理解說、科普說明、操作說明時使用。 依照時空或邏輯順序,客觀、平實地解說事物的特徵、構造、功能與原理。修辭比例極低(5%-10%),追求準確,禁用誇張。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
-      "author": {
-        "name": "kamira"
-      },
-      "keywords": [
-        "exposition",
-        "explainer",
-        "chinese"
-      ]
-    },
-    {
-      "name": "fu",
-      "source": "./plugins/fu",
-      "description": "中文賦 / 駢文寫作技能(繁中)。當使用者要寫賦、駢文、四六文、對仗鋪陳的古典文體時使用。 句式排比對仗(四六句為主),講究平仄聲律與辭藻華麗。修辭比例極高(60%-80%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
-      "author": {
-        "name": "kamira"
-      },
-      "keywords": [
-        "fu",
-        "parallel-prose",
-        "classical-chinese"
-      ]
-    },
-    {
-      "name": "historiography",
-      "source": "./plugins/historiography",
-      "description": "中文史傳文 / 奏啟文寫作技能(繁中)。當使用者要寫史傳、人物傳記、奏章、表、疏、陳情文時使用。 紀實或陳情。史傳追求文學性紀實,奏啟(表、疏)講求委婉進諫或陳情。修辭比例中(20%-30%)。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
-      "author": {
-        "name": "kamira"
-      },
-      "keywords": [
-        "historiography",
-        "memorial",
-        "classical-chinese"
-      ]
+      "name": "classical",
+      "source": "./plugins/classical",
+      "version": "1.0.0",
+      "description": "中文文言文體(賦・駢文 / 史傳・奏啟)。每支保留自己的觸發面,本 plugin 只做打包。"
     }
   ]
 }

@@ -48,6 +48,9 @@
 | BL-015 | 風險 | `RETIRED` 可登記從未存在的 id 而全綠(化妝品級) | plugins/build_suite.py `RETIRED` | 2026-08-14 CHG-20260814-10 |
 | BL-016 | 風險 | `carrier_manifest_check` 是文字層斷言,刻意的間接引用繞得過 | scripts/carrier_manifest_check.py `MANIFEST` | 2026-08-16 CHG-20260816-01 |
 | BL-017 | 風險 | 裸變數 `CI` 不在載體變數偵測範圍(列入會誤紅) | scripts/carrier_manifest_check.py `ENV_TOKEN` | 2026-08-16 CHG-20260816-01 |
+| BL-018 | 待辦 | 唐詩 / 宋詞 skill 尚未存在,需**對仗、平仄、韻腳**三條規則;歸 `classical`,不擴充 `fu`(賦不限韻) | `skills/` 下新支,平仄字表可作共用資產 | 2026-08-16 CHG-20260816-03 |
+| BL-019 | 風險 | `docs/genres.md` 的分組敘述沒有機器覆蓋——審議席實測:一字未改也全綠 | docs/genres.md | 2026-08-16 CHG-20260816-03 |
+| BL-020 | 待辦 | `proposal` 的歸屬(bizdoc 家族)未定 | plugins/proposal | 2026-08-16 CHG-20260816-03 |
 
 ## 已解除
 
