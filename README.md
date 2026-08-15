@@ -31,8 +31,8 @@ python3 skills/writing/scripts/style_check.py <你的稿子.md>
 
 | 路徑 | 內容 |
 |------|------|
-| `skills/` | **24 支 skill**:5 支引擎(writing / fiction / techdoc / bizdoc + 跨文體的 zh-style)+ 19 支前門。分組見 [`docs/genres.md`](docs/genres.md) |
-| `plugins/*/` | 21 個可安裝的 plugin(skill 副本為生成物;前門會把引擎一起打包) |
+| `skills/` | 5 支引擎(writing / fiction / techdoc / bizdoc + 跨文體的 zh-style)+ 各文體前門。分組見 [`docs/genres.md`](docs/genres.md) |
+| `plugins/*/` | 可安裝的 plugin(skill 副本為生成物;前門會把引擎一起打包) |
 | `scripts/` | 治理腳本:install-hooks、chg_diagram_gate、skill_inventory_check |
 | `docs/genres.md` | 文體對照表:誰有 lint、誰明標沒有 lint、為什麼 |
 | `docs/writing/` | 帳本(CHG / ACC)+ 知識庫 |
@@ -45,7 +45,7 @@ python3 skills/writing/scripts/style_check.py <你的稿子.md>
 1. **拆不拆看觸發面。** 使用者會說「幫我寫一篇武俠」,所以武俠要有自己的 skill——skill 的第一個功能是**被找到**。
 2. **規則檔共不共用看硬規則。** 武俠與科幻的硬規則相同(只差配比),共用 `fiction` 引擎;`writing` 與 `fiction` 的硬規則相反(第一人稱、結尾、刻意句三條全反),各自一份。
 
-所以是 **24 支 skill、5 份規則檔**。其中 `zh-style` 是第三種情況:**規則不隨文體改變**(半形標點在散文與公文裡一樣是錯),所以它是共用引擎,由 21 個 plugin 全部打包。前門的 plugin 會把引擎一起打包,裝了就跑得動。
+所以是**引擎 + 前門兩層,5 份規則檔**。其中 `zh-style` 是第三種情況:**規則不隨文體改變**(半形標點在散文與公文裡一樣是錯),所以它是共用引擎,由所有 plugin 全部打包。前門的 plugin 會把引擎一起打包,裝了就跑得動。
 
 沒有任何可判定規則的文體(散文、詩歌、戲劇⋯)一樣有 skill,但 SKILL.md **明標「本支沒有 lint,規則靠人判斷」**——假裝有斷言比沒有更糟。
 

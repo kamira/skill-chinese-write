@@ -79,7 +79,7 @@ Actions 權限正常、repo 是 public,但**完全沒有為 `claude/version-sync
 
 - repo 已 public,舊名 `kamira/skill-write` 由 GitHub 轉址;marketplace id 也一併改名
 - `core.hooksPath` → `.githooks/`,push 前會自動跑 `.github/ci_local.sh`。**2026-08-13 實測本機根本沒設過**——新機器一定要跑 `scripts/install-hooks.sh`,而且要**實際 `git config core.hooksPath` 查一次**,不要相信這份 worklog 說已經設好了
-- **本 repo 現在有 24 支 skill / 21 個 plugin / 5 份規則檔**(第五支 `zh-style` 是跨文體引擎,所有 plugin 打包)。前門 + 引擎分層:
+- **本 repo 的結構是引擎 + 前門兩層 / 5 份規則檔**(確切數目以 `scripts/skill_inventory_check.py --repo .` 為準,寫死的計數會隨每次退役腐爛)(第五支 `zh-style` 是跨文體引擎,所有 plugin 打包)。前門 + 引擎分層:
   前門管觸發與寫作指引,引擎管判定;前門的 plugin 會把引擎一起打包。舊說明(四支):`writing`(評論)、`fiction`(小說)、`techdoc`(規格書+架構說明)、`bizdoc`(公文+新聞稿)。
   拆分判準見 knowledge 的 **KN-003**:硬規則相反才拆,只差結構的用旗標,規格薄的先不拆
 - 使用者定調:**different write should be different skill**,收斂為 KN-003
