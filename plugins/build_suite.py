@@ -37,7 +37,7 @@ PLUGINS = {
     # git 的 core.quotepath 印成八進位跳脫,版號閘與 catalog 閘兩端都取不到 blob,
     # 於是判成「沒變」(實測 fail-open)。中文名在 marketplace 的 description 裡。
     "composition": ('prose', 'narrative', 'lyric', 'exposition', 'poetry', 'zh-style'),
-    "classical": ('fu', 'historiography', 'zh-style'),
+    "classical": ('fu', 'historiography', 'regulated-verse', 'zh-style'),
 }
 EXCLUDE = ("__pycache__", ".DS_Store")
 

@@ -23,6 +23,7 @@
 | 評論、議論文、專欄、影評書評 | `writing` | `style_check.py` |
 | 小說主層(對話、分段、分章) | `fiction` | `fiction_check.py` |
 | 技術文件(引擎,不單獨安裝) | `techdoc` | `techdoc_check.py` |
+| 近體詩(絕句・律詩) | `regulated-verse` | `verse_check.py` |
 | 商務公務文(引擎,不單獨安裝) | `bizdoc` | `bizdoc_check.py` |
 
 ### 指回引擎的前門(硬規則與引擎相同,只差配比或結構)
@@ -66,7 +67,7 @@
 | plugin id | 中文名 | 打包的 skill |
 |---|---|---|
 | `composition` | 作文 | `prose`、`narrative`、`lyric`、`exposition`、`poetry` |
-| `classical` | 文言 | `fu`、`historiography` |
+| `classical` | 文言 | `fu`、`historiography`、`regulated-verse` |
 | `drama` | — | `drama` 自成一家 |
 | `proposal` | — | 屬公文/新聞稿家族,歸屬另議 |
 
@@ -88,9 +89,16 @@
 **`drama` 不另立 plugin**:單成員合併收益為零。
 
 **唐詩 / 宋詞尚未存在**,repo 內唯一帶對仗與平仄的是 `fu`(賦 / 駢文)。
-將來若建,依使用者裁示放 `classical`,且需**對仗、平仄、韻腳**三條規則對應——
-其中韻腳是 `fu` 沒有的維度(賦不限韻,近體詩與詞牌嚴格押韻),
-所以它是獨立 skill 而非 `fu` 的擴充。平仄字表可作共用資產(zh-style 型的第三層)。
+**近體詩已於 `CHG-20260817-01` 建成 `regulated-verse`**,放 `classical`,
+帶平水韻資產與 `verse_check.py`——**文言組第一支有引擎的 skill**。
+它判句式、韻腳同部與不重字、對句第二字平仄相對;
+黏、拗救、對仗的詞性語義**明標不判**。
+
+**宋詞仍未建**:詞依詞牌,每個牌有自己的句式韻位,資料量是近體詩的數十倍,
+且韻走詞林正韻(由平水韻合併而成)。另立帳目,見 `backlog.md`。
+
+`fu` 的 lint 不因本張解鎖:賦的四六句對偶是**字數對稱**問題,不需要聲韻資料,
+它「尚未建」是排序問題而非資料問題;而駢文的平仄相對與近體詩的定格平仄是兩套規則。
 
 **plugin id 用 ASCII 而非中文**,因為 git 的 `core.quotepath` 會把 CJK 路徑印成
 八進位跳脫,版號閘與 catalog 閘兩端都取不到 blob、判成「沒變」——實測的 fail-open。
