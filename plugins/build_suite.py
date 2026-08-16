@@ -32,14 +32,12 @@ PLUGINS = {
     "official": ('official', 'bizdoc', 'zh-style'),
     "press": ('press', 'bizdoc', 'zh-style'),
     "proposal": ('proposal', 'zh-style'),
-    "prose": ('prose', 'zh-style'),
-    "poetry": ('poetry', 'zh-style'),
     "drama": ('drama', 'zh-style'),
-    "narrative": ('narrative', 'zh-style'),
-    "lyric": ('lyric', 'zh-style'),
-    "exposition": ('exposition', 'zh-style'),
-    "fu": ('fu', 'zh-style'),
-    "historiography": ('historiography', 'zh-style'),
+    # CHG-20260816-03:依文體家族分組。id 與目錄用 ASCII——CJK 路徑會被
+    # git 的 core.quotepath 印成八進位跳脫,版號閘與 catalog 閘兩端都取不到 blob,
+    # 於是判成「沒變」(實測 fail-open)。中文名在 marketplace 的 description 裡。
+    "composition": ('prose', 'narrative', 'lyric', 'exposition', 'poetry', 'zh-style'),
+    "classical": ('fu', 'historiography', 'zh-style'),
 }
 EXCLUDE = ("__pycache__", ".DS_Store")
 
@@ -71,6 +69,13 @@ RETIRED: dict[str, str] = {
     "fiction-romance": "CHG-20260814-10",
     "fiction-scifi":   "CHG-20260814-10",
     "fiction-wuxia":   "CHG-20260814-10",
+    "prose": "CHG-20260816-03",
+    "narrative": "CHG-20260816-03",
+    "lyric": "CHG-20260816-03",
+    "exposition": "CHG-20260816-03",
+    "fu": "CHG-20260816-03",
+    "historiography": "CHG-20260816-03",
+    "poetry": "CHG-20260816-03",
 }
 
 COMMANDS_SRC = "commands"

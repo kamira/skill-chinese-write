@@ -1,0 +1,17 @@
+{
+  "name": "composition",
+  "version": "1.0.0",
+  "description": "中文作文五文體(散文 / 記敘文 / 抒情文 / 說明文 / 詩歌)。每支保留自己的觸發面,本 plugin 只做打包。",
+  "author": {
+    "name": "kamira"
+  },
+  "homepage": "https://github.com/kamira/skill-chinese-write",
+  "keywords": [
+    "composition",
+    "essay",
+    "narrative",
+    "expository",
+    "poetry",
+    "chinese"
+  ]
+}
