@@ -1,6 +1,6 @@
 {
   "name": "classical",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "中文文言文體(賦・駢文 / 史傳・奏啟 / 近體詩 / 詞)。每支保留自己的觸發面,本 plugin 只做打包。",
   "author": {
     "name": "kamira"

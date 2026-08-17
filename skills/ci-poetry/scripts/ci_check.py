@@ -67,8 +67,18 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
-CJK = re.compile(r"[㐀-鿿]")
-MD = ("#", ">", "|", "-", "*", "`")
+# **Ext-B 也要收**,而且要與 `cilin.json` 的 `_template_strip.cjk_class_now` 同一個類別。
+# 上一輪只加寬了 `assets_verify.py` 與建置側,**漏了這裡**:於是 𣘼 在韻表裡查得到,
+# 而使用者稿裡寫 𣘼 會被 `lines_of` 靜默丟字,誤紅成「第 4 句 5 字,譜為 6 字」——
+# **表裡有、引擎永遠讀不到。修正沒落完整,比沒修更難發現。**
+CJK = re.compile(r"[㐀-䶿一-鿿豈-﫿\U00020000-\U0003ffff]")
+# **只剝真正的 Markdown 結構。** 舊版把行首的 `-` `*` 也算結構,
+# 於是「詞寫成清單」整首被剝光(誤紅句數 0)、行首當裝飾的 `-` 整行蒸發。
+# 引擎既宣稱讀 `.md`,就不能把常見 Markdown 表達誤當正文或刪掉正文(KN-002)。
+MD = ("#", ">", "|", "`")
+# 清單項:**去掉 marker、保留內容**。marker 後必須有空白,
+# 沒有空白的行首 `-`／`*` 一律當正文(它不是漢字,`CJK` 過濾自然會丟掉)。
+LIST = re.compile(r"^\s*[-*+]\s+")
 
 
 def load() -> dict:
@@ -107,7 +117,14 @@ def rhyme_runs(rows: list[dict]) -> list[tuple[str, list[str]]]:
 
 
 def lines_of(text: str) -> list[str]:
-    body = "\n".join(l for l in text.splitlines()
+    """切句。**標題請用 `#` 開頭**——這是輸入契約,寫在 SKILL.md。
+
+    無標點又無 `#` 前綴的標題行(如 `清平樂・晚春`)會併進第一句,
+    誤紅成「第 1 句 9 字」——**紅在錯的地方,使用者會去改沒錯的首句**。
+    自動辨識它需要「首行短、含詞牌名」這類猜測,那會新增誤殺面,
+    所以改用明確契約收口,不猜。
+    """
+    body = "\n".join(LIST.sub("", l) for l in text.splitlines()
                      if not l.lstrip().startswith(MD))
     out, cur = [], ""
     for ch in body:
@@ -307,6 +324,37 @@ def self_test() -> int:
         if not tbl["idx"].get(c):
             fails.append(f"9 「{c}」不在表內——正控失敗,"
                          "斷言退化成「模板整段被丟掉也算過」")
+    # 10 `lines_of` 三個誤判輸入(審議席實測,codex 裁為「既有宣稱的瑕疵」)
+    qp = tbl["tunes"]["清平樂"]["rows"]
+    plain = "，".join(r["chars"] for r in qp) + "。"
+    ran.append("10a 詞寫成 md 清單 → 去 marker 保留內容,不得剝光")
+    listed = "\n".join("- " + r["chars"] + "，" for r in qp)
+    if len(lines_of(listed)) != len(qp):
+        fails.append(f"10a 清單型輸入應切出 {len(qp)} 句,實得 {len(lines_of(listed))}"
+                     "——整首被剝光就是誤紅句數 0")
+    ran.append("10b 行首半形 - 當裝飾 → 整行不得蒸發")
+    deco = "\n".join("-" + r["chars"] + "，" for r in qp)
+    if len(lines_of(deco)) != len(qp):
+        fails.append(f"10b 行首無空白的 `-` 應當正文,實得 {len(lines_of(deco))} 句")
+    ran.append("10c 正控:`# 標題` 仍必須被剝掉")
+    if len(lines_of("# 清平樂 — 黃庭堅\n" + plain)) != len(qp):
+        fails.append("10c `#` 標題沒被剝掉——正控失敗,10a/10b 退化成「什麼都不剝」")
+    # 10d 是**已知限制的快照**,不是綠端:無標點又無 `#` 的標題行會併進第一句。
+    #     壞的不是句數(句數不變),是第一句的內容——所以斷言必須打在內容上。
+    #     我第一版斷在句數上,它恆真,測不到它宣稱測的東西。
+    ran.append("10d 已知限制快照:無標點且無 `#` 的標題行會併進第一句")
+    got10 = lines_of("清平樂・晚春\n" + plain)
+    if got10[0] == qp[0]["chars"]:
+        fails.append("10d 這一案已能正確切句——SKILL.md 的輸入契約說明過時了,要一起改")
+    elif got10[0] != "清平樂晚春" + qp[0]["chars"]:
+        fails.append(f"10d 併法與記載不符:實得「{got10[0]}」——限制的形狀變了,敘述要跟著改")
+    # 10e Ext-B 罕字不得被 `lines_of` 靜默丟掉——**表裡有,引擎就要讀得到**
+    ran.append("10e Ext-B 正控 𣘼 進得了 lines_of,不被靜默丟字")
+    if lines_of("喚取歸來同𣘼。") != ["喚取歸來同𣘼"]:
+        fails.append("10e 「𣘼」被 lines_of 丟掉——`CJK` 類別與資產側不同步,"
+                     f"實得 {lines_of('喚取歸來同𣘼。')}")
+    if not tbl["idx"].get("𣘼"):
+        fails.append("10e 「𣘼」不在韻表——正控失敗,斷言退化成「兩邊都沒有也算同步」")
     ran.append("9b 假綠實例 月發閱上 必須無共同部")
     if not parts_in(tbl, "上", {"上去"}):
         fails.append("9b 「上」在上去域內查無——正控失敗")

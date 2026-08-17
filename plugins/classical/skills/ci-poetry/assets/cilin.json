@@ -43,7 +43,7 @@
   "multi_part_within_ping": 26,
   "multi_part_within_ze": 103,
   "multi_part_within_tone": 129,
-  "ze_definition": "**仄 = 上聲+去聲+入聲合為一類**(審議席定義,實測三數逐一吻合 26/106/132)。我一度把入聲拆出來算得 86——那不只是統計口徑,**它等於替引擎決定「上去入通不通押」**,而那是規則層的判斷,不該由我選數字時順手定下。**詞的入聲能否與上去通押,列為待裁。**",
+  "ze_definition": "**已作廢的舊敘事,保留形狀是為了讓引用它的人看到更正。** 舊文寫「仄 = 上聲+去聲+入聲合為一類(實測 26/106/132)」並把「詞的入聲能否與上去通押」列為待裁——**兩件事現在都不成立**:三數已重算為 26/103/129(模板污染修正,見 `_template_strip`),而通押問題已由 `_tone_contract.ruling` 定案為「上去通押、入聲獨押」,依據是戈載的分部結構本身。引擎採 `_tone_contract`,不採本欄。",
   "which_is_operative": "within_tone 是 escape surface 的 operative 數字;any_tone 只是資料統計。",
   "escape_ping": 26,
   "escape_ze_union": 103,
