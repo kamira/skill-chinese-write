@@ -1,0 +1,8410 @@
+{
+ "_source": {
+  "work": "白香詞譜(清・舒夢蘭),一百調,每調一體",
+  "status": "原典公共領域;Wikisource 貢獻部分 CC BY-SA 4.0",
+  "digitization": "https://zh.wikisource.org/wiki/白香詞譜",
+  "retrieved_on": "2026-08-17",
+  "raw_bytes": 80170,
+  "raw_sha256": "ac69996f99405851a0155be9192cbde3f133dc43baef5388b079cf547dc702c4",
+  "notation": "○平 ●仄 ⊙可平可仄 △平韻 ▲仄韻",
+  "why_this_source": "⊙(可平可仄)是譜才有的資訊——從語料反推分不出「必平」與「恰好是平」。",
+  "limits": "轉錄本,oldid 只能固定版本、不能證明無誤。每調一體;同牌異體必須明標不判。",
+  "oldid": 1537933,
+  "revision_timestamp": "2019-02-09T04:11:29Z",
+  "permalink": "https://zh.wikisource.org/w/index.php?oldid=1537933",
+  "vendored_raw": "skills/ci-poetry/assets/raw/baixiang.wikitext",
+  "reproduce": "python skills/ci-poetry/scripts/assets_verify.py  ← 對 vendored raw 獨立重算所有數字並對帳"
+ },
+ "_conservation": {
+  "note": "**sha256 錨住輸入,錨不住轉換。** 初版靜默丟了 4 行(西江月 3 行毀在嵌套標記 -{叶}-、鷓鴣天 1 行毀在行內全形空格),而檢查跑在丟失的下游,看不見。本欄對 raw 獨立計數再對帳。",
+  "raw_pairs": 1528,
+  "asset_pairs": 1528,
+  "pairs_delta": 0,
+  "raw_symbols": 7250,
+  "asset_symbols": 7250,
+  "symbols_delta": 0,
+  "raw_symbols_naive_total": 7255,
+  "legend_exemption": 5,
+  "legend_note": "檔頭圖例「○平 ●仄 ⊙可平可仄 △平韻 ▲仄韻」每符號各一,不屬任何詞牌。naive 全檔計數 7255 − 圖例 5 = 7250,與 raw_symbols 一致。**豁免要寫出來,否則守恆數字自己不可獨立重跑,守恆檢查就退化成信任聲明**(審議席)。",
+  "reproduce": "python -c \"import re,pathlib;t=pathlib.Path(RAW).read_text(encoding='utf-8');print(sum(t.count(c) for c in '○●⊙△▲'))\"  → 應得 raw_symbols_naive_total"
+ },
+ "_alignment": {
+  "rule": "解 -{X}-、剝 {{*|…}}、剝**全部**空白(含行內全形)後,漢字數==符號數",
+  "clean_tunes": 85,
+  "dirty_tunes": [
+   "一斛珠",
+   "南鄉子",
+   "春風嫋娜",
+   "桂枝香",
+   "永遇樂",
+   "沁園春",
+   "河傳",
+   "滿庭芳",
+   "滿江紅",
+   "瀟湘夜雨",
+   "瑣窗寒",
+   "祝英臺近",
+   "解語花",
+   "謁金門",
+   "賀新郎"
+  ],
+  "dirty_cause": "含 □ 轉錄缺字符,或來源少一字未標記。**不齊的牌一律不啟用。**"
+ },
+ "_enabled": {
+  "list": [
+   "菩薩蠻",
+   "虞美人",
+   "西江月",
+   "卜算子",
+   "蝶戀花",
+   "水調歌頭",
+   "清平樂",
+   "如夢令",
+   "念奴嬌"
+  ],
+  "why": "未啟用 ≠ 違規。引擎對未啟用牌輸出「非本工具所收白香體/未判定」。"
+ },
+ "_pian": "**不判**。來源的空行不可靠地對應片界,初版存的數字系統性多 1,已刪除該欄。",
+ "tunes": {
+  "菩薩蠻": {
+   "rows": [
+    {
+     "chars": "平林漠漠煙如織",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "寒山一帶傷心碧",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "暝色入高樓",
+     "tones": "⊙●⊙○△",
+     "note": ""
+    },
+    {
+     "chars": "有人樓上愁",
+     "tones": "⊙○○●△",
+     "note": ""
+    },
+    {
+     "chars": "玉階空佇立",
+     "tones": "⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "宿鳥歸飛急",
+     "tones": "⊙●⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "何處是歸程",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "長亭更短亭",
+     "tones": "⊙○⊙●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "憶秦娥": {
+   "rows": [
+    {
+     "chars": "簫聲咽",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "秦娥夢斷秦樓月",
+     "tones": "○○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "秦樓月",
+     "tones": "○○▲",
+     "note": "疊三字"
+    },
+    {
+     "chars": "年年柳色",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "灞陵傷別",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "樂游原上清秋節",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "咸陽古道音塵絕",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "音塵絕",
+     "tones": "○○▲",
+     "note": "疊三字"
+    },
+    {
+     "chars": "西風殘照",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "漢家陵闕",
+     "tones": "●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "調笑令": {
+   "rows": [
+    {
+     "chars": "團扇",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "團扇",
+     "tones": "○▲",
+     "note": "疊句"
+    },
+    {
+     "chars": "美人並來遮面",
+     "tones": "●⊙⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "玉顏憔悴三年",
+     "tones": "⊙○⊙●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "誰複商量管弦",
+     "tones": "⊙●○○●△",
+     "note": ""
+    },
+    {
+     "chars": "弦管",
+     "tones": "○▲",
+     "note": "上句末二字顛倒，換仄韻"
+    },
+    {
+     "chars": "弦管",
+     "tones": "○▲",
+     "note": "疊句"
+    },
+    {
+     "chars": "春草昭陽路斷",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 1,
+   "enabled": false
+  },
+  "長相思": {
+   "rows": [
+    {
+     "chars": "汴水流",
+     "tones": "●⊙△",
+     "note": ""
+    },
+    {
+     "chars": "泗水流",
+     "tones": "●⊙△",
+     "note": ""
+    },
+    {
+     "chars": "流到瓜州古渡頭",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "吳山點點愁",
+     "tones": "⊙○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "思悠悠",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "恨悠悠",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "恨到歸時方始休",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "月明人倚樓",
+     "tones": "●○○●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "更漏子": {
+   "rows": [
+    {
+     "chars": "柳絲長",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "春雨細",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "花外漏聲迢遞",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "驚塞雁",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "起城烏",
+     "tones": "●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "畫屏金鷓鴣",
+     "tones": "●○○●△",
+     "note": ""
+    },
+    {
+     "chars": "香霧薄",
+     "tones": "○⊙▲",
+     "note": "換仄韻"
+    },
+    {
+     "chars": "透重幕",
+     "tones": "⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "惆悵謝家池閣",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "紅燭背",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "繡簾垂",
+     "tones": "●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "夢君君不知",
+     "tones": "●○○●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "攤破浣溪沙": {
+   "rows": [
+    {
+     "chars": "菡萏香銷翠葉殘",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "西風愁起綠波間",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "還與韶光共憔悴",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "不堪看",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "細雨夢回雞塞遠",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "小樓吹徹玉笙寒",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "多少淚珠何限恨",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "倚闌幹",
+     "tones": "●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "憶江南": {
+   "rows": [
+    {
+     "chars": "多少恨",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "昨夜夢魂中",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "還似舊時游上苑",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "車如流水馬如龍",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "花月正春風",
+     "tones": "⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 1,
+   "enabled": false
+  },
+  "搗練子": {
+   "rows": [
+    {
+     "chars": "深院靜",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "小庭空",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "斷續寒砧斷續風",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "無奈夜長人不寐",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "數聲和月到簾櫳",
+     "tones": "●○⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 1,
+   "enabled": false
+  },
+  "相見歡": {
+   "rows": [
+    {
+     "chars": "無言獨上西樓",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "月如鉤",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "寂寞梧桐",
+     "tones": "⊙●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "深院鎖清秋",
+     "tones": "○●●○△",
+     "note": ""
+    },
+    {
+     "chars": "剪不斷",
+     "tones": "●⊙▲",
+     "note": "換仄韻"
+    },
+    {
+     "chars": "理還亂",
+     "tones": "⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "是離愁",
+     "tones": "●○△",
+     "note": "換前平韻"
+    },
+    {
+     "chars": "別是一番",
+     "tones": "⊙●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "滋味在心頭",
+     "tones": "○●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "浪淘沙": {
+   "rows": [
+    {
+     "chars": "簾外雨潺潺",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "春意闌珊",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "羅衾不耐五更寒",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "夢裡不知身是客",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "一晌貪歡",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "獨自莫憑欄",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "無限江山",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "別時容易見時難",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "流水落花春去也",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "天上人間",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "虞美人": {
+   "rows": [
+    {
+     "chars": "春花秋月何時了",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "往事知多少",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "小樓昨夜又東風",
+     "tones": "⊙○⊙●●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "故國不堪回首月明中",
+     "tones": "⊙●●○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "雕欄玉砌應猶在",
+     "tones": "⊙○⊙●○○▲",
+     "note": "換仄韻"
+    },
+    {
+     "chars": "只是朱顏改",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "問君能有幾多愁",
+     "tones": "⊙○⊙●●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "恰似一江春水向東流",
+     "tones": "⊙●●○⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "一斛珠": {
+   "rows": [
+    {
+     "chars": "晚妝初過",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "沉檀輕注些兒個",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "向人微露丁香顆",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "一曲清歌",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "暫引櫻桃破",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "羅袖殘殷色可",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "杯深旋被香醪",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "繡床斜憑嬌無那",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "爛嚼紅絨",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "笑向檀郎唾",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "謁金門": {
+   "rows": [
+    {
+     "chars": "風乍起",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "吹皺一池春水",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "閑引鴛鴦芳徑裡",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "手紅杏蕊",
+     "tones": "⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "鬥鴨闌幹獨倚",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "碧玉搔頭斜墜",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "終日望君君不至",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "舉頭聞鵲喜",
+     "tones": "⊙○○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "踏莎行": {
+   "rows": [
+    {
+     "chars": "春色將闌",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "鶯聲漸老",
+     "tones": "⊙○●▲",
+     "note": ""
+    },
+    {
+     "chars": "紅英落盡青梅小",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "畫堂人靜雨濛濛",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "屏山半掩餘香嫋",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "密約沉沉",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "離情杳杳",
+     "tones": "⊙○●▲",
+     "note": ""
+    },
+    {
+     "chars": "菱花塵滿慵將照",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "倚樓無語欲銷魂",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "長空黯淡連芳草",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "賀聖朝": {
+   "rows": [
+    {
+     "chars": "滿斟綠醑留君住",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "莫匆匆歸去",
+     "tones": "●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "三分春色二分愁",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "更一分風雨",
+     "tones": "●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "花開花謝",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "都來幾許",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "且高歌休訴",
+     "tones": "●○○○●",
+     "note": ""
+    },
+    {
+     "chars": "不知來歲牡丹時",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "再相逢何處",
+     "tones": "●⊙○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "御街行": {
+   "rows": [
+    {
+     "chars": "紛紛墜葉飄香砌",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "夜寂靜",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "寒聲碎",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "真珠簾卷玉樓空",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "天淡銀河垂地",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "年年今夜",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "月華如練",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "長是人千里",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "愁腸已斷無由醉",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "酒未到",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "先成淚",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "殘燈明滅枕頭欹",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "諳盡孤眠滋味",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "都來此事",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "眉間心上",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "無計相回避",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "漁家傲": {
+   "rows": [
+    {
+     "chars": "塞下秋來風景異",
+     "tones": "●●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "衡陽雁去無留意",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "四面邊聲連角起",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "千障裡",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "長煙落日孤城閉",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "濁酒一杯家萬里",
+     "tones": "●●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "燕然未勒歸無計",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "羌管悠悠霜滿地",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "人不寐",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "將軍白髮征夫淚",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "蘇幕遮": {
+   "rows": [
+    {
+     "chars": "碧雲天",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "黃葉地",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "秋色連波",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "波上寒煙翠",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "山映斜陽天接水",
+     "tones": "⊙●○○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "芳草無情",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "更在斜陽外",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "黯鄉魂",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "追旅思",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "夜夜除非",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "好夢留人睡",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "明月樓高休獨倚",
+     "tones": "⊙●○○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "酒入愁腸",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "化作相思淚",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "錦纏道": {
+   "rows": [
+    {
+     "chars": "燕子呢喃",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "景色乍長春晝",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "睹園林",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "萬花如繡",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "海棠經雨胭脂透",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "柳展宮眉",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "翠拂行人首",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "向郊原踏青",
+     "tones": "●○○●○",
+     "note": ""
+    },
+    {
+     "chars": "恣歌攜手",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "醉醺醺",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "尚尋芳酒",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "問牧童",
+     "tones": "●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "遙指孤村道",
+     "tones": "⊙●○○⊙",
+     "note": ""
+    },
+    {
+     "chars": "杏花深處",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "那裡人家有",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "離亭燕": {
+   "rows": [
+    {
+     "chars": "一帶江山如畫",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "風物向秋瀟灑",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "水浸碧天何處斷",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "霽色冷光相射",
+     "tones": "●●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "蓼嶼荻花洲",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "掩映竹籬茅舍",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "雲際客帆高掛",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "煙外酒旗低亞",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "多少六朝興廢事",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "盡入漁樵閒話",
+     "tones": "●●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "悵望倚層樓",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "寒日無言西下",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "訴衷情": {
+   "rows": [
+    {
+     "chars": "清晨簾幕卷輕霜",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "呵手試梅妝",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "都緣自有離恨",
+     "tones": "⊙○⊙●○⊙",
+     "note": ""
+    },
+    {
+     "chars": "故畫作",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "遠山長",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "思往事",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "惜流光",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "易成傷",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "未歌先斂",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "欲笑還顰",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "最斷人腸",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "阮郎歸": {
+   "rows": [
+    {
+     "chars": "南園春半踏青時",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "風和聞馬嘶",
+     "tones": "⊙○○●△",
+     "note": ""
+    },
+    {
+     "chars": "清梅如豆柳如眉",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "日長蝴蝶飛",
+     "tones": "●○○●△",
+     "note": ""
+    },
+    {
+     "chars": "花露重",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "草煙低",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "人家簾幕垂",
+     "tones": "⊙○○●△",
+     "note": ""
+    },
+    {
+     "chars": "秋千慵困解羅衣",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "畫堂雙燕歸",
+     "tones": "●○○●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "南歌子": {
+   "rows": [
+    {
+     "chars": "鳳髻金泥帶",
+     "tones": "⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "龍紋玉掌梳",
+     "tones": "○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "去來窗下笑相扶",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "愛道畫眉深淺入時無",
+     "tones": "⊙●⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "弄筆偎人久",
+     "tones": "⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "描花試手初",
+     "tones": "○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "等閒妨了繡功夫",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "笑問鴛鴦兩字怎生書",
+     "tones": "⊙●⊙○⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "臨江仙": {
+   "rows": [
+    {
+     "chars": "柳外輕雷池上雨",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "雨聲滴碎荷聲",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "小樓西角斷虹明",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "闌幹私倚處",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "遙見月華生",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "燕子飛來窺畫棟",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "玉鉤垂下簾旌",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "涼波不動簟紋平",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "水晶雙枕畔",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "猶有墮釵橫",
+     "tones": "⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "西江月": {
+   "rows": [
+    {
+     "chars": "寶髻松松挽就",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "鉛華淡淡妝成",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "紅煙翠霧罩輕盈",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "飛絮遊絲無定",
+     "tones": "⊙●⊙○⊙▲",
+     "note": "叶仄韻"
+    },
+    {
+     "chars": "相見爭如不見",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "有情還似無情",
+     "tones": "⊙○⊙●○△",
+     "note": "叶平韻"
+    },
+    {
+     "chars": "笙歌散後酒微醒",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "深院月明人靜",
+     "tones": "⊙●⊙○⊙▲",
+     "note": "叶仄韻"
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "桂枝香": {
+   "rows": [
+    {
+     "chars": "登臨縱目",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "正故國晚秋",
+     "tones": "●●●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "天氣初肅",
+     "tones": "⊙⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "千里澄江似練",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "翠峰如簇",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "征帆去棹殘陽裡",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "背西風",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "酒旗斜矗",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "彩舟雲淡",
+     "tones": "●○○○●",
+     "note": ""
+    },
+    {
+     "chars": "星河鷺起",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "畫圖難足",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "念往昔豪華競逐",
+     "tones": "●⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "歎門外樓頭",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "悲恨相續",
+     "tones": "⊙⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "千古憑高對此",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "漫嗟榮辱",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "六朝舊事隨流水",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "但寒煙",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "衰草凝綠",
+     "tones": "⊙⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "至今商女",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "時時猶唱",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "後庭遺曲",
+     "tones": "●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "天仙子": {
+   "rows": [
+    {
+     "chars": "水調數聲持酒聽",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "午醉醒來愁未醒",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "送春春去幾時回",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "臨晚鏡",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "傷流景",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "往事後期空記省",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "沙上並禽池上暝",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "雲破月來花弄影",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "重重簾幕密遮燈",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "風不定",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "人初靜",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "明日落紅應滿徑",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "晝夜樂": {
+   "rows": [
+    {
+     "chars": "洞房記得初相遇",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "便只合",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "長相聚",
+     "tones": "⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "何期小會幽歡",
+     "tones": "○○●●○○",
+     "note": ""
+    },
+    {
+     "chars": "變作別離情緒",
+     "tones": "●●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "況值闌珊春色暮",
+     "tones": "⊙●○○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "對滿目",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "亂花狂絮",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "直恐好風光",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "盡隨伊歸去",
+     "tones": "●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "一場寂寞憑誰訴",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "算前言",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "總輕負",
+     "tones": "⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "早知恁地難拼",
+     "tones": "⊙○●●○○",
+     "note": ""
+    },
+    {
+     "chars": "悔不當初留住",
+     "tones": "⊙●○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "其奈風流端正外",
+     "tones": "⊙●○○○●●",
+     "note": ""
+    },
+    {
+     "chars": "更別有",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "系人心處",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "一日不思量",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "也攢眉千度",
+     "tones": "●○○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "雨淋鈴": {
+   "rows": [
+    {
+     "chars": "寒蟬淒切",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "對長亭晚",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "驟雨初歇",
+     "tones": "●⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "都門帳飲無緒",
+     "tones": "○○●●○●",
+     "note": ""
+    },
+    {
+     "chars": "方留戀處",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "蘭舟催發",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "執手相看",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "淚眼竟無語凝噎",
+     "tones": "●●●○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "念去去",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "千里煙波",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "暮靄沉沉楚天闊",
+     "tones": "●●○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "多情自古傷離別",
+     "tones": "○○●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "更那堪",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "冷落清秋節",
+     "tones": "●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "今宵酒醒何處",
+     "tones": "○○●●○●",
+     "note": ""
+    },
+    {
+     "chars": "楊柳岸",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "曉風殘月",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "此去經年",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "應是良辰好景虛設",
+     "tones": "○●○○●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "便縱有",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "千種風流",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "更與何人說",
+     "tones": "●●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "卜算子": {
+   "rows": [
+    {
+     "chars": "水是眼波橫",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "山是眉峰聚",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "欲問行人去那邊",
+     "tones": "⊙●○○●●○",
+     "note": ""
+    },
+    {
+     "chars": "眉眼盈盈處",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "才始送春歸",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "又送君歸去",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "若到江南趕上春",
+     "tones": "⊙●○○●●○",
+     "note": ""
+    },
+    {
+     "chars": "千萬和春住",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "洞仙歌": {
+   "rows": [
+    {
+     "chars": "冰肌玉骨",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "自清涼無汗",
+     "tones": "●○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "水殿風來暗香滿",
+     "tones": "⊙●○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "繡簾開",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "一點明月窺人",
+     "tones": "●●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "人未寢",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "欹枕釵橫鬢亂",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "起來攜素手",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "庭戶無聲",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "時見疏星渡河漢",
+     "tones": "⊙●○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "試問夜如何",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "夜已三更",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "金波淡",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "玉繩低轉",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "但屈指",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "西風幾時來",
+     "tones": "○○●○○",
+     "note": ""
+    },
+    {
+     "chars": "又不道流年",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "暗中偷換",
+     "tones": "●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "蝶戀花": {
+   "rows": [
+    {
+     "chars": "花褪殘紅青杏小",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "燕子飛時",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "綠水人家繞",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "枝上柳綿吹又少",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "天涯何處無芳草",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "牆裡秋千牆外道",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "牆外行人",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "牆裡佳人笑",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "笑漸不聞聲漸悄",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "多情卻被無情惱",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "水調歌頭": {
+   "rows": [
+    {
+     "chars": "明月幾時有",
+     "tones": "⊙●●○●",
+     "note": ""
+    },
+    {
+     "chars": "把酒問青天",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "不知天上宮闕",
+     "tones": "⊙○⊙●○●",
+     "note": ""
+    },
+    {
+     "chars": "今夕是何年",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "我欲乘風歸去",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "又恐瓊樓玉宇",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "高處不勝寒",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "起舞弄清影",
+     "tones": "⊙●●○●",
+     "note": ""
+    },
+    {
+     "chars": "何似在人間",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "轉朱閣",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "低綺戶",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "照無眠",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "不應有恨",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "何事偏向別時圓",
+     "tones": "○●○●●○△",
+     "note": ""
+    },
+    {
+     "chars": "人有悲歡離合",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "月有陰晴圓缺",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "此事古難全",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "但願人長久",
+     "tones": "⊙●⊙○●",
+     "note": ""
+    },
+    {
+     "chars": "千里共嬋娟",
+     "tones": "⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "清平樂": {
+   "rows": [
+    {
+     "chars": "春歸何處",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "寂寞無行路",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "若有人知春去處",
+     "tones": "⊙●⊙○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "喚取歸來同住",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "春無蹤跡誰知",
+     "tones": "⊙○⊙●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "除非問取黃鸝",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "百囀無人能解",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "因風飛過薔薇",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "畫堂春": {
+   "rows": [
+    {
+     "chars": "東風吹柳日初長",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "雨餘芳草斜陽",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "杏花零落燕泥香",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "睡損紅妝",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "寶篆煙銷龍鳳",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "畫屏雲鎖瀟湘",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "夜寒微透薄羅裳",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "無限思量",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "驀山溪": {
+   "rows": [
+    {
+     "chars": "鴛鴦翡翠",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "小小思珍偶",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "眉黛斂秋波",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "盡湖南",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "山明水秀",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "娉娉嫋嫋",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "恰近十三餘",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "春未透",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "花枝瘦",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "正是愁時候",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "尋芳載酒",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "肯落他人後",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "只恐遠歸來",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "綠成陰",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "青梅如豆",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "心期得處",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "每自不由人",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "長亭柳",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "君知否",
+     "tones": "○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "千里猶回首",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "憶王孫": {
+   "rows": [
+    {
+     "chars": "萋萋芳草憶王孫",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "柳外樓高空斷魂",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "杜宇聲聲不忍聞",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "欲黃昏",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "雨打梨花深閉門",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 1,
+   "enabled": false
+  },
+  "如夢令": {
+   "rows": [
+    {
+     "chars": "鶯嘴啄花紅溜",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "燕尾剪波綠皺",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "指冷玉笙寒",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "吹徹小梅春透",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "依舊",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "依舊",
+     "tones": "○▲",
+     "note": "疊句"
+    },
+    {
+     "chars": "人與綠楊俱瘦",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 1,
+   "enabled": true
+  },
+  "桃源憶故人": {
+   "rows": [
+    {
+     "chars": "玉樓深鎖多情種",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "清夜悠悠誰共",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "羞見枕衾鴛鳳",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "悶則和衣擁",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "無端畫角嚴城動",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "驚破一番新夢",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "窗外月華霜重",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "聽徹梅花弄",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "鵲橋仙": {
+   "rows": [
+    {
+     "chars": "纖雲弄巧",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "飛星傳恨",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "銀漢迢迢暗度",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "金風玉露一相逢",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "便勝卻",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "人間無數",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "柔情似水",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "佳期如夢",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "忍顧鵲橋歸路",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "兩情若是久長時",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "又豈在",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "朝朝暮暮",
+     "tones": "○○⊙▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "河傳": {
+   "rows": [
+    {
+     "chars": "恨眉醉眼",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "甚輕輕覷著",
+     "tones": "●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "神魂迷亂",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "常記那回",
+     "tones": "⊙●●●○",
+     "note": ""
+    },
+    {
+     "chars": "小曲欄幹西畔",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "鬢雲松",
+     "tones": "●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "羅襪剗",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "丁香笑吐嬌無限",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "語軟聲低",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "道我何曾慣",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "雲雨未諧",
+     "tones": "⊙●●○",
+     "note": ""
+    },
+    {
+     "chars": "早被東風吹散",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "瘦殺人",
+     "tones": "●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "天不管",
+     "tones": "○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "滿庭芳": {
+   "rows": [
+    {
+     "chars": "曉色雲開",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "春隨人意",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "驟雨才過還晴",
+     "tones": "●⊙⊙●⊙△",
+     "note": ""
+    },
+    {
+     "chars": "古台芳榭",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "飛燕蹴紅英",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "舞困榆錢自落",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "秋千外",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "綠水橋平",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "東風裡",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "朱門映柳",
+     "tones": "○○○●",
+     "note": ""
+    },
+    {
+     "chars": "低按小秦箏",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "多情",
+     "tones": "○△",
+     "note": ""
+    },
+    {
+     "chars": "行樂處",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "珠鈿翠蓋",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "玉轡紅纓",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "漸酒空金",
+     "tones": "●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "花困蓬瀛",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "豆蔻梢頭舊恨",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "十年夢",
+     "tones": "⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "屈指堪驚",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "憑欄久",
+     "tones": "⊙○●",
+     "note": ""
+    },
+    {
+     "chars": "疏煙淡日",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "寂寞下蕪城",
+     "tones": "⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "清玉案": {
+   "rows": [
+    {
+     "chars": "淩波不過橫塘路",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "但目送芳塵去",
+     "tones": "●⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "錦瑟年華誰與度",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "月樓花院",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "綺窗朱戶",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "惟有春知處",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "碧雲冉冉蘅皋暮",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "彩筆空題斷腸句",
+     "tones": "⊙●○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "試問閒愁知幾許",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "一川煙草",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "滿城風絮",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "梅子黃時雨",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "薄幸": {
+   "rows": [
+    {
+     "chars": "淡妝多態",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "更滴滴",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "頻回盼睞",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "便認得",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "琴心先許",
+     "tones": "○○○●",
+     "note": ""
+    },
+    {
+     "chars": "欲綰合歡雙帶",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "記畫堂",
+     "tones": "●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "風月逢迎",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "輕顰淺笑嬌無奈",
+     "tones": "○○●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "向睡鴨爐邊",
+     "tones": "●●●○○",
+     "note": ""
+    },
+    {
+     "chars": "翔鴛屏裡",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "羞把香羅暗解",
+     "tones": "⊙●○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "自過了",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "燒燈後",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "都不見",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "踏青挑菜",
+     "tones": "●○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "幾回憑雙燕",
+     "tones": "⊙○⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "叮嚀深意",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "往來卻恨重簾礙",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "約何時再",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "正春濃酒困",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "人閑晝永無聊賴",
+     "tones": "○○●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "懨懨睡起",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "猶有花梢日在",
+     "tones": "⊙●○○⊙▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "惜分飛": {
+   "rows": [
+    {
+     "chars": "淚濕欄幹花著露",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "愁到眉峰碧聚",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "此恨平分取",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "更無言語空相覷",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "斷雨殘雲無意絮",
+     "tones": "⊙●⊙○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "寂寞朝朝暮暮",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "今夜山深處",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "斷魂分付潮回去",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "河滿子": {
+   "rows": [
+    {
+     "chars": "悵望浮生急景",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "淒涼寶瑟餘音",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "楚客多情偏怨別",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "碧山遠水登臨",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "目送連天衰草",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "夜闌幾處疏砧",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "黃葉無風自落",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "秋雲不雨長陰",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "天若有情天亦老",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "搖搖幽恨難禁",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "惆悵舊歡如夢",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "覺來無處追尋",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "燭影搖紅": {
+   "rows": [
+    {
+     "chars": "香臉輕勻",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "黛眉巧畫宮妝淺",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "風流天付與精神",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "全在嬌波轉",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "早是縈心可慣",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "更那堪",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "頻頻顧盼",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "幾回得見",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "見了還休",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "爭如不見",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "燭影搖紅",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "夜闌飲散春宵短",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "當時誰解唱陽關",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "離恨天涯遠",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "無奈雲收雨散",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "憑欄幹",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "東風淚眼",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "海棠開後",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "燕子來時",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "黃昏庭院",
+     "tones": "○○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "減字木蘭花": {
+   "rows": [
+    {
+     "chars": "畫橋流水",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "雨濕落紅飛不起",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "月破黃昏",
+     "tones": "⊙●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "簾裡余香馬上聞",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "徘徊不語",
+     "tones": "⊙○⊙▲",
+     "note": "換仄韻"
+    },
+    {
+     "chars": "今夜夢魂何處去",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "不似垂楊",
+     "tones": "⊙●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "猶解飛花入洞房",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "千秋歲": {
+   "rows": [
+    {
+     "chars": "楝花飄砌",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "蔌蔌清香細",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "梅雨過",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "蘋風起",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "情隨湘水遠",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "夢繞吳峰翠",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "琴書倦",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "鷓鴣喚起南窗睡",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "密意無人寄",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "幽恨憑誰洗",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "修竹畔",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "疏簾裡",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "歌餘塵拂扇",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "舞罷風掀袂",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "人散後",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "一鉤新月天如水",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "瑣窗寒": {
+   "rows": [
+    {
+     "chars": "暗柳啼鴉",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "單衣佇立",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "小簾朱戶",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "桐花半畝",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "靜鎖一庭愁雨",
+     "tones": "●●●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "灑空階",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "更闌未休",
+     "tones": "○⊙●⊙",
+     "note": ""
+    },
+    {
+     "chars": "故人翦燭西窗語",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "似楚江暝宿",
+     "tones": "●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "風燈零亂",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "少年羈旅",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "遲暮",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "嬉遊處",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "正店舍無煙",
+     "tones": "●●●○○",
+     "note": ""
+    },
+    {
+     "chars": "禁城百五",
+     "tones": "●○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "旗亭喚酒",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "付與高陽儔侶",
+     "tones": "●●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "想東園",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "桃李自春",
+     "tones": "⊙●●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "小唇秀靨今在否",
+     "tones": "⊙○●●○●▲",
+     "note": ""
+    },
+    {
+     "chars": "到歸時",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "定有殘英",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "待客攜樽俎",
+     "tones": "●●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "解語花": {
+   "rows": [
+    {
+     "chars": "風銷焰蠟",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "露烘爐",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "花市光相射",
+     "tones": "○●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "桂華流瓦",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "纖雲散",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "耿耿素娥欲下",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "衣裳淡雅",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "看楚女",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "纖腰一把",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "簫鼓喧",
+     "tones": "⊙●○",
+     "note": ""
+    },
+    {
+     "chars": "人影參差",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "滿路飄香麝",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "因念帝城放夜",
+     "tones": "⊙●⊙○●▲",
+     "note": ""
+    },
+    {
+     "chars": "望千門如晝",
+     "tones": "●○○○●",
+     "note": ""
+    },
+    {
+     "chars": "嬉笑遊冶",
+     "tones": "○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "鈿車羅帕",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "相逢處",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "自有暗塵隨馬",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "年光是也",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "惟只見",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "舊情衰謝",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "清漏移",
+     "tones": "⊙●○",
+     "note": ""
+    },
+    {
+     "chars": "飛蓋歸來",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "任舞休歌罷",
+     "tones": "●●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "過秦樓": {
+   "rows": [
+    {
+     "chars": "水浴清蟾",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "葉喧涼吹",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "巷陌馬聲初斷",
+     "tones": "●●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "閑依露井",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "笑撲流螢",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "惹破畫羅輕扇",
+     "tones": "●●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "人靜夜久憑欄",
+     "tones": "○●●●○○",
+     "note": ""
+    },
+    {
+     "chars": "愁不歸眠",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "立殘更箭",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "歎年華一瞬",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "人今千里",
+     "tones": "○○○●",
+     "note": ""
+    },
+    {
+     "chars": "夢沉書遠",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "空見說",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "鬢怯瓊梳",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "容銷金鏡",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "漸懶趁時勻染",
+     "tones": "●●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "梅風地溽",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "虹雨苔滋",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "一架舞紅都變",
+     "tones": "●●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "誰信無聊",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "為伊才減江淹",
+     "tones": "●○○●○○",
+     "note": ""
+    },
+    {
+     "chars": "情傷荀倩",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "但明河影下",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "還看疏星幾點",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "昭君怨": {
+   "rows": [
+    {
+     "chars": "春到南樓雪盡",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "驚動燈期花信",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "小雨一番寒",
+     "tones": "⊙●●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "倚欄幹",
+     "tones": "⊙○△",
+     "note": ""
+    },
+    {
+     "chars": "莫把欄幹頻倚",
+     "tones": "⊙●⊙○⊙▲",
+     "note": "換仄韻"
+    },
+    {
+     "chars": "一望幾重煙水",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "何處是京華",
+     "tones": "⊙●●○△",
+     "note": "換平韻"
+    },
+    {
+     "chars": "暮雲遮",
+     "tones": "⊙○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "感皇恩": {
+   "rows": [
+    {
+     "chars": "騎馬踏紅塵",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "長安重到",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "人面依然似花好",
+     "tones": "⊙●○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "舊歡才展",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "又被新愁分了",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "未成雲雨夢",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "巫山曉",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "千里斷腸",
+     "tones": "⊙●●○",
+     "note": ""
+    },
+    {
+     "chars": "關山古道",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "回首高城似天杳",
+     "tones": "⊙●○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "滿懷離恨",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "付與落花啼鳥",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "故人何處也",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "青春老",
+     "tones": "○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "好事近": {
+   "rows": [
+    {
+     "chars": "葉暗乳鴉啼",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "風定老紅猶落",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "蝴蝶不隨春去",
+     "tones": "⊙●⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "入熏風池閣",
+     "tones": "●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "休歌金縷勸金卮",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "酒病煞如昨",
+     "tones": "⊙⊙●○▲",
+     "note": ""
+    },
+    {
+     "chars": "簾卷日長人靜",
+     "tones": "⊙●⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "任楊花飄泊",
+     "tones": "●○○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "賀新郎": {
+   "rows": [
+    {
+     "chars": "篆縷銷金鼎",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "醉沉沉",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "庭陰轉午",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "畫堂人靜",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "芳草王孫知何處",
+     "tones": "○●○○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "惟有楊花糝徑",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "漸玉枕",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "騰騰春醒",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "簾外殘紅春已透",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "鎮無聊",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "酒懨懨病",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "雲鬢亂",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "未整",
+     "tones": "●○▲",
+     "note": ""
+    },
+    {
+     "chars": "江南舊事休重省",
+     "tones": "○○●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "遍天涯",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "尋消問息",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "斷鴻難倩",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "月滿西樓憑欄久",
+     "tones": "⊙●⊙○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "依舊歸期未定",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "又只恐",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "瓶沉金井",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "嘶騎不來銀燭暗",
+     "tones": "⊙●⊙○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "枉教人",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "立盡梧桐影",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "誰伴我",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "對鸞鏡",
+     "tones": "●○▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "瀟湘夜雨": {
+   "rows": [
+    {
+     "chars": "斜點銀缸",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "高擎蓮炬",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "夜寒不耐微風",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "重重簾幕掩堂中",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "香漸遠",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "長煙嫋",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "光不定",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "寒影搖紅",
+     "tones": "○●○△",
+     "note": ""
+    },
+    {
+     "chars": "偏奇處",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "當庭月暗",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "吐焰如虹",
+     "tones": "●●○△",
+     "note": ""
+    },
+    {
+     "chars": "紅裳呈豔",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "麗蛾一見",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "無奈狂蹤",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "試煩他纖手",
+     "tones": "●⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "卷上紗籠",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "開正好",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "銀花照夜",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "堆不盡",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "金粟凝空",
+     "tones": "○●○△",
+     "note": ""
+    },
+    {
+     "chars": "叮嚀語",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "頻將好事",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "來報主人公",
+     "tones": "⊙●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "祝英臺近": {
+   "rows": [
+    {
+     "chars": "寶釵分",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "桃葉渡",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "煙柳暗南浦",
+     "tones": "⊙●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "怕上層樓",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "十日九風雨",
+     "tones": "⊙●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "斷腸點點飛紅",
+     "tones": "⊙○⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "都無人管",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "倩誰喚",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "流鶯聲住",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "鬢邊覷",
+     "tones": "●○▲",
+     "note": ""
+    },
+    {
+     "chars": "試把花卜歸期",
+     "tones": "⊙⊙⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "才簪又重數",
+     "tones": "⊙○●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "羅帳燈昏",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "哽咽夢中語",
+     "tones": "⊙●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "是他春帶愁來",
+     "tones": "⊙○⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "春歸何處",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "卻不解",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "帶將愁去",
+     "tones": "⊙○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "南浦": {
+   "rows": [
+    {
+     "chars": "金鴨懶薰香",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "向晚來",
+     "tones": "●●○",
+     "note": ""
+    },
+    {
+     "chars": "春酲一枕無緒",
+     "tones": "○○⊙●○▲",
+     "note": ""
+    },
+    {
+     "chars": "濃綠漲瑤窗",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "東風外",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "吹盡亂紅飛絮",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "無言佇立",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "斷腸惟有流鶯語",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "碧雲欲暮",
+     "tones": "●○●▲",
+     "note": ""
+    },
+    {
+     "chars": "空惆悵韶華",
+     "tones": "○⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "一時虛度",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "追思舊日心情",
+     "tones": "○○●●○○",
+     "note": ""
+    },
+    {
+     "chars": "記題葉西樓",
+     "tones": "●○●○○",
+     "note": ""
+    },
+    {
+     "chars": "吹花南浦",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "老去覺歡疏",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "傷春恨",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "都付斷雲殘雨",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "黃昏院落",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "問誰猶在憑欄處",
+     "tones": "●○○●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "可堪杜宇",
+     "tones": "⊙○●▲",
+     "note": ""
+    },
+    {
+     "chars": "空只解聲聲",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "催他春去",
+     "tones": "⊙○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "齊天樂": {
+   "rows": [
+    {
+     "chars": "庾郎先自吟愁賦",
+     "tones": "●○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "淒淒更聞私語",
+     "tones": "○○●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "露濕銅鋪",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "苔侵石井",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "都是曾聽伊處",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "哀音似訴",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "正思婦無眠",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "起尋機杼",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "曲曲屏山",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "夜涼獨自甚情緒",
+     "tones": "●○⊙●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "西窗又吹暗雨",
+     "tones": "○○●○●▲",
+     "note": ""
+    },
+    {
+     "chars": "為誰頻斷續",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "相和砧杵",
+     "tones": "○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "候館吟秋",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "離宮吊月",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "別有傷心無數",
+     "tones": "⊙●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "豳詩漫與",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "笑籬落呼燈",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "世間兒女",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "寫入琴絲",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "一聲聲更苦",
+     "tones": "●○○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "沁園春": {
+   "rows": [
+    {
+     "chars": "孤鶴歸來",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "再過遼天",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "換盡舊人",
+     "tones": "⊙●⊙△",
+     "note": ""
+    },
+    {
+     "chars": "念累累枯塚",
+     "tones": "●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "茫茫夢境",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "王侯螻蟻",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "畢竟成塵",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "載酒園林",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "尋花巷陌",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "當日何曾輕負春",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "流年改",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "歎圍腰帶剩",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "點鬢霜新",
+     "tones": "●●○△",
+     "note": ""
+    },
+    {
+     "chars": "交親散落如雲",
+     "tones": "○○●●○△",
+     "note": ""
+    },
+    {
+     "chars": "又豈料而今餘此身",
+     "tones": "●⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "幸眼明身健",
+     "tones": "●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "茶甘飯軟",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "非惟我老",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "更有人貧",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "躲盡危機",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "消殘壯志",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "短艇湖中閑采",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "吾何恨",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "有漁翁共醉",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "溪友為鄰",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "醉太平": {
+   "rows": [
+    {
+     "chars": "情高意真",
+     "tones": "○○●△",
+     "note": ""
+    },
+    {
+     "chars": "眉長鬢青",
+     "tones": "○○●△",
+     "note": ""
+    },
+    {
+     "chars": "小樓明月調箏",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "寫春風數聲",
+     "tones": "●○○●△",
+     "note": ""
+    },
+    {
+     "chars": "思君憶君",
+     "tones": "○○●△",
+     "note": ""
+    },
+    {
+     "chars": "魂牽夢縈",
+     "tones": "○○●△",
+     "note": ""
+    },
+    {
+     "chars": "翠銷香暖雲屏",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "更那堪酒醒",
+     "tones": "●○○●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "喜遷鶯": {
+   "rows": [
+    {
+     "chars": "銀蟾光彩",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "喜稔歲閏正",
+     "tones": "●⊙●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "元宵還再",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "樂事難並",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "佳時罕遇",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "依舊試燈何礙",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "花市又移星漢",
+     "tones": "⊙●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "蓮炬重芳人海",
+     "tones": "○●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "盡勾引",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "遍嬉游寶馬",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "香車喧隘",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "晴快",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "天意教",
+     "tones": "○●○",
+     "note": ""
+    },
+    {
+     "chars": "人月更圓",
+     "tones": "○●●○",
+     "note": ""
+    },
+    {
+     "chars": "償足風流債",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "媚柳煙濃",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "夭桃紅小",
+     "tones": "⊙○⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "景物迥然堪愛",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "巷陌笑聲不斷",
+     "tones": "⊙●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "襟袖餘香仍在",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "待歸也",
+     "tones": "●○●",
+     "note": ""
+    },
+    {
+     "chars": "便相期明日",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "踏青挑菜",
+     "tones": "⊙○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "雙雙燕": {
+   "rows": [
+    {
+     "chars": "過春社了",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "度簾幕中間",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "去年塵冷",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "差池欲住",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "試入舊巢相並",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "還相雕梁藻井",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "又軟語",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "商量不定",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "飄然快拂花梢",
+     "tones": "○○●●○○",
+     "note": ""
+    },
+    {
+     "chars": "翠尾分開紅影",
+     "tones": "●●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "芳徑",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "芹泥雨潤",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "愛貼地爭飛",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "競誇輕俊",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "紅樓歸晚",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "看足柳昏花暝",
+     "tones": "●●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "應是棲香正穩",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "便忘了",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "天涯芳信",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "愁損翠黛雙蛾",
+     "tones": "○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "日日畫欄獨憑",
+     "tones": "●●⊙○⊙▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "換巢鸞鳳": {
+   "rows": [
+    {
+     "chars": "人若梅嬌",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "正愁橫斷塢",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "夢繞溪橋",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "倚風融漢粉",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "坐月怨秦簫",
+     "tones": "●●●○△",
+     "note": ""
+    },
+    {
+     "chars": "相思因什到纖腰",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "定知我今",
+     "tones": "●○●○",
+     "note": ""
+    },
+    {
+     "chars": "無魂可銷",
+     "tones": "○○●△",
+     "note": ""
+    },
+    {
+     "chars": "佳期晚",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "謾幾度",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "淚痕相照",
+     "tones": "●○○▲",
+     "note": "換仄韻"
+    },
+    {
+     "chars": "人悄",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "天渺渺",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "花外語香",
+     "tones": "○●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "時透郎懷抱",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "暗握荑苗",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "乍嘗櫻顆",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "猶恨侵階芳草",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "天念王昌忒多情",
+     "tones": "○●○○●○○",
+     "note": ""
+    },
+    {
+     "chars": "換巢鸞鳳教偕老",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "溫柔鄉",
+     "tones": "○○○",
+     "note": ""
+    },
+    {
+     "chars": "醉芙蓉",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "一帳春曉",
+     "tones": "⊙●○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "瑞鶴仙": {
+   "rows": [
+    {
+     "chars": "杏煙嬌濕鬢",
+     "tones": "⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "過杜若汀洲",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "楚衣香潤",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "回頭翠樓近",
+     "tones": "○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "指鴛鴦沙上",
+     "tones": "●○○○●",
+     "note": ""
+    },
+    {
+     "chars": "暗藏春恨",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "歸鞭隱隱",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "便不念",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "芳痕未穩",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "自簫聲",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "吹落雲東",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "再數故園花信",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "誰問",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "聽歌窗罅",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "倚月鉤欄",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "舊家輕俊",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "芳心一寸",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "相思後",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "總灰盡",
+     "tones": "●○▲",
+     "note": ""
+    },
+    {
+     "chars": "奈春風多事",
+     "tones": "●○○○●",
+     "note": ""
+    },
+    {
+     "chars": "吹花搖柳",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "也把幽情喚醒",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "對南溪",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "桃萼翻紅",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "又成瘦損",
+     "tones": "●○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "風入松": {
+   "rows": [
+    {
+     "chars": "聽風聽雨過清明",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "愁草瘞花銘",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "樓前綠暗分攜路",
+     "tones": "⊙○●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "一絲柳",
+     "tones": "●○⊙",
+     "note": ""
+    },
+    {
+     "chars": "一寸柔情",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "料峭春寒中酒",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "迷離曉夢啼鶯",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "西園日日掃林亭",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "依舊賞新晴",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "黃蜂頻撲秋千索",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "有當時",
+     "tones": "●○⊙",
+     "note": ""
+    },
+    {
+     "chars": "纖手香凝",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "惆悵雙鴛不到",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "幽階一夜苔生",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "一翦梅": {
+   "rows": [
+    {
+     "chars": "一片春愁帶酒澆",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "江上舟搖",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "樓上簾招",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "秋娘容與泰娘嬌",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "風又飄飄",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "雨又瀟瀟",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "何日雲帆卸浦橋",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "銀字箏調",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "心字香燒",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "流光容易把人拋",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "紅了櫻桃",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "綠了芭蕉",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "永遇樂": {
+   "rows": [
+    {
+     "chars": "清逼池亭",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "潤侵山閣",
+     "tones": "⊙⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "雲氣凝聚",
+     "tones": "⊙●⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "未有蟬前",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "已無蝶後",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "花事隨流水",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "西園支徑",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "今朝重到",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "半礙醉筇吟袂",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "除非是",
+     "tones": "⊙○●",
+     "note": ""
+    },
+    {
+     "chars": "鶯身瘦小",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "暗中引雛穿去",
+     "tones": "⊙○●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "梅簷滴溜",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "風來吹斷",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "放得斜陽一縷",
+     "tones": "●●○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "玉子敲枰",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "香綃落翦",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "聲度深幾許",
+     "tones": "⊙●○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "層層離恨",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "淒迷如此",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "點破漫煩輕絮",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "應難認",
+     "tones": "⊙○●",
+     "note": ""
+    },
+    {
+     "chars": "爭春舊館",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "倚紅杏處",
+     "tones": "⊙○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "瑤臺聚八仙": {
+   "rows": [
+    {
+     "chars": "秋月娟娟",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "人正遠",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "魚雁待拂吟箋",
+     "tones": "○●●●○△",
+     "note": ""
+    },
+    {
+     "chars": "也知遊事",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "多在第二橋邊",
+     "tones": "○●●●○△",
+     "note": ""
+    },
+    {
+     "chars": "花底鴛鴦深處睡",
+     "tones": "⊙●○○○●●",
+     "note": ""
+    },
+    {
+     "chars": "柳陰淡隔裡湖船",
+     "tones": "⊙○●●●○△",
+     "note": ""
+    },
+    {
+     "chars": "路綿綿",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "夢吹舊曲",
+     "tones": "●○●●",
+     "note": ""
+    },
+    {
+     "chars": "如此山川",
+     "tones": "○●○△",
+     "note": ""
+    },
+    {
+     "chars": "平生幾兩謝屐",
+     "tones": "○○⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "便放歌自得",
+     "tones": "●⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "直上風煙",
+     "tones": "●●○△",
+     "note": ""
+    },
+    {
+     "chars": "峭壁誰家",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "長嘯竟落松前",
+     "tones": "○●●●○△",
+     "note": ""
+    },
+    {
+     "chars": "十年孤劍萬里",
+     "tones": "⊙○⊙●●●",
+     "note": ""
+    },
+    {
+     "chars": "又何似",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "畦分抱甕泉",
+     "tones": "○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "中山酒",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "且醉餐石髓",
+     "tones": "●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "白眼青天",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "水龍吟": {
+   "rows": [
+    {
+     "chars": "仙人掌上芙蓉",
+     "tones": "○○⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "涓涓猶滴金盤露",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "輕妝照水",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "纖裳玉立",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "飄飄似舞",
+     "tones": "⊙○●▲",
+     "note": ""
+    },
+    {
+     "chars": "幾度消凝",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "滿湖煙月",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "一汀鷗鷺",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "記小舟夜悄",
+     "tones": "●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "波明香遠",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "渾不見",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "花開處",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "應是浣紗人妒",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "褪紅衣",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "被誰輕誤",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "閒情淡雅",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "冶姿清潤",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "憑嬌待語",
+     "tones": "⊙○●▲",
+     "note": ""
+    },
+    {
+     "chars": "隔浦相逢",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "偶然傾蓋",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "似傳心素",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "怕湘皋佩解",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "綠雲十裡",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "卷西風去",
+     "tones": "●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "綺羅香": {
+   "rows": [
+    {
+     "chars": "萬里飛霜",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "千山落木",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "寒豔不招春妒",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "楓冷吳江",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "獨客又吟愁句",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "正船艤",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "流水孤村",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "似花繞",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "斜陽芳樹",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "甚荒溝",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "一片淒涼",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "載情不去載愁去",
+     "tones": "⊙○⊙●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "長安誰問倦旅",
+     "tones": "○○○●●▲",
+     "note": ""
+    },
+    {
+     "chars": "羞見衰顏借酒",
+     "tones": "○●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "飄零如許",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "漫倚新妝",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "不入洛陽花譜",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "為回風",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "起舞樽前",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "盡化作",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "斷霞千縷",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "記陰陰",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "綠遍江南",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "夜窗聽暗雨",
+     "tones": "●○○●▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "疏影": {
+   "rows": [
+    {
+     "chars": "黃昏片月",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "似碎陰滿地",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "還更清絕",
+     "tones": "⊙●○▲",
+     "note": ""
+    },
+    {
+     "chars": "枝北枝南",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "疑有疑無",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "幾度背燈難折",
+     "tones": "⊙⊙●⊙○▲",
+     "note": ""
+    },
+    {
+     "chars": "依稀倩女離魂處",
+     "tones": "○○●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "緩步出",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "前村時節",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "看夜深",
+     "tones": "●●⊙",
+     "note": ""
+    },
+    {
+     "chars": "竹外橫斜",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "應妒過雲明滅",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "窺鏡蛾眉淡掃",
+     "tones": "⊙●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "為容不在貌",
+     "tones": "●○⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "獨抱孤潔",
+     "tones": "⊙●○▲",
+     "note": ""
+    },
+    {
+     "chars": "莫是花光",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "描取春痕",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "不怕麗譙吹徹",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "還驚海上燃犀去",
+     "tones": "○○●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "照水底",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "珊瑚疑活",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "做弄得",
+     "tones": "●●⊙",
+     "note": ""
+    },
+    {
+     "chars": "酒醒天寒",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "空對一庭香雪",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "採桑子": {
+   "rows": [
+    {
+     "chars": "幛泥油壁人歸後",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "滿院花陰",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "樓影沉沉",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "中有傷春一片心",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    },
+    {
+     "chars": "閑穿綠樹尋梅子",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "斜日籠明",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "團扇風輕",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "一徑黃花不避人",
+     "tones": "⊙●○○⊙●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "荊州亭": {
+   "rows": [
+    {
+     "chars": "簾捲曲欄獨倚",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "江展暮雲無際",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "淚眼不曾晴",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "家在吳頭楚尾",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "數點雪花亂委",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "撲漉沙鷗驚起",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "詩句欲成時",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "沒入蒼煙叢裡",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "醉花陰": {
+   "rows": [
+    {
+     "chars": "薄霧濃雲愁永晝",
+     "tones": "⊙●⊙○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "瑞腦銷金獸",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "佳節又重陽",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "寶枕紗廚",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "昨夜涼初透",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "東籬把酒黃昏後",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "有暗香盈袖",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "莫道不銷魂",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "簾卷西風",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "人比黃花瘦",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "鳳凰臺上憶吹簫": {
+   "rows": [
+    {
+     "chars": "香冷金猊",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "被翻紅浪",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "起來慵自梳頭",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "任寶奩塵滿",
+     "tones": "●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "日上簾鉤",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "生怕離懷別苦",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "多少事",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "欲說還休",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "新來瘦",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "非幹病酒",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "不是悲秋",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "休休",
+     "tones": "○△",
+     "note": ""
+    },
+    {
+     "chars": "這回去也",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "千萬遍陽關",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "也則難留",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "念武陵人遠",
+     "tones": "●⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "煙鎖秦樓",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "惟有樓前流水",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "應念我",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "終日凝眸",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "凝眸處",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "從今又添",
+     "tones": "○○●⊙",
+     "note": ""
+    },
+    {
+     "chars": "一段新愁",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "聲聲慢": {
+   "rows": [
+    {
+     "chars": "尋尋覓覓",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "冷冷清清",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "淒淒慘慘戚戚",
+     "tones": "○○●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "乍暖乍寒時候",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "最難將息",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "三杯兩盞淡酒",
+     "tones": "○○●○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "怎敵他",
+     "tones": "●●○",
+     "note": ""
+    },
+    {
+     "chars": "晚來風急",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "雁過也",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "正傷心",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "卻是舊時相識",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "滿地黃花堆積",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "憔悴損",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "而今有誰堪摘",
+     "tones": "⊙⊙●○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "守著窗兒",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "獨自怎生得黑",
+     "tones": "⊙●⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "梧桐更兼細雨",
+     "tones": "○○●○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "到黃昏",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "點點滴滴",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "這次第",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "怎一個",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "愁字了得",
+     "tones": "○●●▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "南鄉子": {
+   "rows": [
+    {
+     "chars": "曉日壓重簷",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "鬥帳春寒起未",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "天氣困人梳洗懶",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "眉尖",
+     "tones": "○△",
+     "note": ""
+    },
+    {
+     "chars": "淡畫春山不喜添",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "閑把繡絲",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "認得金針又倒拈",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "陌上遊人歸也未",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "懨懨",
+     "tones": "○△",
+     "note": ""
+    },
+    {
+     "chars": "滿院楊花不捲簾",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "生查子": {
+   "rows": [
+    {
+     "chars": "去年元夜時",
+     "tones": "⊙○○●○",
+     "note": ""
+    },
+    {
+     "chars": "花市燈如晝",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "月上柳梢頭",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "人約黃昏後",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "今年元夜時",
+     "tones": "⊙○○●○",
+     "note": ""
+    },
+    {
+     "chars": "月與燈依舊",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "不見去年人",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "淚濕春衫袖",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "鷓鴣天": {
+   "rows": [
+    {
+     "chars": "玉慘花愁出鳳城",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "蓮花樓下柳青青",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "尊前一唱陽關曲",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "別個人人第五程",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    },
+    {
+     "chars": "尋好夢夢難成",
+     "tones": "○●●●○△",
+     "note": ""
+    },
+    {
+     "chars": "有誰知我此時情",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "枕前淚共階前雨",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "隔個窗兒滴到明",
+     "tones": "⊙●○○●●△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "人月圓": {
+   "rows": [
+    {
+     "chars": "南朝千古傷心事",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "還唱後庭花",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "舊時王謝",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "堂前燕子",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "飛向誰家",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "恍然一夢",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "天姿勝雪",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "宮鬢堆鴉",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "江州司馬",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "青衫淚濕",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "同是天涯",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "望海潮": {
+   "rows": [
+    {
+     "chars": "地雄河嶽",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "疆分韓晉",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "潼關高壓秦頭",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "山倚斷霞",
+     "tones": "⊙●●○",
+     "note": ""
+    },
+    {
+     "chars": "江吞絕壁",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "野煙縈帶滄洲",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "虎旆擁貔貅",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "看陣雲截岸",
+     "tones": "●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "霜氣橫秋",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "千雉嚴城",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "五更殘角月如鉤",
+     "tones": "●○○●●○△",
+     "note": ""
+    },
+    {
+     "chars": "西風曉入貂裘",
+     "tones": "○○●●○△",
+     "note": ""
+    },
+    {
+     "chars": "恨儒冠誤我",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "卻羨兜牟",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "六郡少年",
+     "tones": "⊙●●○",
+     "note": ""
+    },
+    {
+     "chars": "三關老將",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "賀蘭烽火新收",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "天外岳蓮樓",
+     "tones": "○●●○○",
+     "note": ""
+    },
+    {
+     "chars": "掛幾行雁字",
+     "tones": "●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "指引歸舟",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "正好黃金換酒",
+     "tones": "⊙●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "羯鼓醉涼州",
+     "tones": "●●●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "玉漏遲": {
+   "rows": [
+    {
+     "chars": "浙江歸路杳",
+     "tones": "●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "西南卻羨",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "投林高鳥",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "升鬥微官",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "世累苦相縈繞",
+     "tones": "●⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "不似麒麟殿裡",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "又不與",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "巢由同調",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "時自笑",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "虛名負我",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "半生吟嘯",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "擾擾馬足車塵",
+     "tones": "⊙⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "被歲月無情",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "暗消年少",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "鐘鼎山林",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "一事幾時曾了",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "四壁秋蟲夜雨",
+     "tones": "⊙●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "更一點",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "殘燈斜照",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "清鏡曉",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "白髮又添多少",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "點絳唇": {
+   "rows": [
+    {
+     "chars": "一夜東風",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "枕邊吹散愁多少",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "數聲啼鳥",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "夢轉紗窗曉",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "來是春初",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "去是春將老",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "長亭道",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "一般芳草",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "只有歸時好",
+     "tones": "⊙●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "滿江紅": {
+   "rows": [
+    {
+     "chars": "六代豪華",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "春去也",
+     "tones": "⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "更無消息",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "空悵望",
+     "tones": "⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "山川形勝",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "已非疇昔",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "王謝堂前雙燕子",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "烏衣巷口曾相識",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "聽夜深寂寞打孤城",
+     "tones": "●⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "春潮急",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "思往事",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "愁如織",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "懷故國",
+     "tones": "○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "空陳跡",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "但荒煙衰草",
+     "tones": "●⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "亂鴉斜日",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "玉樹歌殘秋露冷",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "胭脂井壞寒泣",
+     "tones": "⊙○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "到如今只有蔣山青",
+     "tones": "●⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "秦淮碧",
+     "tones": "○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "念奴嬌": {
+   "rows": [
+    {
+     "chars": "石頭城上",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "望天低",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "吳楚眼空無物",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "指點六朝形勝地",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "惟有青山如壁",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "蔽日旌旗",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "連雲檣櫓",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "白骨紛如雪",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "一江南北",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "消磨多少豪傑",
+     "tones": "⊙○⊙●○▲",
+     "note": ""
+    },
+    {
+     "chars": "寂寞避暑離宮",
+     "tones": "⊙●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "東風輦路",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "芳草年年發",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "落日無人松徑冷",
+     "tones": "⊙●⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "鬼火高低明滅",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "歌舞尊前",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "繁華鏡裡",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "暗換青青發",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "傷心千古",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "秦淮一片明月",
+     "tones": "⊙○○●○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": true
+  },
+  "陌上花": {
+   "rows": [
+    {
+     "chars": "關山夢裡",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "歸來還又",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "歲華催晚",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "馬影雞聲",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "諳盡倦郵荒館",
+     "tones": "○●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "綠箋密記多情事",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "一看一回腸斷",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "待殷勤寄與",
+     "tones": "●⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "舊游鶯燕",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "水流雲散",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "滿羅衫是酒",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "香痕凝處",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "唾碧啼紅相半",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "只恐梅花",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "瘦倚夜寒誰暖",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "不成便沒相逢日",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "重整釵鸞箏雁",
+     "tones": "○●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "但何郎縱有",
+     "tones": "●⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "春風詞筆",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "病懷渾懶",
+     "tones": "●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "東風第一枝": {
+   "rows": [
+    {
+     "chars": "老樹渾苔",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "橫枝未葉",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "青春肯誤芳約",
+     "tones": "○○●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "背陰未返冰魂",
+     "tones": "⊙○●●○○",
+     "note": ""
+    },
+    {
+     "chars": "陽梢已含紅萼",
+     "tones": "⊙○●○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "佳人寒怯",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "誰驚起",
+     "tones": "⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "曉來梳掠",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "是月斜",
+     "tones": "●●⊙",
+     "note": ""
+    },
+    {
+     "chars": "花外麼禽",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "霜冷竹間幽鶴",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "雲淡淡",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "粉痕漸薄",
+     "tones": "●○●▲",
+     "note": ""
+    },
+    {
+     "chars": "風細細",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "凍香又落",
+     "tones": "●○●▲",
+     "note": ""
+    },
+    {
+     "chars": "叩門喜伴金樽",
+     "tones": "●○●●○○",
+     "note": ""
+    },
+    {
+     "chars": "倚欄怕聽畫角",
+     "tones": "⊙○●○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "依稀夢裡",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "記半面",
+     "tones": "⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "淺窺珠箔",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "恁時得",
+     "tones": "●○⊙",
+     "note": ""
+    },
+    {
+     "chars": "重寫鸞箋",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "去訪舊遊東閣",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "摸魚兒": {
+   "rows": [
+    {
+     "chars": "漲西湖",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "半篙新雨",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "麴塵波外風軟",
+     "tones": "⊙○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "蘭舟同上鴛鴦浦",
+     "tones": "○○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "天氣嫩寒輕暖",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "簾半卷",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "度一縷歌雲",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "不礙桃花扇",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "鶯嬌燕婉",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "任狂客無腸",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "王孫有恨",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "莫放酒杯淺",
+     "tones": "⊙●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "垂楊岸",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "何處紅亭翠館",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "如今遊興全懶",
+     "tones": "⊙○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "山容水態依然好",
+     "tones": "○○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "惟有綺羅雲散",
+     "tones": "⊙●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "君不見",
+     "tones": "○●▲",
+     "note": ""
+    },
+    {
+     "chars": "歌舞地",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "青蕪滿目成秋苑",
+     "tones": "○○⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "斜陽又晚",
+     "tones": "○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "正落絮飛花",
+     "tones": "●⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "將春欲去",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "目送水天遠",
+     "tones": "⊙●●○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "多麗": {
+   "rows": [
+    {
+     "chars": "晚山青",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "一川雲樹冥冥",
+     "tones": "●○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "正參差",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "煙凝紫翠",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "斜陽畫出南屏",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "館娃歸",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "吳台游鹿",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "銅仙去",
+     "tones": "⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "漢苑飛螢",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "懷古情多",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "憑高望極",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "且將樽酒慰飄零",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "自湖上",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "愛梅仙遠",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "鶴夢幾時醒",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "空留得",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "六橋疏柳",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "孤嶼危亭",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "待蘇堤",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "歌聲散盡",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "更須攜妓西泠",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "藕花深",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "雨涼翡翠",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "菰蒲軟",
+     "tones": "⊙⊙●",
+     "note": ""
+    },
+    {
+     "chars": "風弄蜻蜓",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "澄碧生秋",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "鬧紅駐景",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "采菱新唱最堪聽",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "見一片",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "水天無際",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "漁火兩三星",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "多情月",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "為人留照",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "未過前汀",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "奪錦標": {
+   "rows": [
+    {
+     "chars": "涼月橫舟",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "銀潢浸練",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "萬里秋容如拭",
+     "tones": "●●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "冉冉鸞驂鶴馭",
+     "tones": "●●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "橋倚高寒",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "鵲飛空碧",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "問歡情幾許",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "早收拾",
+     "tones": "●○⊙",
+     "note": ""
+    },
+    {
+     "chars": "新愁重織",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "恨人間",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "會少離多",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "萬古千秋今夕",
+     "tones": "●●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "誰念文園病客",
+     "tones": "⊙●○○●▲",
+     "note": ""
+    },
+    {
+     "chars": "夜色沉沉",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "獨抱一天岑寂",
+     "tones": "●●○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "忍記穿針亭榭",
+     "tones": "●●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "金鴨香寒",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "玉徽塵積",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "憑新涼半枕",
+     "tones": "●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "又依稀",
+     "tones": "●○⊙",
+     "note": ""
+    },
+    {
+     "chars": "行雲消息",
+     "tones": "○○○▲",
+     "note": ""
+    },
+    {
+     "chars": "聽窗前",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "淚雨浪浪",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "夢裡簷聲猶滴",
+     "tones": "●●○○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "眼兒媚": {
+   "rows": [
+    {
+     "chars": "萋萋煙草小樓西",
+     "tones": "⊙○⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "雲壓雁聲低",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "兩行疏柳",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "一絲殘照",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "萬點鴉棲",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "春山碧樹秋重綠",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "人在武陵溪",
+     "tones": "⊙●●○△",
+     "note": ""
+    },
+    {
+     "chars": "無情明月",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "有情歸夢",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "同到幽閨",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "誤佳期": {
+   "rows": [
+    {
+     "chars": "寒氣暗侵簾幕",
+     "tones": "⊙●⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "孤負芳春小約",
+     "tones": "⊙●⊙○●▲",
+     "note": ""
+    },
+    {
+     "chars": "庭梅開遍不歸來",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "直恁心情惡",
+     "tones": "●●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "獨抱影兒眠",
+     "tones": "⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "背看燈花落",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "待他重與畫眉時",
+     "tones": "⊙○⊙●●○○",
+     "note": ""
+    },
+    {
+     "chars": "細數郎輕薄",
+     "tones": "●●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "柳梢青": {
+   "rows": [
+    {
+     "chars": "障羞羅扇",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "花時猶記",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "這邊曾見",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "曲錄欄幹",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "玲瓏窗戶",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "也都尋遍",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "兩峰依舊青青",
+     "tones": "⊙○⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "但不比",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "眉梢平遠",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "第一難忘",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "重來崔護",
+     "tones": "⊙○○●",
+     "note": ""
+    },
+    {
+     "chars": "去年人面",
+     "tones": "⊙○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "解佩令": {
+   "rows": [
+    {
+     "chars": "十年磨劍",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "五陵結客",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "把平生",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "涕淚都飄盡",
+     "tones": "⊙●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "老去填詞",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "一半是",
+     "tones": "●⊙⊙",
+     "note": ""
+    },
+    {
+     "chars": "空中傳恨",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "幾曾圍",
+     "tones": "⊙○○",
+     "note": ""
+    },
+    {
+     "chars": "燕釵蟬鬢",
+     "tones": "⊙○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "不師秦七",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "不師黃九",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "倚新聲",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "玉田差近",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "落拓江湖",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "且分付",
+     "tones": "●⊙●",
+     "note": ""
+    },
+    {
+     "chars": "歌筵紅粉",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "料封侯",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "白頭無分",
+     "tones": "●○⊙▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "暗香": {
+   "rows": [
+    {
+     "chars": "凝珠吹黍",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "似早梅乍萼",
+     "tones": "●⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "新桐初乳",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "莫是珊瑚",
+     "tones": "●●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "零亂敲殘石家樹",
+     "tones": "○●○○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "記得南中舊事",
+     "tones": "⊙●○○●●",
+     "note": ""
+    },
+    {
+     "chars": "金齒屐",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "小鬟蠻女",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "向兩岸",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "樹底盈盈",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "素手摘新雨",
+     "tones": "⊙●●○▲",
+     "note": ""
+    },
+    {
+     "chars": "延佇",
+     "tones": "○▲",
+     "note": ""
+    },
+    {
+     "chars": "碧雲暮",
+     "tones": "●○▲",
+     "note": ""
+    },
+    {
+     "chars": "休逗入茜裙",
+     "tones": "⊙●●⊙○",
+     "note": ""
+    },
+    {
+     "chars": "欲尋無處",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "唱歌歸去",
+     "tones": "●○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "先向綠窗飼鸚鵡",
+     "tones": "○●⊙○●○▲",
+     "note": ""
+    },
+    {
+     "chars": "惆悵檀郎終遠",
+     "tones": "⊙●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "待寄與",
+     "tones": "⊙●●",
+     "note": ""
+    },
+    {
+     "chars": "相思猶阻",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "燭影下",
+     "tones": "●●●",
+     "note": ""
+    },
+    {
+     "chars": "開玉合",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "背人偷數",
+     "tones": "●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "慶春澤": {
+   "rows": [
+    {
+     "chars": "橋影流虹",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "湖光映雪",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "翠簾不卷春深",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "一寸橫波",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "斷腸人在樓陰",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "遊絲不系羊車住",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "倩何人",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "傳語青禽",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "最難禁",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "倚遍雕欄",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "夢遍羅衾",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "重來已是朝雲散",
+     "tones": "○○●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "悵明珠佩冷",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "紫玉煙沉",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "前度桃花",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "依然開滿江潯",
+     "tones": "⊙○⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "鍾情怕到相思路",
+     "tones": "⊙○⊙●○○●",
+     "note": ""
+    },
+    {
+     "chars": "盼長堤",
+     "tones": "●○○",
+     "note": ""
+    },
+    {
+     "chars": "草盡紅心",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "動愁吟",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "碧落黃泉",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "兩處誰尋",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "春風嫋娜": {
+   "rows": [
+    {
+     "chars": "倩東君著力",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "系住韶華",
+     "tones": "●●○△",
+     "note": ""
+    },
+    {
+     "chars": "穿小徑",
+     "tones": "○●●",
+     "note": ""
+    },
+    {
+     "chars": "漾晴沙",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "正陰雲籠日",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "難尋野馬",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "輕染草",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "細綰秋蛇",
+     "tones": "●●○△",
+     "note": ""
+    },
+    {
+     "chars": "燕蹴還低",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "鶯銜忽溜",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "惹卻黃須無數花",
+     "tones": "●●○○○●△",
+     "note": ""
+    },
+    {
+     "chars": "縱許悠揚度朱戶",
+     "tones": "●●○○●○●",
+     "note": ""
+    },
+    {
+     "chars": "終愁人影隔窗紗",
+     "tones": "○○○●●○△",
+     "note": ""
+    },
+    {
+     "chars": "惆悵謝娘池閣",
+     "tones": "⊙●⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "湘簾乍卷",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "凝斜盼",
+     "tones": "⊙○●",
+     "note": ""
+    },
+    {
+     "chars": "近拂簷牙",
+     "tones": "●●○△",
+     "note": ""
+    },
+    {
+     "chars": "疏籬",
+     "tones": "○○●",
+     "note": ""
+    },
+    {
+     "chars": "短垣遮",
+     "tones": "●○△",
+     "note": ""
+    },
+    {
+     "chars": "微風別院",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "好景誰家",
+     "tones": "⊙●○△",
+     "note": ""
+    },
+    {
+     "chars": "紅袖招時",
+     "tones": "⊙●○○",
+     "note": ""
+    },
+    {
+     "chars": "偏隨羅扇",
+     "tones": "⊙○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "玉鞭墮處",
+     "tones": "⊙○●●",
+     "note": ""
+    },
+    {
+     "chars": "又逐香車",
+     "tones": "●●○△",
+     "note": ""
+    },
+    {
+     "chars": "休憎輕薄",
+     "tones": "○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "笑多情似我",
+     "tones": "●○○⊙●",
+     "note": ""
+    },
+    {
+     "chars": "春心不定",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "飛夢天涯",
+     "tones": "⊙●○△",
+     "note": ""
+    }
+   ],
+   "aligned": false,
+   "pian_breaks": 2,
+   "enabled": false
+  },
+  "翠樓吟": {
+   "rows": [
+    {
+     "chars": "月魄荒唐",
+     "tones": "●●○○",
+     "note": ""
+    },
+    {
+     "chars": "花靈仿佛",
+     "tones": "○○●●",
+     "note": ""
+    },
+    {
+     "chars": "相攜最無人處",
+     "tones": "○○●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "欄幹芳草外",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "忽驚轉",
+     "tones": "●○●",
+     "note": ""
+    },
+    {
+     "chars": "幾聲啼宇",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "飄零何許",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "似一縷遊絲",
+     "tones": "●●●○○",
+     "note": ""
+    },
+    {
+     "chars": "因風吹去",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "渾無據",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "想應淒斷",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "路旁酸雨",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "日暮",
+     "tones": "●▲",
+     "note": ""
+    },
+    {
+     "chars": "渺渺愁予",
+     "tones": "○●○○",
+     "note": ""
+    },
+    {
+     "chars": "覺黯然銷卻",
+     "tones": "●●○○●",
+     "note": ""
+    },
+    {
+     "chars": "別情離緒",
+     "tones": "●○○▲",
+     "note": ""
+    },
+    {
+     "chars": "春陰樓外遠",
+     "tones": "⊙○○●●",
+     "note": ""
+    },
+    {
+     "chars": "入煙柳",
+     "tones": "●○●",
+     "note": ""
+    },
+    {
+     "chars": "和鶯私語",
+     "tones": "⊙○○▲",
+     "note": ""
+    },
+    {
+     "chars": "連江暝樹",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "欲打點幽香",
+     "tones": "●●●○○",
+     "note": ""
+    },
+    {
+     "chars": "隨郎黏住",
+     "tones": "○○⊙▲",
+     "note": ""
+    },
+    {
+     "chars": "能留否",
+     "tones": "○○▲",
+     "note": ""
+    },
+    {
+     "chars": "只愁輕絕",
+     "tones": "●○○●",
+     "note": ""
+    },
+    {
+     "chars": "化為飛絮",
+     "tones": "●○○▲",
+     "note": ""
+    }
+   ],
+   "aligned": true,
+   "pian_breaks": 2,
+   "enabled": false
+  }
+ }
+}
