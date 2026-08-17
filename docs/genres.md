@@ -24,6 +24,7 @@
 | 小說主層(對話、分段、分章) | `fiction` | `fiction_check.py` |
 | 技術文件(引擎,不單獨安裝) | `techdoc` | `techdoc_check.py` |
 | 近體詩(絕句・律詩) | `regulated-verse` | `verse_check.py` |
+| 詞(宋詞) | `ci-poetry` | `ci_check.py` |
 | 商務公務文(引擎,不單獨安裝) | `bizdoc` | `bizdoc_check.py` |
 
 ### 指回引擎的前門(硬規則與引擎相同,只差配比或結構)

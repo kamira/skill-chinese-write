@@ -121,6 +121,19 @@ if $PY skills/regulated-verse/scripts/verse_check.py skills/regulated-verse/asse
   echo "    ❌ 近體詩 sample-bad.md 竟然通過 —— 韻腳或對仗規則壞了"; exit 1
 fi
 
+echo "[6c/19] 宋詞格律:資產守恆 + 好樣本要過、壞樣本要擋"
+# 資產先驗:baixiang / cilin 的守恆帳要對得起來。
+# 「sha256 錨住了輸入,沒錨住轉換」——雜湊只證明來源沒被換,
+# 證明不了正規化沒把資料吃掉。西江月曾靜默掉 3 個句對而仍回報 aligned:true。
+$PY skills/ci-poetry/scripts/assets_verify.py > /dev/null
+$PY skills/ci-poetry/scripts/ci_check.py --self-test > /dev/null
+# 綠端夾具是黃庭堅〈清平樂〉,而 self-test 的綠端是〈菩薩蠻〉——**刻意不共用**。
+# 同一首當兩處綠端,兩道閘看起來是兩道、實際是一道(CHG-20260817-01 被 6b 抓過)。
+$PY skills/ci-poetry/scripts/ci_check.py --tune 清平樂 skills/ci-poetry/assets/sample-good.md > /dev/null
+if $PY skills/ci-poetry/scripts/ci_check.py --tune 清平樂 skills/ci-poetry/assets/sample-bad.md > /dev/null 2>&1; then
+  echo "    ❌ 宋詞 sample-bad.md 竟然通過 —— 韻組同部規則壞了"; exit 1
+fi
+
 echo "[7/19] zh-style:夾具雙向 + 全 repo 夾具零半形"
 $PY skills/zh-style/scripts/zh_style_check.py --self-test > /dev/null
 $PY skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-good.md > /dev/null
