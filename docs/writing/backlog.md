@@ -53,6 +53,9 @@
 | BL-021 | 待辦 | **宋詞**尚未建:依詞牌,每牌自有句式韻位;韻走詞林正韻(平水韻合併而成) | `skills/` 下新支,可用 `regulated-verse` 的平水韻資產 | 2026-08-17 CHG-20260817-01 |
 | BL-022 | 風險 | 近體詩不判黏、拗救、對仗的詞性語義;3b 殘餘 12 首中出韻 1 首未查版本異文 | skills/regulated-verse/scripts/verse_check.py | 2026-08-17 CHG-20260817-01 |
 | BL-023 | **阻塞** | **宋詞 3b 未跑,本張因此不可 merge、不可發版。** 母體 pin:`chinese-poetry/chinese-poetry` `master` 的 `宋詞/ci.song.{0..21000 step 1000}.json`(21,050 首,22 分片)。GitHub 整站回 429,22 分片全失敗。三條驗收線(全樣本完成判定且無靜默未驗/不通過案例可重現並列出逐字部屬及具名成因/版本更新不得新增未解釋退步)**皆屬未判定**。審議席(codex)裁:「429 是外部阻塞,不是驗收通過…可保留分支並建立具名阻塞條目,**但不能把必要驗收降格成後續白條**。」重現指令:`curl -sL -o ci.song.0.json "https://raw.githubusercontent.com/chinese-poetry/chinese-poetry/master/%E5%AE%8B%E8%AF%8D/ci.song.0.json"`。退步基準存放位置:`docs/writing/acceptance/ACC-20260817-02.md` 的逐首具名表(尚未產生)。**解除條件是三條線全綠,不是「重試過了」** | skills/ci-poetry/ 全支;分支 claude/ci-poetry 保留 | 2026-08-17 CHG-20260817-02 |
+| BL-024 | 風險 | CHG 的 `## Status` 只被檢查「存不存在」,不檢查它說什麼——`CHG-20260814-07` 因此掛著「施工中」直到 merge 後第三天才被看見 | 上游 `doc_integrity_check` | 2026-08-17 CHG-20260817-03 |
+| BL-025 | 待辦 | **詞的入聲能否與上去通押**未裁定;現行資料把入獨立成類,`_stats` 的 `ze` 口徑則把上去入合為一類——兩者並存但引擎只用前者 | skills/ci-poetry/assets/cilin.json `_stats.ze_definition` | 2026-08-17 CHG-20260817-03 |
+| BL-026 | 風險 | **兩邊相同的錯,raw→asset 對帳看不見**(模板污染就是靠第三份獨立實作才抓到);目前沒有機制保證第三份實作會存在 | skills/ci-poetry/scripts/assets_verify.py | 2026-08-17 CHG-20260817-03 |
 
 ## 已解除
 

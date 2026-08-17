@@ -53,9 +53,16 @@ for _s in (sys.stdout, sys.stderr):
 
 DEFAULT_BASE = Path(__file__).resolve().parent.parent / "assets"
 TONE_SYMS = "○●⊙△▲"
-CJK = re.compile(r"[㐀-鿿]")
+# **Ext-B 也要收。** 舊版寫 `[㐀-鿿]`,不含 U+20000 以上,於是 𣘼 𦶟 這兩個罕字
+# 落在類別外被丟掉——而它們正是下面 TPL 那兩個模板真正代表的字。
+CJK = re.compile(r"[㐀-䶿一-鿿豈-﫿\U00020000-\U0003ffff]")
 ANN = re.compile(r"\{\{\*\|[^}]*\}\}")
 LANGVAR = re.compile(r"-\{(?:[^{}|]*\|)?([^{}]*)\}-")     # -{叶}- 這類嵌套標記
+# 字形結構模板 `{{!|𣘼|上「啟」下「木」}}`——**第二引數是描述,不是韻字**。
+# 這一行是補上來的:舊版兩邊(資產建置與本檔的 raw parser)**犯同一個錯**,
+# 把「上啟下木」「上艹下热」當四個韻字收進表,於是 上、下、木 成為假橋接字,
+# 而橋接字正是「入聲獨押」宣稱的殘餘誤放面。守恆閘照樣綠——**一起錯就是一致**。
+TPL = re.compile(r"\{\{!\|([^|{}]+)\|[^{}]*\}\}")
 
 
 # ── 從 raw 獨立 parse(不看成品)────────────────────────────────────────
@@ -106,7 +113,8 @@ def parse_cilin_raw(t: str) -> dict:
         if not cur:
             continue
         for rm in re.finditer(r"【([^】]+)】([^【]*)", line):
-            name, chars = rm.group(1), GLOSS.sub("", rm.group(2))
+            name = rm.group(1)
+            chars = GLOSS.sub("", TPL.sub(r"\1", rm.group(2)))
             chars = "".join(CJK.findall(chars))
             if chars:
                 parts[cur][name] = chars

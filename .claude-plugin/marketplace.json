@@ -5,7 +5,7 @@
   },
   "metadata": {
     "description": "繁體中文寫作技能集:**每個文體一支 skill**,因為它們的硬規則會互相誤殺——同一個詞(如「予以」)在評論裡要改掉、在公文裡是精準用語。涵蓋評論、小說(主層,流派以命令提供)、規格書、架構說明、公文、新聞稿、企劃、散文、詩歌、戲劇、記敘、抒情、說明文、賦駢文、史傳奏啟。有可判定規則的配可跑的 lint(硬性違規 exit 1);判不了的**明標「本支沒有 lint」**,不假裝有把關。Traditional-Chinese writing skills, one per genre.",
-    "version": "4.1.0"
+    "version": "4.2.0"
   },
   "plugins": [
     {
@@ -142,8 +142,8 @@
     {
       "name": "classical",
       "source": "./plugins/classical",
-      "version": "1.1.0",
-      "description": "中文文言文體(賦・駢文 / 史傳・奏啟 / 近體詩)。每支保留自己的觸發面,本 plugin 只做打包。"
+      "version": "1.2.0",
+      "description": "中文文言文體(賦・駢文 / 史傳・奏啟 / 近體詩 / 詞)。每支保留自己的觸發面,本 plugin 只做打包。"
     }
   ]
 }

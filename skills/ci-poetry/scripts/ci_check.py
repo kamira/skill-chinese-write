@@ -23,7 +23,12 @@
 `入聲:…通用`(獨立成部、獨立標頭,無一例外)。**這不是學術意見,是戈載的分部結構。**
 
 `▲` 位在 `上去 ∪ 入` 聯集域求共同部。非橋接字不可能跨舒入,混押組天然無共同部,
-**殘餘誤放面恰好是 50 個橋接字**(名單在 `cilin.json` 的 `_stats.bridge_chars`)。
+**殘餘誤放面恰好是 47 個橋接字**(名單在 `cilin.json` 的 `_stats.bridge_chars`)。
+
+這個數字一度是 50,而多出來的 `上、下、木` **是資料污染造的假橋接**:
+字形結構模板 `{{!|𣘼|上「啟」下「木」}}` 的描述文字被當韻字收進表。
+實測假綠是 `▲ 組「月發閱上」全綠`——**污染剛好落在誤放面宣稱安全的正中央**。
+守恆閘當時是綠的,因為 `assets_verify.py` 的 raw parser 犯同一個錯:**一起錯就是一致**。
 
 **不採「依詞牌要求選上去或入」**——白香的 `▲` 不分域,「某牌要求入聲韻」是
 欽定詞譜層級的外部知識,造它就踩了「禁止自行造規則資料」的紅線。
@@ -160,19 +165,12 @@ def check(tune: str, text: str, tbl: dict) -> tuple[list[str], list[str]]:
                 bad.append(f"第 {i} 句第 {j} 字「{ch}」譜為 {t},實為 {'/'.join(sorted(have))}")
 
     # ── 韻組:run 內求共同部,組間不比較 ──
-    pos = 0
-    flat = [(ch, t) for g, s in zip(got, spec) for ch, t in zip(g, s["tones"])]
-    runs, cur, buf = [], None, []
-    for ch, t in flat:
-        if t not in "△▲":
-            continue
-        if t != cur:
-            if buf:
-                runs.append((cur, buf))
-            cur, buf = t, []
-        buf.append(ch)
-    if buf:
-        runs.append((cur, buf))
+    # **這裡必須呼叫 `rhyme_runs()`,不可再內聯一份。** 初版兩處各有一份切法,
+    # 於是 self-test 的 run 回歸打在**引擎不用的那一份**上:審議席實測把
+    # `check()` 的內聯版改成「只併 ▲、保留 △」,self-test 八案全過、CI 夾具全綠,
+    # 而正確的虞美人譜例當場假陽性。**兩份實作,測到的永遠是沒人跑的那份。**
+    runs = rhyme_runs([{"chars": g, "tones": s["tones"]}
+                       for g, s in zip(got, spec)])
 
     for k, (sym, chars) in enumerate(runs, 1):
         dom = DOMAIN[sym]
@@ -264,11 +262,29 @@ def self_test() -> int:
         pooled = [c for sym, ch in runs if sym == "△" for c in ch]
         if set.intersection(*(parts_in(tbl, c, {"平"}) for c in pooled)):
             fails.append("6 pooled △ 竟有共同部——那道回歸夾具測不到 run 切法")
-    # 7 回歸:念奴嬌譜例依詞林無共同部(已知診斷,非「錯」)
-    ran.append("7 已知診斷 念奴嬌譜例跨十七/十八部")
+    # 6b **▲ 側也要有 run 回歸**,而綠端必須是「▲ 換到不同仄部」的牌。
+    #    菩薩蠻兩個 ▲ run 都是第十七部,pool 起來仍有共同部——所以只用它時,
+    #    「只併 ▲、保留 △」的突變照樣八案全過。虞美人是現成的反例:
+    #    了少(第八部)/ 在改(第五部),pool 起來必紅。
+    case("6b 綠 虞美人譜例(▲ 換到不同仄部)", "虞美人", spec_text("虞美人"))
+    ran.append("6c 反向 虞美人 pooled ▲ 必須無共同部")
+    yruns = rhyme_runs(tbl["tunes"]["虞美人"]["rows"])
+    ypool = [c for sym, ch in yruns if sym == "▲" for c in ch]
+    if sum(1 for sym, _ in yruns if sym == "▲") < 2:
+        fails.append("6c 虞美人應有 ≥2 個 ▲ run,否則這條反向斷言測不到 ▲ 側的 run 切法")
+    elif set.intersection(*(parts_in(tbl, c, DOMAIN["▲"]) for c in ypool)):
+        fails.append("6c pooled ▲ 竟有共同部——▲ 側的 run 切法就算寫錯也照樣綠")
+    # 7 回歸:念奴嬌譜例的**兩處**紅都要 pin(已知診斷,非「錯」)
+    #   只 pin 韻組那處不夠:那第二處是全測試面唯一的平仄紅,
+    #   審議席實測把整段 ○● 檢查刪掉,self-test 八案照樣全過、CI 夾具照樣全綠。
+    #   **一條規則可以被整段刪除而沒有任何測試發現,那條規則等於沒有被測。**
+    ran.append("7 已知診斷 念奴嬌譜例兩處紅(韻組跨部 + 平仄「一」)")
     bad7, _ = check("念奴嬌", spec_text("念奴嬌"), tbl)
     if not any("無共同部" in b for b in bad7):
         fails.append("7 念奴嬌譜例應報無共同部(壁 17 / 其餘 18),實得:" + str(bad7))
+    if not any("「一」譜為 ○" in b for b in bad7):
+        fails.append("7 念奴嬌第 20 句第 3 字「一」的平仄紅未出現"
+                     "——**整段平仄檢查失去負控**,實得:" + str(bad7))
     if any("錯" in b for b in bad7):
         fails.append("7 診斷文案不得出現「錯」字——名家範例不合後世韻書不是作品的錯")
     # 8 域內帶正控(禁全域缺席斷言)
@@ -277,6 +293,27 @@ def self_test() -> int:
         fails.append("8 「間」出現在第一部——釋義污染回歸")
     if "第七部" not in {p for p, _ in tbl["idx"].get("間", ())}:
         fails.append("8 「間」不在第七部——正控失敗,斷言退化成全域缺席")
+    # 9 字形結構模板污染回歸
+    #   舊版把 `{{!|𣘼|上「啟」下「木」}}` 的**描述文字**當韻字收進表,
+    #   於是「上」被污染出一個第十八部入聲身分——而橋接字正是「入聲獨押」
+    #   宣稱的殘餘誤放面,污染落在它的正中央。真字 𣘼 𦶟 反被丟(CJK 類別不含 Ext-B)。
+    ran.append("9 模板污染回歸 上/下無入聲、木無上去,且 𣘼/𦶟 在表內")
+    for c in "上下":
+        if any(t == "入" for _, t in tbl["idx"].get(c, ())):
+            fails.append(f"9 「{c}」帶入聲身分——字形結構模板污染回歸")
+    if any(t == "上去" for _, t in tbl["idx"].get("木", ())):
+        fails.append("9 「木」帶上去身分——字形結構模板污染回歸")
+    for c in "𣘼𦶟":
+        if not tbl["idx"].get(c):
+            fails.append(f"9 「{c}」不在表內——正控失敗,"
+                         "斷言退化成「模板整段被丟掉也算過」")
+    ran.append("9b 假綠實例 月發閱上 必須無共同部")
+    if not parts_in(tbl, "上", {"上去"}):
+        fails.append("9b 「上」在上去域內查無——正控失敗")
+    else:
+        k9 = [c for c in "月發閱上" if parts_in(tbl, c, DOMAIN["▲"])]
+        if set.intersection(*(parts_in(tbl, c, DOMAIN["▲"]) for c in k9)):
+            fails.append("9b 「月發閱上」竟有共同部——入聲獨押沒有真的落地")
 
     if fails:
         for f in fails:
