@@ -43,6 +43,7 @@ import hashlib
 import json
 import re
 import sys
+from fnmatch import fnmatch
 from pathlib import Path
 
 for _s in (sys.stdout, sys.stderr):
@@ -52,6 +53,28 @@ for _s in (sys.stdout, sys.stderr):
         pass
 
 DEFAULT_BASE = Path(__file__).resolve().parent.parent / "assets"
+
+
+def _repo_root() -> Path | None:
+    """往上找 `.git`。**寫死 `parents[3]` 是錯的**——`skills/` 下算對,
+    `plugins/classical/skills/` 下會指到 plugin 目錄,而副本才是使用者裝到的那份。"""
+    for d in Path(__file__).resolve().parents:
+        if (d / ".git").exists():
+            return d
+    return None
+
+
+def _read_gitattributes() -> str | None:
+    """回 None 代表**不在 git 工作樹裡**(已安裝的 plugin 副本)。
+
+    這不是 fail-open:第 6 條防的是 git 簽出時的行尾轉換,
+    **沒有 git 就沒有那個轉換**,條件本身不成立。而在 repo 裡缺規則一定紅。"""
+    root = _repo_root()
+    if root is None:
+        return None
+    p = root / ".gitattributes"
+    return p.read_text(encoding="utf-8") if p.exists() else ""
+
 TONE_SYMS = "○●⊙△▲"
 # **Ext-B 也要收。** 舊版寫 `[㐀-鿿]`,不含 U+20000 以上,於是 𣘼 𦶟 這兩個罕字
 # 落在類別外被丟掉——而它們正是下面 TPL 那兩個模板真正代表的字。
@@ -127,7 +150,7 @@ def parse_cilin_raw(t: str) -> dict:
 
 # ── 對帳 ───────────────────────────────────────────────────────────────
 
-def check(base: Path = DEFAULT_BASE) -> list[str]:
+def check(base: Path = DEFAULT_BASE, attrs: str | None = None) -> list[str]:
     bad: list[str] = []
     bx = json.loads((base / "baixiang.json").read_text(encoding="utf-8"))
     cl = json.loads((base / "cilin.json").read_text(encoding="utf-8"))
@@ -224,6 +247,33 @@ def check(base: Path = DEFAULT_BASE) -> list[str]:
             junk = [c for c in x["chars"] if not CJK.fullmatch(c)]
             if junk:
                 bad.append(f"cilin:{pn}/{rn} 含非 CJK 字元 {junk}")
+
+    # 6. **vendored raw 必須被 .gitattributes 釘成不轉換。**
+    #
+    # 為什麼這條要存在,而不是「加了 .gitattributes 就好」:
+    # `core.autocrlf=true` 是 Windows 版 git 的預設,簽出時會注入 CRLF——
+    # baixiang 80170 → 83739 bytes、cilin 27665 → 28025。第 1 條的 sha256
+    # 於是在**任何 Windows checkout 上都紅**,而 CI runner 是 Linux,永遠綠。
+    #
+    # 所以第 1 條的紅端在 CI 上不可達,**這條規則等於沒有被 CI 測過**(KN-001)。
+    # 本條把「設定有沒有寫」變成平台無關的斷言:誰把 `*.wikitext -text` 刪掉,
+    # Linux 上也會紅。**保護 sha 的不是 sha 檢查本身,是這一條。**
+    raws = sorted((base / "raw").glob("*")) if (base / "raw").is_dir() else []
+    text = attrs if attrs is not None else _read_gitattributes()
+    if raws and text is not None:
+        pinned = set()
+        for line in text.splitlines():
+            line = line.split("#", 1)[0].strip()
+            if not line:
+                continue
+            pat, *rest = line.split()
+            if any(a in ("-text", "binary") for a in rest):
+                pinned.add(pat)
+        for r in raws:
+            if not any(fnmatch(r.name, pat) for pat in pinned):
+                bad.append(f"vendored raw「{r.name}」沒有被 .gitattributes 釘成 "
+                           "`-text`——Windows 簽出會注入 CRLF,sha256 當場分家,"
+                           "而 Linux CI 看不見")
     return bad
 
 
@@ -274,6 +324,33 @@ def self_test() -> int:
         p.write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")
 
     probe("綠 真實資產", lambda b: None, None)
+
+    # 第 6 條的紅綠兩端。**這一條的價值全在紅端能不能在 Linux 上到達**——
+    # 若只靠第 1 條的 sha256,紅端只在 Windows 可達,CI 永遠測不到。
+    def attrs_probe(label, attrs, want):
+        ran.append(label)
+        got = check(DEFAULT_BASE, attrs=attrs)
+        if want is None:
+            if got:
+                fails.append(f"{label} 應綠卻紅:{got}")
+        elif not any(want in g for g in got):
+            fails.append(f"{label} 應紅於「{want}」,實得:{got or '全綠'}")
+
+    attrs_probe("紅 .gitattributes 沒釘 vendored raw", "*.sh text eol=lf",
+                "沒有被 .gitattributes 釘成")
+    attrs_probe("綠 釘了就過", "*.wikitext -text", None)
+    # 註解掉的規則不算數——`#` 之後要被剝掉
+    attrs_probe("紅 規則被註解掉", "# *.wikitext -text",
+                "沒有被 .gitattributes 釘成")
+    # **把「不在 git 工作樹就跳過」這條路徑也釘住。** 已安裝的 plugin 副本沒有
+    # `.git`,第 6 條不成立而非通過;不釘的話,哪天 `_repo_root()` 壞掉退回 None,
+    # 整條規則會在 repo 裡靜默消失,而 self-test 照樣全綠。
+    ran.append("邊界 不在 git 工作樹時第 6 條不成立(非靜默通過)")
+    if check(DEFAULT_BASE, attrs=None) != []:
+        fails.append("邊界 真實 repo 應綠,第 6 條在本 repo 內必須是成立且通過的")
+    if _read_gitattributes() is None:
+        fails.append("邊界 本檔在 repo 內卻找不到 git 工作樹"
+                     "——`_repo_root()` 壞了,第 6 條會靜默消失")
 
     probe("紅 非 CJK 污染(ASCII)",
           lambda b: edit(b, "cilin.json", lambda d: next(

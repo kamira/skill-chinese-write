@@ -3,3 +3,11 @@
 # `bad interpreter: /usr/bin/env bash^M`——而且錯誤訊息完全不像是行尾造成的。
 *.sh text eol=lf
 .githooks/* text eol=lf
+
+# **vendored raw 一個 byte 都不准動。** 這些檔被 `_source.raw_sha256` 錨住,
+# 而 `core.autocrlf=true`(Windows 的 git 預設)會在簽出時注入 CRLF:
+#   baixiang.wikitext  80170 → 83739 bytes(+3569 個 CRLF)
+#   cilin.wikitext     27665 → 28025 bytes(+360)
+# 於是守恆閘在**任何 Windows checkout 上都紅**,而 CI runner 是 Linux,永遠綠。
+# 這正是本 repo 反覆遇到的那件事:**CI 綠是所有失效形態的共同外觀。**
+*.wikitext -text

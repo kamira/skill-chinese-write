@@ -10,7 +10,7 @@ description: >
   **不要拿 `regulated-verse` 套這一支**:近體詩定句定字押平水韻,詞依詞牌、押詞林正韻,
   兩套規則不同。也不要拿 `poetry`(現代詩)來量。
 metadata:
-  version: 1.0.0
+  version: 1.0.1
 ---
 
 # ci-poetry — 詞(宋詞)
