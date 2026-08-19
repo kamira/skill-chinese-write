@@ -53,6 +53,7 @@
 | BL-027 | 風險 | **白香的 `○`／`●` 在部分位置比實際格律嚴**:3b 的 5 首殘餘全指向這裡(舒亶「江」、陳克「自」、周邦彥「泠」、葉夢得「游」「多」、張孝祥「無」「點」「一」「處」)。審議席(codex)裁「**先量再訂**:暫維持紅並具名,不因 5 例直接放寬;用更大樣本量化各譜位的反例率,再決定哪些 `○/●` 應收窄或改為 `⊙`」。**解除條件是量化完成並具名裁定,不是把它們改綠** | skills/ci-poetry/assets/baixiang.json 的 tones | 2026-08-17 ACC-20260817-02 |
 | BL-029 | 風險 | **`skills/fiction/references/genres.md` 是下一個孤兒,而且最肥**:它與 plugin 副本各載著全部六支流派的修辭 %(PCT×12)與成語密度(IDIOM×6),而 `live_docs` 不收它、`genres_table_check` 管的是 `docs/genres.md`(skill 名冊)不是它、`[18/19]` 只釘兩份副本彼此相等——**兩份一起漂,19 道全綠**。注意它**不能天真塞進 `live_docs`**:一份檔含六套數值與六個 token,現行 per-genre 的 `[B]`/`[E]` 會整片誤紅,需分節驗或另立閘 | skills/fiction/references/genres.md | 2026-08-20 ACC-20260820-01 |
 | BL-030 | 風險 | **「施工期紅」讓 CI 的 rc 在施工中失去判別力**:`chg_field_check` 對 Status 寫「施工中」的 CHG 必紅(設計如此),於是「先跑 CI 再 commit」這條紀律對施工中的 commit 恆為紅、無從據以判斷。審議席(codex)裁:「現行流程把『施工中必紅』與『CI 應作為 commit 判準』**混成同一個 rc**;`;` 改 `&&` 只能防誤操作,不能解決語義衝突。」建議拆兩層:**開發檢查**允許 CHG 為施工中、**收尾 CI** 要求 ACC 齊備且 Status 收尾 | .github/ci_local.sh 與 scripts/chg_field_check.py | 2026-08-20 ACC-20260820-01 |
+| BL-031 | 待辦 | **窄閘:分支關聯的 CHG 全部已驗收、main 已有對應成果,而分支仍存在 → 報告**。不判「分支是否太老」、不禁止長命分支。審議席實測出三個必須吃下的邊角:多 CHG 對一分支(`claude/ci-poetry` 掛 4 份)、`- Branch: main`(早期 3 份)、無 CHG 的 session worktree 分支(依 KN-002 明標不判)。「main 已有對應成果」**不能用 `git branch --merged`**(squash 下恆假),要用 ACC-20260820-02 的 tree/diff 三重等價法。**先做報告不硬紅**(codex 裁) | scripts/ 下新支 | 2026-08-20 ACC-20260820-02 |
 
 ## 已解除
 
