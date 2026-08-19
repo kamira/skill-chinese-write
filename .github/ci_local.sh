@@ -146,7 +146,10 @@ echo "[8/19] skill 清單一致性(含紅燈可達自檢)"
 $PY scripts/skill_inventory_check.py --self-test > /dev/null
 $PY scripts/skill_inventory_check.py --repo . > /dev/null
 
-echo "[9/19] CHG 欄位不得留佔位字串(含紅燈可達自檢)"
+echo "[9/19] CHG 欄位不得留佔位字串 + `## Status` 說的話要為真(含紅燈可達自檢)"
+# 後半是 BL-024:`doc_integrity_check` 只查 Status 這一節**存不存在**,
+# 而「施工中」不是可辨識的佔位字串,是一句看起來完整的假陳述——
+# CHG-20260814-07 掛著它一路 merge 進 main(632cbe4 / #17),第三天才被眼睛抓到。
 $PY scripts/chg_field_check.py --self-test > /dev/null
 $PY scripts/chg_field_check.py --repo . > /dev/null
 
