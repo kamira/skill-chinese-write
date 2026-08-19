@@ -135,7 +135,7 @@ def _first_code(cell: str):
     return m.group(1) if m else None
 
 
-def check(repo: Path, ci_path: Path = None) -> list:
+def check(repo: Path, *, ci_path: Path = None) -> list:
     bad: list = []
     gp = repo / "docs" / "genres.md"
     if not gp.exists():
@@ -238,8 +238,13 @@ def check(repo: Path, ci_path: Path = None) -> list:
                            "而它的 SKILL.md 沒有「" + NO_LINT_DECL + "」這句宣告"
                            "——建了 lint 就要把它挪到「有引擎」那張表")
             else:
-                # **磁碟側也要看,但不猜檔名。** 判準是「CI 有沒有在跑它」——
-                # `ci_local.sh` 是本 repo 的唯一真相源,一支腳本被它跑就是在把關。
+                # **磁碟側也要看,但不猜檔名。** 判準是
+                # 「**該腳本的字面路徑有沒有出現在 `ci_local.sh` 的文本裡**」。
+                # 說清楚它不是什麼(審議席實測的兩個邊,今天都不活):
+                #   註解裡提到完整路徑 → **算**(誤紅方向,fail-closed,但訊息要誠實)
+                #   `(cd skills/x && $PY scripts/y.py)` 這種改寫呼叫形 → **不算**(假綠)
+                # 之所以用這個判準:`ci_local.sh` 是本 repo 的唯一真相源,
+                # 一支腳本被它跑就是在把關,而躺在磁碟上的腳本關不住任何東西。
                 # 審議席 E4 實測:只驗宣告的話,某支長出 lint 而表與 SKILL.md 都不動,
                 # 閘全盲;而初版「scripts/ 不得有 .py」會被 assets_verify.py 這類
                 # 輔助腳本誤紅。用 CI 當判準兩邊都避開。
@@ -249,8 +254,10 @@ def check(repo: Path, ci_path: Path = None) -> list:
                         ref = "skills/" + name + "/scripts/" + f.name
                         if ref in ci_text:
                             bad.append("[沒有 lint] 表說 `" + name + "` 沒有 lint,"
-                                       "而 " + ref + " 正在 ci_local.sh 裡被跑"
-                                       "——它已經是一道閘了,請挪到「有引擎」那張表")
+                                       "而 ci_local.sh 的文本裡出現了 " + ref +
+                                       "——若那是實際的呼叫,它已經是一道閘,"
+                                       "請挪到「有引擎」那張表;若只是註解,請改寫成"
+                                       "不含完整路徑的措辭")
 
     # ── 4 plugin 打包表 == build_suite.PLUGINS(**完整相等**)──
     # 初版只走表列、且 `pid not in plugins` 就 continue,於是三個洞全開:
@@ -293,6 +300,10 @@ def check(repo: Path, ci_path: Path = None) -> list:
                 bad.append("[plugin] build_suite.PLUGINS 有 `" + pid +
                            "`,而表上沒有這一列")
             for pid in sorted(set(table) & set(registry)):
+                # **這個分支是訊息品質,不是判定力。** 把它刪掉,下面的
+                # `set() != registry[pid]` 照樣會紅——所以 self-test 偵測不到
+                # 它的消失(審議席稱之為良性遮蔽)。留著是為了讓紅燈說得更準,
+                # 不要因為「self-test 沒抓到」就以為它可以刪。
                 if not table[pid]:
                     bad.append("[plugin] `" + pid + "` 那一列的成分欄是空的"
                                "——**空欄不算相符**,登記簿裡是 " +
@@ -351,12 +362,17 @@ def self_test(repo: Path) -> int:
     if base:
         fails.append("綠端:現行 genres.md 本身就不一致 " + str(base[:3]))
 
+    orig_bytes = gp.read_bytes()
+
     def run_mut(label: str, text: str, want: str):
-        gp.write_text(text, encoding="utf-8")
+        # **bytes 讀寫。** `write_text`/`read_text` 會做行尾正規化,於是在行尾與
+        # 平台預設不符的 checkout 上,self-test 會改寫 genres.md 的行尾
+        # 而它自己的還原檢查看不見(跨檔突變那邊本來就是 bytes,這裡跟上)。
+        gp.write_bytes(text.encode("utf-8"))
         try:
             got = check(repo)
         finally:
-            gp.write_text(orig, encoding="utf-8")
+            gp.write_bytes(orig_bytes)
         if not any(g.startswith(want) for g in got):
             fails.append("突變「" + label + "」應紅在 " + want + ",實得 " +
                          (str(got[:2]) if got else "全綠") + "——**該斷言不可達**")
@@ -454,8 +470,8 @@ def self_test(repo: Path) -> int:
                          "應紅在 [沒有 lint],實得 " +
                          (str(got[:2]) if got else "全綠") + "——**該斷言不可達**")
 
-    if gp.read_text(encoding="utf-8") != orig:
-        fails.append("**self-test 沒把 genres.md 還原**")
+    if gp.read_bytes() != orig_bytes:
+        fails.append("**self-test 沒把 genres.md 還原**(逐 byte 比對,含行尾)")
     if fails:
         for f in fails:
             print("  ❌ " + f)
