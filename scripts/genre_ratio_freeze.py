@@ -332,12 +332,30 @@ def check(root: Path, engine: bool = True) -> list[str]:
             s = scan_doc(d)
             pcts = {tuple(map(int, m)) for m in s["pct"]}
             idioms = {tuple(map(int, m)) for m in s["idiom"]}
-            if (lo_p, hi_p) not in pcts:
+            # **全部出現皆須相等,不是「至少含一個正確的」(BL-009)。**
+            #
+            # 初版寫 `(lo_p, hi_p) not in pcts` ——成員判定。於是同一份 command
+            # 同時寫 `30%-40%`(對)與 `10%-20%`(錯)照樣全綠:**正確值在場,
+            # 就把旁邊的矛盾值罩住了**。而讀的人會看到兩個數字,不知道信哪個。
+            #
+            # 這條原則本檔的 `[E]` 早就寫著了(「後者的漏洞是:正確 token 在場、
+            # 旁邊多一個錯貼的 wuxia,照樣綠」)——**同一個檔對一條斷言講對、
+            # 對隔壁那條做錯**。
+            #
+            # 收緊前先量:12 份住址每份都恰好一組數值,改成集合相等**零誤紅**。
+            # 先量再訂,不是先訂再量。
+            if pcts != {(lo_p, hi_p)}:
+                extra = sorted(pcts - {(lo_p, hi_p)})
                 bad.append(f"[B] {rel}: 修辭比例 {sorted(pcts) or '查無'} "
-                           f"不含凍結值 {lo_p}%-{hi_p}%")
-            if (lo_i, hi_i) not in idioms:
+                           f"≠ 凍結值 {{{lo_p}%-{hi_p}%}}" +
+                           (f"——多出 {extra},同一份文件有兩個真相"
+                            if extra else "——凍結值不在場"))
+            if idioms != {(lo_i, hi_i)}:
+                extra = sorted(idioms - {(lo_i, hi_i)})
                 bad.append(f"[B] {rel}: 成語密度 {sorted(idioms) or '查無'} "
-                           f"不含凍結值 {lo_i}-{hi_i} 次/千字")
+                           f"≠ 凍結值 {{{lo_i}-{hi_i}}} 次/千字" +
+                           (f"——多出 {extra},同一份文件有兩個真相"
+                            if extra else "——凍結值不在場"))
             # ---- [E] `--genre` token 與檔案身分必須相符。
             #
             # **正確性:全部出現皆須相等,不是「至少含一個正確的」。**
@@ -516,6 +534,21 @@ def self_test() -> int:
     pdrift["commands/fiction-long.md"] = _GOOD_DOC.replace("25%-35%", "25%-36%")
     run(full, pdrift, "修辭比例", "8 修辭比例漂移")                           # 8
 
+    # BL-009 的紅端:**正確值仍在場**,旁邊多一組矛盾值。
+    # 舊的成員判定對這兩案全綠——那正是它被開成 backlog 的原因。
+    contra_p = dict(all_docs)
+    contra_p["commands/fiction-long.md"] = _GOOD_DOC.replace(
+        "25%-35%", "25%-35%(舊稿寫 10%-20%)", 1)
+    run(full, contra_p, "同一份文件有兩個真相", "8b 修辭比例:對的旁邊多一組錯的")
+
+    contra_i = dict(all_docs)
+    # 插入的是**完整片語**。第一版寫成 `4-8 次(前版 1-3 次)`,把 `次` 與
+    # `/千字` 拆開,兩個都不再匹配 IDIOM——結果變成「查無」,測到的是
+    # 「凍結值不在場」而不是「多了一組矛盾值」。**探針壞了會測到別的東西。**
+    contra_i["commands/fiction-long.md"] = _GOOD_DOC.replace(
+        "4-8 次/千字", "4-8 次/千字(前版 1-3 次/千字)", 1)
+    run(full, contra_i, "同一份文件有兩個真相", "8c 成語密度:對的旁邊多一組錯的")
+
     _DISHONEST = _GOOD_DOC.replace(
         "lint 只擋上限;**下限不會被檢查**(引擎值為 0)", "lint 會數")
 
@@ -628,17 +661,11 @@ def self_test() -> int:
         print("\n✗ self-test 未通過:配比凍結閘的紅綠端不可達。")
         return 1
     print(f"✅ self-test:{len(ran) + 3} 案全過"
-          f"({len(ran)} 個文案案 + [D] 執法探針 3 案)——"
-          "設定四條(上限漂移/下限復活/缺流派/多流派)、"
-          "文案四條(整支不見/成語漂移/修辭漂移/並存住址其一漂移)、"
-          "誠實欄五條(下限、修辭、豁免,加上**兩個方向的說謊**且不得誤掛罪名)、"
-          "綠端一條,"
-          "[E] genre token 六條(command 錯置 / command 缺 token / "
-          "正確 token 在場也擋不住旁邊錯貼的 / 等號形 --genre=X / "
-          "CJK 緊鄰的正確 token 必綠 / CJK 緊鄰的錯 token 仍紅),"
-          "[G] 相位切換三條(舊住址有 token 也紅 / 缺 token 也紅 / 退役後真實 repo 必須乾淨),"
-          "以及 [D] 執法探針三條"
-          "(原封綠端 / 上限被架空 / 下限被注回引擎)。")
+          f"({len(ran)} 個文案案 + [D] 執法探針 3 案)。")
+    # **案名從 `ran` 印出來,不再寫死。** 這段原本是一長串手寫的分類敘述,
+    # 而我加了兩案之後它沒跟上——本 repo 反覆出現的「改了主體、漏了標頭」。
+    # 寫死的清單讀起來跟真的一樣,而它會在下一次加案時再過期一遍。
+    print("   " + "、".join(ran))
     return 0
 
 
