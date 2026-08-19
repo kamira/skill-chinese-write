@@ -48,7 +48,6 @@
 | BL-015 | 風險 | `RETIRED` 可登記從未存在的 id 而全綠(化妝品級) | plugins/build_suite.py `RETIRED` | 2026-08-14 CHG-20260814-10 |
 | BL-016 | 風險 | `carrier_manifest_check` 是文字層斷言,刻意的間接引用繞得過 | scripts/carrier_manifest_check.py `MANIFEST` | 2026-08-16 CHG-20260816-01 |
 | BL-017 | 風險 | 裸變數 `CI` 不在載體變數偵測範圍(列入會誤紅) | scripts/carrier_manifest_check.py `ENV_TOKEN` | 2026-08-16 CHG-20260816-01 |
-| BL-019 | 風險 | `docs/genres.md` 的分組敘述沒有機器覆蓋——審議席實測:一字未改也全綠 | docs/genres.md | 2026-08-16 CHG-20260816-03 |
 | BL-020 | 待辦 | `proposal` 的歸屬(bizdoc 家族)未定 | plugins/proposal | 2026-08-16 CHG-20260816-03 |
 | BL-022 | 風險 | 近體詩不判黏、拗救、對仗的詞性語義;3b 殘餘 12 首中出韻 1 首未查版本異文 | skills/regulated-verse/scripts/verse_check.py | 2026-08-17 CHG-20260817-01 |
 | BL-026 | 風險 | **兩邊相同的錯,raw→asset 對帳看不見**(模板污染就是靠第三份獨立實作才抓到);目前沒有機制保證第三份實作會存在 | skills/ci-poetry/scripts/assets_verify.py | 2026-08-17 CHG-20260817-03 |
@@ -76,6 +75,7 @@
 | BL-021 | 宋詞 skill 尚未建 | 2026-08-17 CHG-20260817-01 | 2026-08-17 ACC-20260817-02(`skills/ci-poetry`,含詞林正韻 19 部與白香詞譜 100 調) |
 | BL-024 | CHG 的 `## Status` 只被檢查「存不存在」,不檢查它說什麼 | 2026-08-17 CHG-20260817-03 | 2026-08-18 ACC-20260818-02(`chg_field_check.py` 加內容判定;四出口 fail-closed,紅端含 `632cbe4` 的歷史重放) |
 | BL-025 | 詞的入聲能否與上去通押未裁定 | 2026-08-17 CHG-20260817-03 | 2026-08-18 ACC-20260818-02(**其實早被 CHG-20260817-04 的 `_tone_contract.ruling` 解掉**,帳上文字停在解掉前;欄位保留為更正墓碑,故為解除而非「來源已消失」) |
+| BL-019 | `docs/genres.md` 的分組敘述沒有機器覆蓋——審議席實測:一字未改也全綠 | 2026-08-16 CHG-20260816-03 | 2026-08-18 ACC-20260818-03(`genres_table_check.py`,16 個紅端;**只判表格層,敘述層明標不判**——那部分靠人,而閘自己會把這件事印出來) |
 | BL-018 | 唐詩 / 宋詞 skill 尚未存在,需對仗、平仄、韻腳三條規則 | 2026-08-16 CHG-20260816-03 | 2026-08-17 CHG-20260817-01(**近體詩部分**;宋詞拆為 BL-021) |
 
 ## 永久記錄(不是待辦,也不會被解除)

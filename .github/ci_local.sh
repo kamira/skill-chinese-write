@@ -146,6 +146,14 @@ echo "[8/19] skill 清單一致性(含紅燈可達自檢)"
 $PY scripts/skill_inventory_check.py --self-test > /dev/null
 $PY scripts/skill_inventory_check.py --repo . > /dev/null
 
+echo "[8b/19] genres.md 的表要與磁碟、與 build_suite.PLUGINS 一致(含紅燈可達自檢)"
+# BL-019:這份對照表在此之前**沒有任何機器在看**——審議席實測一字未改也全綠,
+# 而它已經失準:表列了 ci-poetry,plugin 打包那一列卻漏了它。
+# **只判表格層。** 敘述層(「宋詞尚未存在」那類過期句子)要靠 NLP 才判得動,
+# 造那個會製造誤殺面,所以明標不判——本閘抓不到,而它自己會把這件事印出來。
+$PY scripts/genres_table_check.py --self-test > /dev/null
+$PY scripts/genres_table_check.py --repo . > /dev/null
+
 echo "[9/19] CHG 欄位不得留佔位字串 + `## Status` 說的話要為真(含紅燈可達自檢)"
 # 後半是 BL-024:`doc_integrity_check` 只查 Status 這一節**存不存在**,
 # 而「施工中」不是可辨識的佔位字串,是一句看起來完整的假陳述——
