@@ -51,6 +51,8 @@
 | BL-022 | 風險 | 近體詩不判黏、拗救、對仗的詞性語義;3b 殘餘 12 首中出韻 1 首未查版本異文 | skills/regulated-verse/scripts/verse_check.py | 2026-08-17 CHG-20260817-01 |
 | BL-026 | 風險 | **兩邊相同的錯,raw→asset 對帳看不見**(模板污染就是靠第三份獨立實作才抓到);目前沒有機制保證第三份實作會存在 | skills/ci-poetry/scripts/assets_verify.py | 2026-08-17 CHG-20260817-03 |
 | BL-027 | 風險 | **白香的 `○`／`●` 在部分位置比實際格律嚴**:3b 的 5 首殘餘全指向這裡(舒亶「江」、陳克「自」、周邦彥「泠」、葉夢得「游」「多」、張孝祥「無」「點」「一」「處」)。審議席(codex)裁「**先量再訂**:暫維持紅並具名,不因 5 例直接放寬;用更大樣本量化各譜位的反例率,再決定哪些 `○/●` 應收窄或改為 `⊙`」。**解除條件是量化完成並具名裁定,不是把它們改綠** | skills/ci-poetry/assets/baixiang.json 的 tones | 2026-08-17 ACC-20260817-02 |
+| BL-029 | 風險 | **`skills/fiction/references/genres.md` 是下一個孤兒,而且最肥**:它與 plugin 副本各載著全部六支流派的修辭 %(PCT×12)與成語密度(IDIOM×6),而 `live_docs` 不收它、`genres_table_check` 管的是 `docs/genres.md`(skill 名冊)不是它、`[18/19]` 只釘兩份副本彼此相等——**兩份一起漂,19 道全綠**。注意它**不能天真塞進 `live_docs`**:一份檔含六套數值與六個 token,現行 per-genre 的 `[B]`/`[E]` 會整片誤紅,需分節驗或另立閘 | skills/fiction/references/genres.md | 2026-08-20 ACC-20260820-01 |
+| BL-030 | 風險 | **「施工期紅」讓 CI 的 rc 在施工中失去判別力**:`chg_field_check` 對 Status 寫「施工中」的 CHG 必紅(設計如此),於是「先跑 CI 再 commit」這條紀律對施工中的 commit 恆為紅、無從據以判斷。審議席(codex)裁:「現行流程把『施工中必紅』與『CI 應作為 commit 判準』**混成同一個 rc**;`;` 改 `&&` 只能防誤操作,不能解決語義衝突。」建議拆兩層:**開發檢查**允許 CHG 為施工中、**收尾 CI** 要求 ACC 齊備且 Status 收尾 | .github/ci_local.sh 與 scripts/chg_field_check.py | 2026-08-20 ACC-20260820-01 |
 
 ## 已解除
 

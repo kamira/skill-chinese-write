@@ -344,18 +344,27 @@ def check(root: Path, engine: bool = True) -> list[str]:
             #
             # 收緊前先量:12 份住址每份都恰好一組數值,改成集合相等**零誤紅**。
             # 先量再訂,不是先訂再量。
+            # **訊息要說對是哪一種**。分支條件是「凍結值在不在場」,
+            # 不是「有沒有多出來的值」——初版寫成後者,於是純漂移
+            # (只有一組錯值、凍結值整個不在場)也被說成「同一份文件有兩個真相」,
+            # 而那份文件裡只有一個(錯的)真相。
+            # **一道治「宣稱與事實對不上」的閘,自己的紅訊息在說謊。**
+            def _why(got: set, frozen: tuple, unit: str) -> str:
+                extra = sorted(got - {frozen})
+                if frozen in got:
+                    return f"——凍結值在場,但旁邊還有 {extra},同一份文件有兩個真相"
+                if got:
+                    return f"——凍結值不在場,實際寫的是 {extra}(數值漂移)"
+                return "——文件裡查無" + unit
+
             if pcts != {(lo_p, hi_p)}:
-                extra = sorted(pcts - {(lo_p, hi_p)})
                 bad.append(f"[B] {rel}: 修辭比例 {sorted(pcts) or '查無'} "
                            f"≠ 凍結值 {{{lo_p}%-{hi_p}%}}" +
-                           (f"——多出 {extra},同一份文件有兩個真相"
-                            if extra else "——凍結值不在場"))
+                           _why(pcts, (lo_p, hi_p), "修辭比例"))
             if idioms != {(lo_i, hi_i)}:
-                extra = sorted(idioms - {(lo_i, hi_i)})
                 bad.append(f"[B] {rel}: 成語密度 {sorted(idioms) or '查無'} "
                            f"≠ 凍結值 {{{lo_i}-{hi_i}}} 次/千字" +
-                           (f"——多出 {extra},同一份文件有兩個真相"
-                            if extra else "——凍結值不在場"))
+                           _why(idioms, (lo_i, hi_i), "成語密度"))
             # ---- [E] `--genre` token 與檔案身分必須相符。
             #
             # **正確性:全部出現皆須相等,不是「至少含一個正確的」。**
@@ -390,6 +399,14 @@ description: 測試用
 | **修辭比例** | 中高(25%-35%) | 靠人判斷——沒有程式量得出一段文字有幾成是譬喻 |
 | **成語密度** | 4-8 次/千字 | lint 只擋上限;**下限不會被檢查**(引擎值為 0) |
 """
+
+
+# 帶 `--genre long` token 的版本。**夾具要用它,不要用裸 `_GOOD_DOC`**——
+# 裸版沒有 token,每跑一次都背著一條 `[E]` 缺 token 的噪音紅,
+# 而那條噪音正是案 12 恆真的成因(它的 want 是路徑子字串,被噪音滿足了)。
+_GOOD_LONG = (_GOOD_DOC + chr(10) + "```" + chr(10) +
+              "python3 skills/fiction/scripts/fiction_check.py 稿件.md --genre long"
+              + chr(10) + "```" + chr(10))
 
 
 def _tree(root: Path, rules: dict, docs: dict[str, str]) -> None:
@@ -572,11 +589,22 @@ def self_test() -> int:
     run(full, ex, "又出現了", "11 [G] 舊住址退役後存在即紅(豁免已壽終)")     # 11
 
     # 12:同一支流派住在兩處,其中一處漂了也要紅——只驗一處就是下一個孤兒
+    #
+    # **want 原本只是路徑子字串,那讓本案恆真。** 審議席實測:把 `[B]` 整條
+    # 改成 `if False`,案 12 照樣綠——因為夾具用裸 `_GOOD_DOC`(沒有 `--genre`
+    # 行),`[E]` 的缺 token 紅裡就含這個路徑,**斷言被別條的訊息滿足了**。
+    # 這與 `chg_field_check` 犯過的是同一個病:斷言只看「有沒有出現」,
+    # 而別的規則必然會產生含那個字串的訊息。
+    # 改法兩層:want 綁到 `[B]` 自己的措辭上;夾具改用帶 token 的基底,
+    # 免得每跑一次都背著一條與本案無關的噪音紅。
     two = dict(all_docs)
-    two["commands/fiction-long.md"] = _GOOD_DOC.replace("4-8 次", "5-8 次")
-    run(full, two, "commands/fiction-long.md", "12 並存住址其一漂移")
+    two["commands/fiction-long.md"] = _GOOD_LONG.replace(
+        "4-8 次/千字", "5-8 次/千字")
+    run(full, two, "[B] commands/fiction-long.md: 成語密度", "12 並存住址其一漂移")
 
-    # ---- 16、17 由複審(fable)的合成 probe 打出來:**兩個方向都能穿**。
+    # ---- 9b、10b 由複審(fable)的合成 probe 打出來:**兩個方向都能穿**。
+    # (原編號 16/17 與 [E] 的 16/17 撞號,使「27 案」不可逐一追溯——
+    #  審議席裁「修,但只改重號那一對,不整編」:整編會孤兒化碼註解裡的歷史引用。)
     # 舊實作把整份文件當一個單元,於是一列說謊、另一列的用字替它擔保。
     # 這兩案各自把一列改成謊話、另一列保持誠實,所以跨列支援一旦復活就會紅。
 
@@ -587,7 +615,7 @@ def self_test() -> int:
         "lint 只擋上限;**下限不會被檢查**(引擎值為 0)",
         "上限與下限都會擋,低於下限一樣紅")
     run(full, lie_floor, "沒說「下限沒有機器在管」",
-        "16 成語列對下限說謊(修辭列誠實,不得替它擔保)",
+        "9b 成語列對下限說謊(修辭列誠實,不得替它擔保)",
         forbid="修辭比例卻沒說")                                              # 16
 
     # 17:修辭那列說謊。成語列維持誠實。除了要紅,**還不得誤掛下限的罪名**
@@ -596,12 +624,12 @@ def self_test() -> int:
     lie_rh["commands/fiction-long.md"] = _GOOD_DOC.replace(
         "靠人判斷——沒有程式量得出一段文字有幾成是譬喻", "lint 會量")
     run(full, lie_rh, "修辭比例卻沒說",
-        "17 修辭列說謊(成語列誠實,不得替它擔保)",
-        forbid="沒說「下限沒有機器在管」")                                     # 17
+        "10b 修辭列說謊(成語列誠實,不得替它擔保)",
+        forbid="沒說「下限沒有機器在管」")                                     # 10b
 
-    # ---- 16~19:[E] `--genre` 與檔案身分。審議席指定四案 + forbid。
-    _GOOD_LONG = (_GOOD_DOC + "\n```\npython3 skills/fiction/scripts/"
-                  "fiction_check.py 稿件.md --genre long\n```\n")
+    # ---- [E] `--genre` 與檔案身分,以及 [G] 相位切換。
+    # (原註解寫「16~19」,實際涵蓋 16–20 且 18/19 屬 [G]——審議席指出已漂。)
+    # `_GOOD_LONG` 已提到模組層,這裡不再重複定義。
 
     # 16 command 錯 genre → 紅,且**不得誤掛配比罪名**
     g16 = dict(all_docs)
