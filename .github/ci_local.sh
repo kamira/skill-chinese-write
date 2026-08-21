@@ -154,10 +154,15 @@ echo "[8b/19] genres.md 的表要與磁碟、與 build_suite.PLUGINS 一致(含�
 $PY scripts/genres_table_check.py --self-test > /dev/null
 $PY scripts/genres_table_check.py --repo . > /dev/null
 
-echo "[9/19] CHG 欄位不得留佔位字串 + `## Status` 說的話要為真(含紅燈可達自檢)"
+echo "[9/19] CHG 欄位不得留佔位字串 + \`## Status\` 說的話要為真 + 審議席共識欄位(含紅燈可達自檢)"
 # 後半是 BL-024:`doc_integrity_check` 只查 Status 這一節**存不存在**,
 # 而「施工中」不是可辨識的佔位字串,是一句看起來完整的假陳述——
 # CHG-20260814-07 掛著它一路 merge 進 main(632cbe4 / #17),第三天才被眼睛抓到。
+#
+# 判定三(CHG-20260821-01):DIR-002 第 5 款的 `- Consensus:` 欄位與逐項共識表。
+# DIR-002 從 2026-08-13 生效,管的是「誰有權判定」,而它自己**八天沒有任何機器在看**——
+# KN-001 第 10 次,這次落在決定誰有權判定的那條規則自己身上。
+# 前瞻不追溯(檔名編號 >= CHG-20260821-01),與第 [10/19] 步的 DIAGRAM_SINCE 同一手法。
 $PY scripts/chg_field_check.py --self-test > /dev/null
 $PY scripts/chg_field_check.py --repo . > /dev/null
 

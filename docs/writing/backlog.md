@@ -54,6 +54,8 @@
 | BL-029 | 風險 | **`skills/fiction/references/genres.md` 是下一個孤兒,而且最肥**:它與 plugin 副本各載著全部六支流派的修辭 %(PCT×12)與成語密度(IDIOM×6),而 `live_docs` 不收它、`genres_table_check` 管的是 `docs/genres.md`(skill 名冊)不是它、`[18/19]` 只釘兩份副本彼此相等——**兩份一起漂,19 道全綠**。注意它**不能天真塞進 `live_docs`**:一份檔含六套數值與六個 token,現行 per-genre 的 `[B]`/`[E]` 會整片誤紅,需分節驗或另立閘 | skills/fiction/references/genres.md | 2026-08-20 ACC-20260820-01 |
 | BL-030 | 風險 | **「施工期紅」讓 CI 的 rc 在施工中失去判別力**:`chg_field_check` 對 Status 寫「施工中」的 CHG 必紅(設計如此),於是「先跑 CI 再 commit」這條紀律對施工中的 commit 恆為紅、無從據以判斷。審議席(codex)裁:「現行流程把『施工中必紅』與『CI 應作為 commit 判準』**混成同一個 rc**;`;` 改 `&&` 只能防誤操作,不能解決語義衝突。」建議拆兩層:**開發檢查**允許 CHG 為施工中、**收尾 CI** 要求 ACC 齊備且 Status 收尾 | .github/ci_local.sh 與 scripts/chg_field_check.py | 2026-08-20 ACC-20260820-01 |
 | BL-031 | 待辦 | **窄閘:分支關聯的 CHG 全部已驗收、main 已有對應成果,而分支仍存在 → 報告**。不判「分支是否太老」、不禁止長命分支。審議席實測出三個必須吃下的邊角:多 CHG 對一分支(`claude/ci-poetry` 掛 4 份)、`- Branch: main`(早期 3 份)、無 CHG 的 session worktree 分支(依 KN-002 明標不判)。「main 已有對應成果」**不能用 `git branch --merged`**(squash 下恆假),要用 ACC-20260820-02 的 tree/diff 三重等價法。**先做報告不硬紅**(codex 裁) | scripts/ 下新支 | 2026-08-20 ACC-20260820-02 |
+| BL-032 | 待辦 | **單項 CHG 免附逐項共識表,是使用者裁決的分階段安排,不是判定結論**。codex 三輪都主張單項也要附表,理由:第 1 款已要求每張 CHG 至少列一個修正項目 ID、ACC 也要承接同一組 ID,單項免表會讓閘**無處檢查「修正項目 ID → 處置版本 ID → 兩席判定 → ACC」這條鏈**,等於重新長出兩套承接規則;fable 三輪都主張免表,理由:閘該守的不變量標頭單欄位已守到,逐項表對單項票是重複記帳。三輪未收斂,使用者裁「兩者都要但分階段」——先落 fable 版讓規則上線。**解除條件**:實際跑過若干張單項 CHG 之後,具名裁定要不要收緊成一律附表,不得因為沒出事就默默留著。**另附一項一併覆核**:標頭第四種形狀 `使用者裁決(記於 <編號>)` 是主 agent 依第 2 款推導後新增的,**兩席都沒審過** | scripts/chg_field_check.py `CONSENSUS_SINCE` 附近 | 2026-08-21 CHG-20260821-01 |
+
 
 ## 已解除
 

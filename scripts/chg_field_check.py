@@ -197,6 +197,168 @@ def check_status(files: list) -> list[str]:
     return bad
 
 
+# ── 判定三:`- Consensus:` 與逐項共識表(DIR-002 第 5 款)───────────────
+#
+# DIR-002 從 2026-08-13 生效,管的是「誰有權判定」——而它自己**八天沒有任何機器在看**,
+# 全靠主 agent 記得送審。KN-001 的同一個型樣第 10 次,這次落在決定誰有權判定的那條規則上。
+#
+# 前瞻不追溯:只管檔名編號 >= CONSENSUS_SINCE 的 CHG。既有 41 張是在舊制度下完成的證據,
+# 回填等於在已 merge 的歷史上偽造當時不存在的共識紀錄,而全數轉紅又是
+# 「閘紅的理由與它要守的不變量無關」(STATUS_BASELINE 註解記過同型)。
+# 邊界用**檔名編號字串比大小**而不是解析日期:CHG-YYYYMMDD-NN 的字典序就是時間序,
+# 不需要第二套解析器,也就不會有第二套解析器的 bug。
+#
+# **本閘查得了什麼、查不了什麼,寫在 DIR-002 第 5 款的「判不了的四件事」**。
+# 最要緊的一條:欄位可以謊填,同版本 ID 下的處置文字也可以被覆寫——
+# 閘查形狀與引用,查不了共識是真的。防線是對造覆核,不是這支腳本。
+CONSENSUS_SINCE = "CHG-20260821-01"
+
+CONSENSUS_RE = re.compile(r"^-\s*Consensus[:：]\s*(.*)$", re.M)
+ITEM_SEC_RE = re.compile(r"^##\s+修正項目\s*$", re.M)
+TABLE_SEC_RE = re.compile(r"^##\s+審議席共識\s*$", re.M)
+ITEM_ID_RE = re.compile(r"^-\s*(CHG-\d{8}-\d{2}\.\d+)\s*[—\-–]")
+# 四種合法形狀。**「不同意」含「同意」兩字**,所以判同意一律先排除不同意——
+# 子字串比對在中文否定式上會反向誤判,這裡不押注在「應該沒事」上。
+SHAPE_BOTH = re.compile(r"codex\s*✓.*fable\s*✓|fable\s*✓.*codex\s*✓")
+SHAPE_SINGLE = re.compile(r"^單方[(（]\s*(\S+?)\s*缺席[:：]\s*(.+?)\s*[)）]$")
+SHAPE_DEADLOCK = re.compile(r"^僵局[(（]\s*記於\s*(\S+?)\s*[,，]\s*待使用者\s*[)）]$")
+SHAPE_USER = re.compile(r"^使用者裁決[(（]\s*記於\s*(\S+?)\s*[)）]$")
+AGREE_RE = re.compile(r"同意")
+DISAGREE_RE = re.compile(r"不同意|反對")
+
+
+def section_body(text: str, header_re) -> str | None:
+    m = header_re.search(text)
+    if not m:
+        return None
+    rest = text[m.end():]
+    nxt = NEXT_H2.search(rest)
+    return rest[:nxt.start()] if nxt else rest
+
+
+def declared_items(text: str) -> list[str]:
+    body = section_body(text, ITEM_SEC_RE)
+    if body is None:
+        return []
+    out = []
+    for ln in body.split("\n"):
+        m = ITEM_ID_RE.match(ln.strip())
+        if m:
+            out.append(m.group(1))
+    return out
+
+
+def parse_table(text: str) -> list[list[str]] | None:
+    """回傳資料列(已去掉表頭與分隔列);沒有 `## 審議席共識` 節回 None。"""
+    body = section_body(text, TABLE_SEC_RE)
+    if body is None:
+        return None
+    rows = []
+    for ln in body.split("\n"):
+        ln = ln.strip()
+        if not ln.startswith("|"):
+            continue
+        cells = [c.strip() for c in ln.strip("|").split("|")]
+        if all(set(c) <= set("-: ") for c in cells):     # 分隔列
+            continue
+        rows.append(cells)
+    return rows[1:] if rows else []                       # 第一列是表頭
+
+
+def shape_of(value: str) -> str:
+    if SHAPE_BOTH.search(value):
+        return "兩席具名"
+    if SHAPE_SINGLE.match(value):
+        return "單方"
+    if SHAPE_DEADLOCK.match(value):
+        return "僵局"
+    if SHAPE_USER.match(value):
+        return "使用者裁決"
+    return ""
+
+
+def consensus_verdict(name: str, text: str) -> list[str]:
+    """回傳該檔的違規訊息;空清單 = 過。前瞻豁免由呼叫端先擋。"""
+    bad = []
+    head = header_of(text)
+    m = CONSENSUS_RE.search(head)
+    if not m:
+        return [f"{name}:標頭沒有 `- Consensus:` 欄位"
+                "——DIR-002 第 5 款自 " + CONSENSUS_SINCE + " 起強制,缺欄位不算過"]
+    value = m.group(1).strip()
+    if not value or PLACEHOLDER.match(value):
+        bad.append(f"{name}:`- Consensus:` 是空的或還留著佔位字串")
+        return bad
+    shape = shape_of(value)
+    if not shape:
+        bad.append(f"{name}:`- Consensus:` 的值「{value[:60]}」不匹配四種合法形狀"
+                   "(兩席具名 / 單方 / 僵局 / 使用者裁決)"
+                   "——**新形狀要具名加進本閘,不能默默過**")
+
+    items = declared_items(text)
+    if not items:
+        bad.append(f"{name}:`## 修正項目` 一個 ID 都沒列"
+                   "——DIR-002 第 1 款要求**只有一個處置時仍須列一個 ID**")
+    dup = {i for i in items if items.count(i) > 1}
+    if dup:
+        bad.append(f"{name}:修正項目 ID 重複:{'、'.join(sorted(dup))}")
+
+    rows = parse_table(text)
+    if len(items) >= 2 and rows is None:
+        bad.append(f"{name}:列了 {len(items)} 個修正項目卻沒有 `## 審議席共識` 表"
+                   "——兩項以上必須逐項列(單項免表是 BL-032 的分階段安排)")
+    if rows is None:
+        return bad
+
+    row_ids = [r[0] for r in rows if r]
+    for r in rows:
+        if len(r) != 7:
+            bad.append(f"{name}:共識表第一欄「{(r[0] if r else '')[:24]}」只有 {len(r)} 欄,"
+                       "應為 7 欄(ID / 處置版本 ID / codex / fable / 共識狀態 / 輪次 / 未決理由)")
+            continue
+        rid, ver, cx, fb, state, rounds, _why = r
+        if not ver:
+            bad.append(f"{name}:{rid} 的處置版本 ID 是空的")
+        if state == "通過":
+            # **先排除否定式**:「不同意」含「同意」,子字串比對會反向誤判。
+            for who, val in (("codex", cx), ("fable", fb)):
+                if DISAGREE_RE.search(val) or not AGREE_RE.search(val):
+                    bad.append(f"{name}:{rid} 標為通過,但 {who} 欄是「{val[:24]}」"
+                               "——通過只能出現在兩席判定皆為同意時")
+        try:
+            n = int(rounds.strip())
+        except ValueError:
+            bad.append(f"{name}:{rid} 的收斂輪次「{rounds[:12]}」不是數字")
+        else:
+            if n > 3:
+                bad.append(f"{name}:{rid} 的收斂輪次是 {n},超過第 2 款的三輪上限")
+
+    missing = [i for i in items if i not in row_ids]
+    extra = [i for i in row_ids if i not in items]
+    for i in missing:
+        bad.append(f"{name}:{i} 列在 `## 修正項目` 卻沒有共識表的對應列")
+    for i in extra:
+        bad.append(f"{name}:共識表有 {i} 這一列,但 `## 修正項目` 沒宣告它")
+
+    # **標頭與表不得互相說謊。** 這一格是兩席在第三輪各自獨立提出的同一條:
+    # 一張 CHG 可以整表僵局、標頭卻寫兩席具名,兩層各自全綠。純引用一致性,機器判得了。
+    if shape == "兩席具名":
+        notpass = [r[0] for r in rows if len(r) == 7 and r[4] != "通過"]
+        if notpass:
+            bad.append(f"{name}:標頭用了兩席具名形狀,但共識表有 {len(notpass)} 列不是通過"
+                       f"({'、'.join(notpass[:3])})——標頭與表互相說謊")
+    return bad
+
+
+def check_consensus(files: list) -> list[str]:
+    bad = []
+    for f in files:
+        if f.stem < CONSENSUS_SINCE:
+            continue                                     # 前瞻不追溯
+        bad.extend(consensus_verdict(f.name, f.read_text(encoding="utf-8")))
+    return bad
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="CHG 欄位不得留佔位字串")
     ap.add_argument("--repo", default=".")
@@ -288,9 +450,89 @@ def main(argv=None) -> int:
             for f in fails:
                 print("  ❌ " + f)
             return 1
+        # ── 判定三:綠端一例,紅端**全部由綠端突變產生** ──
+        # 綠端就是 CHG-20260821-01 自己的形狀:四個修正項目、標頭因為表裡有非通過列
+        # 而不能用兩席具名、輪次都在三輪內。
+        cg = (
+            "# CHG-20260821-01 — X" + chr(10) + chr(10) +
+            "- Consensus: 使用者裁決(記於 CHG-20260821-01)" + chr(10) +
+            "- Risk: 中" + chr(10) + chr(10) +
+            "## 修正項目" + chr(10) + chr(10) +
+            "- CHG-20260821-01.1 — 條文" + chr(10) +
+            "- CHG-20260821-01.2 — 斷言條文" + chr(10) + chr(10) +
+            "## 審議席共識" + chr(10) + chr(10) +
+            "| 修正項目 ID | 處置版本 ID | codex 判定 | fable 判定 | 共識狀態 | 收斂輪次 | 未決理由 |" + chr(10) +
+            "|---|---|---|---|---|---|---|" + chr(10) +
+            "| CHG-20260821-01.1 | v3-a | 同意 | 同意 | 通過 | 3 | — |" + chr(10) +
+            "| CHG-20260821-01.2 | v3-b | 不同意 | 同意 | 使用者裁決 | 3 | 三輪未收斂 |" + chr(10) +
+            chr(10) + "## Status" + chr(10) + chr(10) + "已驗收 — ACC-X。" + chr(10)
+        )
+        if consensus_verdict("green.md", cg):
+            fails.append("判定三綠端竟然不綠:" +
+                         " / ".join(consensus_verdict("green.md", cg)))
+        cmuts = [
+            ("缺欄位", cg.replace("- Consensus: 使用者裁決(記於 CHG-20260821-01)" + chr(10), "", 1),
+             "沒有 `- Consensus:` 欄位"),
+            ("形狀不合法", cg.replace("使用者裁決(記於 CHG-20260821-01)", "兩席都說可以", 1),
+             "不匹配四種合法形狀"),
+            ("單方理由空白", cg.replace("使用者裁決(記於 CHG-20260821-01)", "單方(codex 缺席:)", 1),
+             "不匹配四種合法形狀"),
+            ("零個修正項目", cg.replace("- CHG-20260821-01.1 — 條文" + chr(10), "", 1)
+                              .replace("- CHG-20260821-01.2 — 斷言條文" + chr(10), "", 1),
+             "一個 ID 都沒列"),
+            ("兩項以上卻沒表", cg.replace("## 審議席共識", "## 別的節", 1),
+             "沒有 `## 審議席共識` 表"),
+            ("表缺一列", cg.replace(
+                "| CHG-20260821-01.2 | v3-b | 不同意 | 同意 | 使用者裁決 | 3 | 三輪未收斂 |" + chr(10), "", 1),
+             "沒有共識表的對應列"),
+            ("表多一列", cg.replace(
+                "| CHG-20260821-01.2 | v3-b | 不同意 | 同意 | 使用者裁決 | 3 | 三輪未收斂 |",
+                "| CHG-20260821-01.2 | v3-b | 不同意 | 同意 | 使用者裁決 | 3 | 三輪未收斂 |" + chr(10) +
+                "| CHG-20260821-01.9 | v3-z | 同意 | 同意 | 通過 | 1 | — |", 1),
+             "`## 修正項目` 沒宣告它"),
+            # **否定式反向誤判的正控**:「不同意」含「同意」,子字串比對會判它通過。
+            ("一席不同意卻標通過", cg.replace(
+                "| CHG-20260821-01.2 | v3-b | 不同意 | 同意 | 使用者裁決 | 3 |",
+                "| CHG-20260821-01.2 | v3-b | 不同意 | 同意 | 通過 | 3 |", 1),
+             "通過只能出現在兩席判定皆為同意時"),
+            ("輪次超過三", cg.replace("| 同意 | 同意 | 通過 | 3 |", "| 同意 | 同意 | 通過 | 4 |", 1),
+             "超過第 2 款的三輪上限"),
+            ("處置版本 ID 空白", cg.replace("| CHG-20260821-01.1 | v3-a |",
+                                            "| CHG-20260821-01.1 |  |", 1),
+             "處置版本 ID 是空的"),
+            # 兩席在第三輪各自獨立提出的同一條:標頭與表不得互相說謊。
+            ("標頭具名兩席但表有非通過列", cg.replace(
+                "使用者裁決(記於 CHG-20260821-01)", "codex ✓ 2026-08-21 / fable ✓ 2026-08-21", 1),
+             "標頭與表互相說謊"),
+        ]
+        for label, text, want in cmuts:
+            got = consensus_verdict("m.md", text)
+            if not any(want in g for g in got):
+                fails.append("判定三紅端「" + label + "」應報「" + want +
+                             "」,實得 " + (" / ".join(got) if got else "全綠") +
+                             "——**該出口不可達**")
+        # 前瞻豁免的正控:同一份壞樣本掛在舊編號上必須被跳過,否則會回頭紅既有 41 張
+        import tempfile as _tf
+        with _tf.TemporaryDirectory() as d2:
+            r2 = Path(d2)
+            broken = cg.replace("- Consensus: 使用者裁決(記於 CHG-20260821-01)" + chr(10), "", 1)
+            (r2 / "CHG-20260727-01.md").write_text(broken, encoding="utf-8")
+            if check_consensus([r2 / "CHG-20260727-01.md"]):
+                fails.append("前瞻豁免失效:CHG-20260727-01 早於 " + CONSENSUS_SINCE +
+                             ",不該被判定三掃到")
+            (r2 / "CHG-20260821-01.md").write_text(broken, encoding="utf-8")
+            if not check_consensus([r2 / "CHG-20260821-01.md"]):
+                fails.append("生效邊界失效:CHG-20260821-01 是第一張該被掃的,竟然全綠"
+                             "——**邊界寫成了永遠豁免**")
+        if fails:
+            for f in fails:
+                print("  ❌ " + f)
+            return 1
         print("✅ self-test:佔位字串綠紅兩端可達;"
               "Status 綠端 + 三個紅出口(換詞×2 / 刪段×1)皆由綠端突變產生;"
-              "baseline 的 fail-open 與孤兒條目兩個紅端亦可達")
+              "baseline 的 fail-open 與孤兒條目兩個紅端亦可達;"
+              "判定三綠端 + " + str(len(cmuts)) + " 個紅端(全部由綠端突變產生)"
+              "+ 前瞻邊界的豁免與生效兩側正控皆可達")
         return 0
 
     root = Path(args.repo)
@@ -327,6 +569,22 @@ def main(argv=None) -> int:
           + str(n_base) + " 份在具名 baseline(模板前的歷史帳本)。")
     print("   仍判不了的:首段直接**謊寫**已驗收。"
           "本閘治的是模板狀態忘了改,不是蓄意造假。")
+
+    # ── 判定三:`- Consensus:` 與逐項共識表(DIR-002 第 5 款)──
+    n_scope = sum(1 for f in files if f.stem >= CONSENSUS_SINCE)
+    con_bad = check_consensus(files)
+    if con_bad:
+        print(chr(10) + "✗ 共識欄位檢查 " + str(len(con_bad)) + " 項:")
+        for b in con_bad:
+            print("  " + b)
+        print(chr(10) + "DIR-002 第 5 款自 " + CONSENSUS_SINCE + " 起前瞻生效。"
+              "**缺欄位不算過**,否則本閘會退化成恆真。")
+        return 1
+    print("✅ 共識欄位一致:" + str(n_scope) + " 份在生效範圍內、"
+          + str(len(files) - n_scope) + " 份前瞻豁免(舊制度下的歷史帳本)。")
+    print("   仍判不了的四件事見 DIR-002 第 5 款:欄位可謊填、"
+          "同版本 ID 下的文字可被覆寫、票內可能藏著沒列出的處置、"
+          "該開 CHG 而沒開的變更本閘全盲。")
     return 0
 
 
