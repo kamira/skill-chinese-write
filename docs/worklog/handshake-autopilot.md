@@ -4,14 +4,81 @@
 
 ## 最近一次進場(人手)
 
-- 時間:2026-08-13 (UTC+0)
-- branch:`claude/ai-sdlc-handshake-ae9a3d`(worktree;無 upstream,但 tip == `origin/main` == `main` = `46331e8`,**基準最新**)
+- 時間:2026-08-21 (UTC+0)
+- branch:`claude/ai-sdlc-handshake-c7b2a2`(worktree;**無 upstream**,但 tip == `origin/main` == `b8506dc`,基準最新)
 - worktree:clean;無未提交變更可對帳
-- commit 對帳:自 `06f0e89` 至 HEAD **每一筆都帶 CHG 編號**,無未治理 commit
-- 未收尾:**無**。CHG-20260727-01 ~ CHG-20260810-10 共 17 張全部收尾;ACC 15 份 + `CHG-20260810-07` 走 CHG-lite(低風險 + 內嵌自驗,依 modification-guide 免獨立 ACC)。`doc_integrity_check.py --repo .` exit 0
-- 治理路徑:`docs/writing/`(非預設 `docs/`);knowledge INDEX 生效條目 KN-001 / KN-002 / KN-003 + DIR-001(預先授權)
-- skill 版本自檢:帳本記載 `Skill: ai-sdlc v1.22`,執行中的 skill 為 **v1.35.0** —— 記錄較舊,新規則只往後適用,**不需升級**
-- 本輪動作:僅進場握手 + 對齊本檔,未改任何受治理內容
+- commit 對帳:錨點 `ACC-20260820-02` 的 commit(`b8506dc`)即 HEAD,錨點後**零筆** commit,無未治理工作
+- 未收尾:**無**。CHG 41 張 / ACC 36 份;差額 5 張全部有歸屬——
+  `CHG-20260810-09`→`ACC-20260810-07`、`CHG-20260810-10`→`ACC-20260810-08`、
+  `CHG-20260817-03/-04/-05`→`ACC-20260817-02`(三張合併驗收)。
+  `doc_integrity_check.py --repo .` exit 0
+- 治理路徑:`docs/writing/`(非預設 `docs/`);本 repo **沒有** `ai-guideline.md` / `coordination.md` / `structure/`,
+  入口是 `AGENTS.md`,結構真相源是 `scripts/skill_inventory_check.py` 與 `docs/genres.md`
+- knowledge INDEX 生效條目:KN-001 / KN-002 / KN-003 / KN-004 + DIR-001(低中風險預先授權)+ DIR-002(codex + fable 互審)
+- skill 版本自檢:帳本記載 `Skill: ai-sdlc v1.35`,執行中的 skill 為 **v1.64.0** —— 記錄較舊,新規則只往後適用,**不需升級**
+
+### 本輪查到、上一棒沒有記過的兩件事
+
+**(1) 工具鏈探測回 `NOT_RUN`,而原因不是缺相依,是本 repo 沒有那個載具。**
+`bash <plugin>/skills/ai-sdlc-autopilot/scripts/toolchain_probe.sh .` → 直譯器找到
+(`python3` 3.11.9),但 `requirements-dev.txt` 不存在,判定 `NOT_RUN` / exit 4。
+本 repo 的治理閘**只用標準庫**(`.github/workflows/governance.yml` 只 setup-python 3.12,
+不跑任何 `pip install`),所以「沒有 requirements-dev.txt」是實情,不是缺件。
+**但 `NOT_RUN` 不得自行升級成 `PASS`**——三態的意義正是「沒查成」與「沒問題」要分得開。
+處置:本 repo 需要自己的探測載具(或在 repo 內宣告零第三方相依的等價聲明),
+`tools/` 目前**沒有**把 `toolchain_probe.sh` 帶過來(`PROVENANCE.json` 的 42 支清單裡沒有它)。
+
+**(2) 隨身工具落後上游,而漂移閘依設計查不出來。**
+`tools/tools_drift_check.py` → 42 支與帶過來當下一致(來源 commit `88ac05a`)。
+但握手協定要求的 `doc_integrity_check.py --repo . --check-baseline` 在本地副本
+**不存在這個旗標**(argparse 直接 exit 2);上游同名檔第 986 行有。
+上游 `skill-ai-sdlc-autopilot` 現在是 `e09d721` / skill v1.64.0,本地副本停在 v1.35 那一代。
+基準對帳本輪改用等價的 `git fetch` + `git log --oneline HEAD..origin/main`(空 → 最新)。
+這正是 `PROVENANCE.json` 自己寫明的盲區:「本檢查看不出上游是否已前進」。
+
+## 已收尾:DIR-002 擴大案(2026-08-21)
+
+使用者原話(2026-08-21 UTC+0):「所有及往後的修正項目全部交由 fable 和 codex 交叉決議達成共識」。
+`CHG-20260821-01` / `ACC-20260821-01` 收尾。DIR-002 改寫為五款,並補上它生效八天以來
+**一直沒有的斷言**(`scripts/chg_field_check.py` 判定三,掛 `ci_local.sh` 第 [9/19] 步)。
+
+- **第 1~4 款**:兩席第三輪各自明示同意同一份文字
+- **第 5 款**:三輪未收斂,依第 2 款主動上報,使用者裁決「兩者都要,但分階段」——
+  本輪落 fable 版(單項免表),codex 的「一律附表」轉為 `BL-032`
+- **風險評級**:codex 判高、fable 判中,使用者裁決以中風險路徑走到 merge
+- 審議全文六份存於該 session 的 scratchpad(未進帳本);實質理由已抄進 CHG 與 ACC
+
+**下一次有修正項目送審時,第一項議程**:覆核標頭第四種形狀 `使用者裁決(記於 <編號>)`——
+它是主 agent 依第 2 款推導後新增的,兩席都沒審過(已記於 `BL-032`)。
+
+## 已收尾:CHG-20260821-02(2026-08-22,兩席互審共識)
+
+`CHG-20260821-01` push 時被 pre-push 閘擋下,追成因發現
+`scripts/version_impact_check.py` 的 `git()` 沒清環境變數——**同一支 `ci_local.sh`,
+直接跑全綠、經 hook 跑則紅**。追下去還發現它帶著繼承來的 `GIT_DIR` 執行時會**寫壞宿主 repo**
+(`core.bare = true` 加假身分,宿主 git 全面失效,要人工改 config 才救回來)。
+
+五個修正項目,兩席三輪,全部**明示同意同一處置版本**:
+
+| ID | 處置 | 輪次 |
+|---|---|---|
+| .1 | `clean_git_env()` 補集定義(清所有 `GIT_*`,只留 `GIT_TRACE` 族) | 2 |
+| .2 | self-test 第 0 案 sandbox + decoy + 補集結構斷言;CHG 文件重建 | 3 |
+| .3 | `ci_local.sh` 呼叫端清 `GIT_*` + 事後斷言紅端 | 3 |
+| .4 | `BL-033`(隨身副本同型缺陷,送上游;`.3` 是縱深不是替代) | 3 |
+| .5 | `KN-005`(重現破壞性行為時靶必須是沙盒,正屋只准讀) | 2 |
+
+**下一棒要知道的三件事:**
+
+1. **審議標的在收斂輪內要凍結**(fable 的程序意見,已採納):本張第三輪的 bytes
+   在 fable 審議進行中變動過一次,它的掃描撞上新舊兩個狀態、全部作廢重做。
+   現在的作法是發 md5 清單、投票期間不動檔、收票後主 agent 重算比對。
+2. **跳脫序列在轉手之間會被收斂掉一層**,本張連咬三次,每次都在同一段。
+   凡要寫進檔案的跳脫序列,**一律用碼值組字**(`chr(92)`),不寫跳脫。
+3. **插入錨點不要用會在檔頭出現的字串**:主 agent 用 `## Design diagrams` 當錨點,
+   而檔頭 `- Diagrams: 見 \`## Design diagrams\`` 才是第一個匹配,三次插入把 CHG 剖開三次。
+
+`BL-030` 第三次現形(施工期紅讓 CI 的 rc 在施工中失去判別力),仍開放。
 
 ## 目前的停點(2026-08-13,工具鏈)
 

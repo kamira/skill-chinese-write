@@ -41,6 +41,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -54,8 +55,40 @@ EXCLUDE_PARTS = ("__pycache__", ".DS_Store")
 VERSION_LINE = re.compile(rb"^(\s*)version:\s*\S+\s*$")
 
 
+# git 執行 hook 時會**匯出 `GIT_DIR` 等變數**(pre-push 是其中之一)。子行程繼承之後,
+# `cwd=repo` 就不再決定它打到哪個 repo——GIT_DIR 贏。本檔的 self-test 建暫時 repo 跑夾具,
+# 於是從 hook 跑時每一個 `git` 都打回宿主 repo:夾具建不起來,下游一律報「紅端不可達」。
+#
+# 代價不只是誤紅。實測(CHG-20260821-02):帶著繼承來的 `GIT_DIR` 執行本檔的 self-test,
+# 它的 `git init` 會**把 `core.bare = true` 與一組假身分寫進宿主 repo 的 config**,
+# 宿主的 `git status` / `git push` 當場全部回 `fatal: this operation must be run in a work tree`。
+# **一支唯讀的檢查腳本寫壞了被檢查的 repo。**
+#
+# 所以不是「把 cwd 傳對就好」:凡是要對指定 repo 下 git 指令的地方,
+# 都必須把繼承來的 git 環境變數**清掉**,否則 cwd 只是建議。
+# **補集定義,不是列舉。** 第一版列了十項,而兩席獨立審都指出同一個病:名單窄於規則
+# 自己寫的範圍。漏掉的至少有 git 自家 `local_repo_env` 的其餘成員
+# (`GIT_IMPLICIT_WORK_TREE` / `GIT_GRAFT_FILE` / `GIT_SHALLOW_FILE` /
+# `GIT_NO_REPLACE_OBJECTS` / `GIT_REPLACE_REF_BASE`),以及整個 config 注入族
+# (`GIT_CONFIG` / `GIT_CONFIG_PARAMETERS` / `GIT_CONFIG_COUNT` 與依它展開的
+# `GIT_CONFIG_KEY_n` / `GIT_CONFIG_VALUE_n`)。**後者尤其要命**:它不只改定位,
+# 還能把身分、hooks path、core.bare 直接注進被測 repo——正是這次寫壞宿主 config 的那一類。
+#
+# 列舉會讓下一個新變數靜默漏網。補集定義下,未知的新變數落進「清」,不是落進「留」。
+# 本檔全部 git 操作都是本地的(init / config / add / commit / rev-parse / cat-file /
+# ls-tree / merge-base),不碰網路,所以不需要保留憑證或傳輸類變數。
+GIT_ENV_KEEP_PREFIX = ("GIT_TRACE",)      # 除錯用;不影響定位與設定
+
+
+def clean_git_env() -> dict:
+    """繼承環境剔除**所有** `GIT_*`,只留明示白名單。留其他變數(PATH 等還要用)。"""
+    return {k: v for k, v in os.environ.items()
+            if not k.startswith("GIT_") or k.startswith(GIT_ENV_KEEP_PREFIX)}
+
+
 def git(repo: Path, *args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=repo, capture_output=True)
+    return subprocess.run(["git", *args], cwd=repo, capture_output=True,
+                          env=clean_git_env())
 
 
 def blob_at(repo: Path, ref: str, path: str) -> bytes | None:
@@ -962,6 +995,95 @@ def vacuous_base_test() -> list[str]:
 def self_test() -> int:
     import tempfile
     fails: list[str] = []
+
+    # ── 0 環境隔離(CHG-20260821-02)。**放最前面,而且要跑得快** ──
+    # 守的是:從 pre-push hook 跑時,繼承來的 git 環境不得把本檔的 git 指令拉離目標 repo。
+    # 這一條壞了,底下 12 案全是空的——它們的夾具根本沒建起來。
+    #
+    # 設計出自兩席第一輪的獨立審,兩邊各補了對方沒看到的一半:
+    #   · **sandbox + decoy 兩個受控暫存 repo**(codex):紅端不能只斷言「沒命中 sandbox」——
+    #     污染呼叫若因路徑格式或 git 版本差異**直接失敗**,也會被當成合格正控。
+    #     兩端都必須**成功**且**精確命中各自的 gitdir**,才證明污染真把 git 導向預定的錯誤 repo。
+    #   · **夾具不得引用宿主 `.git`**(兩席都提):本案的事故正是拿正屋當污染靶造成的。
+    #   · **補集語意要有自己的斷言**(fable):只毒 `GIT_DIR` 的話,把 `GIT_INDEX_FILE`
+    #     從清單移除不會有任何一案轉紅——可判而未判,不在 KN-001 的豁免內。
+    with tempfile.TemporaryDirectory() as td0:
+        sandbox, decoy = Path(td0) / "sandbox", Path(td0) / "decoy"
+        for d in (sandbox, decoy):
+            d.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=d,
+                           capture_output=True, env=clean_git_env())
+
+        # 污染環境**只指向 decoy**,不碰宿主。
+        poisoned = clean_git_env()
+        poisoned["GIT_DIR"] = str(decoy / ".git")
+        poisoned["GIT_WORK_TREE"] = str(decoy)
+
+        def _gitdir(out: bytes) -> Path | None:
+            t = out.decode(errors="replace").strip()
+            return Path(t).resolve() if t else None
+
+        _saved = {k: os.environ.get(k) for k in ("GIT_DIR", "GIT_WORK_TREE")}
+        os.environ["GIT_DIR"] = poisoned["GIT_DIR"]
+        os.environ["GIT_WORK_TREE"] = poisoned["GIT_WORK_TREE"]
+        try:
+            r_clean = git(sandbox, "rev-parse", "--absolute-git-dir")
+            r_dirty = subprocess.run(["git", "rev-parse", "--absolute-git-dir"],
+                                     cwd=sandbox, capture_output=True, env=poisoned)
+        finally:
+            for k, v in _saved.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+
+        if r_clean.returncode != 0 or _gitdir(r_clean.stdout) != (sandbox / ".git").resolve():
+            fails.append("環境隔離:git() 沒有精確命中 sandbox 的 .git(得到 " +
+                         (r_clean.stdout.decode(errors="replace").strip() or
+                          r_clean.stderr.decode(errors="replace").strip()) +
+                         ")——從 pre-push hook 跑時本檔的每一案都是空的")
+        # **正控要求成功且命中 decoy**,不是「失敗就算數」。
+        if r_dirty.returncode != 0 or _gitdir(r_dirty.stdout) != (decoy / ".git").resolve():
+            fails.append("環境隔離的**正控失敗**:污染呼叫沒有精確命中 decoy(得到 " +
+                         (r_dirty.stdout.decode(errors="replace").strip() or
+                          r_dirty.stderr.decode(errors="replace").strip()) +
+                         ")——本案沒有判別力,清不清都一樣過")
+
+        # 補集語意的斷言:git 自己列的 local_repo_env 一項都不許留下,
+        # **而且未知的新變數也要落進「清」**——列舉式名單就是在這一格漏掉下一個變數的。
+        lev = subprocess.run(["git", "rev-parse", "--local-env-vars"],
+                             capture_output=True, env=clean_git_env())
+        names = [n for n in lev.stdout.decode(errors="replace").split() if n.startswith("GIT_")]
+        if not names:
+            fails.append("環境隔離:`git rev-parse --local-env-vars` 沒回任何變數"
+                         "——判不出清單完不完整,這不是「沒問題」")
+        probe = {n: "x" for n in names}
+        probe["GIT_ZZZ_NOT_YET_INVENTED"] = "x"     # 代表「下一個新變數」
+        probe["GIT_TRACE"] = "1"                    # 白名單本尊,必須留
+        # **族成員也必須留。** 規則寫的是前綴族(`GIT_ENV_KEEP_PREFIX`),
+        # 而初版的洩漏斷言只豁免精確的 "GIT_TRACE"——於是任何人帶著
+        # `GIT_TRACE_SETUP` 之類的除錯變數 push,就會吃到一個**說謊的紅**:
+        # 白名單其實運作正常,訊息卻控訴「補集定義破功」。
+        # 斷言的範圍不等於規則的範圍,正是本張拿來打回 v1 清單的 KN-001 第四問。
+        probe["GIT_TRACE_PACKET"] = "1"             # 族成員正控,必須留
+        _saved2 = {k: os.environ.get(k) for k in probe}
+        os.environ.update(probe)
+        try:
+            kept = [k for k in clean_git_env() if k.startswith("GIT_")]
+        finally:
+            for k, v in _saved2.items():
+                if v is None:
+                    os.environ.pop(k, None)
+                else:
+                    os.environ[k] = v
+        leaked = sorted(k for k in kept if not k.startswith(GIT_ENV_KEEP_PREFIX))
+        if leaked:
+            fails.append("環境隔離:clean_git_env() 漏清了 " + "、".join(leaked) +
+                         "——補集定義破功,退化成列舉")
+        for keep in ("GIT_TRACE", "GIT_TRACE_PACKET"):
+            if keep not in kept:
+                fails.append("環境隔離的**白名單正控失敗**:" + keep + " 也被清掉了"
+                             "——那不是補集,是全清,白名單這一格沒有判別力")
 
     ran: list[str] = []      # 案數用數的,不用寫死的
 
