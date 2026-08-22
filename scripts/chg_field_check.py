@@ -111,7 +111,12 @@ CHG-20260810-08.md CHG-20260810-09.md CHG-20260810-10.md CHG-20260814-02.md
 
 
 def status_verdict(text: str) -> tuple[str, str]:
-    """回 (出口, 首個平文段前 80 字)。出口見模組 docstring 的四出口表。
+    """回 (出口, **首個平文段全文**)。出口見模組 docstring 的四出口表。
+
+    第二個回傳值**不截斷**——止血條款(CHG-20260822-02)要拿它撈 ACC 編號,
+    截斷會把編號切掉。顯示端自己截。初版讓止血條款自己掃整個 Status 節,
+    結果撈到 `CHG-20260817-03` 裡一段**歷史引述**(「本欄原本寫『施工中 — 待 ACC-…-03』」)
+    而誤紅——**同一個檔裡兩套切法必然分岔**,這個 repo 記過四次。
 
     切段刻意用迴圈而不用 regex:空行可能夾雜空白或 TAB,而寫成 `[ \t]` 這種
     跳脫字元在經過多層工具傳遞時會被吃掉——施工時就發生過一次:`
@@ -159,20 +164,117 @@ def status_verdict(text: str) -> tuple[str, str]:
     first = " ".join(" ".join(plain[0]).split())
     # **先判紅**:同一段同時出現「已驗收」與「施工中」時往紅倒。
     if BAD_STATE.search(first):
-        return ("RED(bad-state)", first[:80])
+        return ("RED(bad-state)", first)
     if OK_STATE.search(first):
-        return ("GREEN", first[:80])
-    return ("RED(unknown-state)", first[:80])
+        return ("GREEN", first)
+    return ("RED(unknown-state)", first)
 
 
-def check_status(files: list) -> list[str]:
-    """回違規訊息。files 是 Path 清單。"""
+# ── 判定二的兩個具名紅出口(CHG-20260822-01 / BL-030)──────────────────
+#
+# 原本只有一個 `RED(bad-state)`:任何時候說「施工中」就紅。它把**兩條不同的不變量**
+# 混判成同一個 rc:
+#   (a) 施工中的 CHG 不得進 main
+#   (b) Status 不得與**已存在的 ACC** 自相矛盾
+# 而「任何時候都不得說施工中」嚴格強於這兩條,強出來的部分正好覆蓋
+# **治理流程明文要求存在的合法施工期**——於是「先跑 CI 再 commit」這條紀律在施工期恆為紅,
+# 綠不了不是因為東西壞了,是因為東西還沒做完,而這兩件事在 rc 上長得一樣。
+# `BL-030` 三次現形,三次的處置都是「收尾後才跑閘」——**繞過,不是解法**。
+#
+# 拆法(審議席三輪收斂,兩席交叉改判後一致):
+#   RED(acc-contradiction)          施工中 ∧ 對應 ACC 檔**已存在** → **任何模式都紅**
+#   RED(wip-not-explicitly-allowed) 施工中 ∧ ACC 不存在          → 預設紅,`--allow-wip` 時綠
+#
+# 前者正是 `632cbe4` 的形狀:ACC 已經寫完了,Status 忘了改。**旗標不放行它。**
+#
+# ## 為什麼旗標走命令列而不是環境變數
+#
+# 第一版設計是環境變數 `CI_ALLOW_WIP`,理由是「取 `CI_` 前綴才落在
+# `carrier_manifest_check` 的 `ENV_TOKEN` 掃描域內,守衛才看得見」。審議席(fable)
+# 第三輪自己推翻了這條:**環境是可寫的通道**——GitHub Actions 的 `GITHUB_ENV` 允許
+# 前置步驟用 `echo "NAME=value" >> "$GITHUB_ENV"` 注入,而那行字串**可以拼接構造**,
+# 變數名七個字元不必完整出現在 workflow 檔的任何地方,文字層掃描對它**必然全盲**。
+# 命令列版把整個面在**機制層**關掉:本檔不讀任何施工模式環境變數,環境裡塞什麼都無效。
+#
+# 附帶一個機械事實:**argv 穿不過 `git push`**。pre-push hook 的呼叫形式固定,
+# 沒辦法對一次 push 臨時傳參數——於是 hook **恆為全嚴**,施工中的東西一個位元組都出不了本機。
+# 而 `CI_ALLOW_WIP=1 git push` 會穿過去。
+#
+# **判定打在 `check_status` 層而不是 `status_verdict` 層**:後者是純文字函式,看不到磁碟,
+# 判不了 ACC 在不在;而只斷言 `status_verdict` 會讓 caller 層 fail-open——
+# 這支 self-test 自己記錄過那個病(「斷言被別的東西滿足了」)。
+ACC_ID = re.compile(r"ACC-\d{8}-\d{2}")
+TEMPLATE_LITE = re.compile(r"^-\s*Template:\s*lite\s*$", re.M | re.I)
+
+
+def acc_exists(chg_path, text: str) -> str:
+    """對應 ACC 檔存不存在;回傳命中的檔名,沒有回空字串。
+
+    候選有兩個來源,取聯集:
+      · **同尾碼**:`CHG-20260822-01.md` → `ACC-20260822-01.md`
+      · **Status 節裡明示引用的任一 ACC id**——本帳本有合併驗收
+        (`CHG-20260817-03/-04/-05` 三張共用 `ACC-20260817-02`),只看同尾碼會漏掉。
+    """
+    acc_dir = chg_path.parent.parent / "acceptance"
+    if not acc_dir.is_dir():
+        return ""
+    cands = {chg_path.name.replace("CHG-", "ACC-", 1)}
+    body = section_body(text, re.compile(r"^##\s+Status\s*$", re.M)) or ""
+    cands |= {m + ".md" for m in ACC_ID.findall(body)}
+    for c in sorted(cands):
+        if (acc_dir / c).is_file():
+            return c
+    return ""
+
+
+def check_status(files: list, allow_wip: bool = False) -> list[str]:
+    """回違規訊息。files 是 Path 清單。`allow_wip` 只由命令列參數傳入,不讀環境。"""
     bad = []
     seen = set()
     for f in files:
         seen.add(f.name)
         in_base = f.name in STATUS_BASELINE
-        code, detail = status_verdict(f.read_text(encoding="utf-8"))
+        text = f.read_text(encoding="utf-8")
+        code, detail = status_verdict(text)
+        if code == "GREEN" and not in_base:
+            # ── 止血條款(CHG-20260822-02):`RED(acc-contradiction)` 的鏡像 ──
+            #
+            # 本閘的宣稱一直是「`## Status` 說的話要為真」,而它**接不住一句假話**:
+            # 「已驗收 — ACC-X」在 ACC-X 不存在時就是假的,而閘讓它乾淨通過(兩席都實測過)。
+            # 現況是**覆蓋追不上既有宣稱**——所以這不是新增一支閘,是把覆蓋補到宣稱之內。
+            #
+            # **本條只宣稱「說出口的 ACC 必須存在」**,不宣稱完整的 CHG↔ACC 配對——
+            # 後者沒有任何機器在看(`doc_integrity_check` 的配對掃 `docs/changes`,
+            # 本 repo 的帳本在 `docs/writing/changes`,恆空轉),記於 `BL-034`。
+            # 輸出與紅出口的用字刻意避開「帳本完整性」「配對」,免得兩個訊號互相背書。
+            #
+            # 旁門要一起堵:`OK_STATE` 只認「已驗收」字樣,**不要求具名 ACC**——
+            # 寫「已驗收。」不引編號就繞過鏡像條款,所以「沒具名任何 ACC」也是紅。
+            # **CHG-lite 免獨立 ACC**(modification-guide:低風險 + 內嵌自驗),
+            # 它的 Status 寫的是「Accepted — self-verified」,本來就不該具名 ACC。
+            if TEMPLATE_LITE.search(header_of(text)):
+                continue
+            cited = ACC_ID.findall(detail)
+            acc_dir = f.parent.parent / "acceptance"
+            if not cited:
+                bad.append(f"{f.name}:`## Status` 說已驗收,卻沒有具名任何 ACC 編號"
+                           "——說出口的驗收事實要能被查證,不具名等於沒說")
+                continue
+            missing = [c for c in sorted(set(cited)) if not (acc_dir / (c + ".md")).is_file()]
+            if missing:
+                bad.append(f"{f.name}:`## Status` 說已驗收並具名 {'、'.join(missing)},"
+                           "**而那份 ACC 不存在**——說出口的驗收事實不為真")
+            continue
+
+        if code == "RED(bad-state)":
+            hit = acc_exists(f, text)
+            if hit:
+                code = "RED(acc-contradiction)"
+                detail = f"{detail}(而 {hit} 已經存在)"
+            elif allow_wip:
+                code = "GREEN"          # 合法施工期:明示放行
+            else:
+                code = "RED(wip-not-explicitly-allowed)"
         if in_base:
             # 斷言 3
             if code != "NO_STATUS":
@@ -184,12 +286,17 @@ def check_status(files: list) -> list[str]:
             bad.append(f"{f.name}:沒有精確的 `## Status` 節,也不在具名 baseline 裡"
                        "——**缺節不算過**,否則本閘會退化成恆真")
         elif code.startswith("RED"):
-            why = {"RED(bad-state)": "`## Status` 說它還在施工,而它已經在帳本裡",
+            why = {"RED(acc-contradiction)":
+                       "`## Status` 說它還在施工,**而對應的 ACC 已經寫完了**"
+                       "——這是 632cbe4 的形狀,任何模式都不放行",
+                   "RED(wip-not-explicitly-allowed)":
+                       "`## Status` 說它還在施工,而對應 ACC 尚不存在"
+                       "——合法的施工期請明示 `--allow-wip`;正式 CI 不得帶這個參數",
                    "RED(no-plain-para)": "`## Status` 只有引用塊,沒有平文段"
                                          "——狀態不得藏在引用裡",
                    "RED(unknown-state)": "`## Status` 的狀態詞不在本閘認得的名單內"
                                          "——新狀態詞要具名加進閘,不能默默過"}[code]
-            bad.append(f"{f.name}:{why}" + (f"「{detail}」" if detail else ""))
+            bad.append(f"{f.name}:{why}" + (f"「{detail[:80]}」" if detail else ""))
     # 斷言 2
     for name in sorted(STATUS_BASELINE - seen):
         bad.append(f"{name}:登記在 STATUS_BASELINE 裡,但掃不到這個檔"
@@ -212,6 +319,9 @@ def check_status(files: list) -> list[str]:
 # 最要緊的一條:欄位可以謊填,同版本 ID 下的處置文字也可以被覆寫——
 # 閘查形狀與引用,查不了共識是真的。防線是對造覆核,不是這支腳本。
 CONSENSUS_SINCE = "CHG-20260821-01"
+
+# 具名下限(CHG-20260822-02)。現值 45;要改必須在 CHG 說明,與 EXPECT 名單同治理。
+MIN_LEDGER_CHG = 45
 
 CONSENSUS_RE = re.compile(r"^-\s*Consensus[:：]\s*(.*)$", re.M)
 ITEM_SEC_RE = re.compile(r"^##\s+修正項目\s*$", re.M)
@@ -364,6 +474,13 @@ def main(argv=None) -> int:
     ap.add_argument("--repo", default=".")
     ap.add_argument("--glob", default="docs/writing/changes/CHG-*.md")
     ap.add_argument("--self-test", action="store_true")
+    # **只從命令列進來,不讀任何環境變數**(CHG-20260822-01)。
+    # 環境是可寫的通道:GitHub Actions 的 GITHUB_ENV 可由前置步驟拼接構造注入,
+    # 文字層掃描對它必然全盲;命令列把整個面在機制層關掉。
+    # 附帶:argv 穿不過 `git push`,所以 pre-push hook 恆為全嚴。
+    ap.add_argument("--allow-wip", action="store_true",
+                    help="明示本次為施工期檢查:放行「施工中且對應 ACC 尚不存在」的 CHG。"
+                         "ACC 已存在而 Status 仍施工中,本參數不放行。正式 CI 不得帶。")
     args = ap.parse_args(argv)
 
     if args.self_test:
@@ -440,6 +557,100 @@ def main(argv=None) -> int:
             if not any("CHG-9999-02.md" in g and "沒有精確的" in g for g in got2):
                 fails.append("baseline 外、**沒有 Status 節**的檔竟然通過"
                              "——fail-open,本閘會退化成恆真")
+        # ── 判定二的兩個新紅出口(CHG-20260822-01 / BL-030)──
+        # **綠端與紅端互為突變**:同一份 WIP 文字,只動「ACC 檔在不在」與「有沒有帶旗標」
+        # 兩個位元,四種組合全測;第五端是收尾綠端。
+        # 最要緊的是第四格:**帶旗標時矛盾仍紅**——旗標放不了 632cbe4 那一型。
+        _WIP = ("# CHG-20260901-01 — x" + chr(10) * 2 + "- Risk: 低" + chr(10) * 2 +
+                "## Status" + chr(10) * 2 + "施工中 — 待 ACC-20260901-01。" + chr(10))
+        _DONE = _WIP.replace("施工中 —", "已驗收 —", 1)
+
+        def _bl030(has_acc, text, allow):
+            with tempfile.TemporaryDirectory() as d:
+                r = Path(d)
+                (r / "changes").mkdir()
+                (r / "acceptance").mkdir()
+                f = r / "changes" / "CHG-20260901-01.md"
+                f.write_text(text, encoding="utf-8")
+                if has_acc:
+                    (r / "acceptance" / "ACC-20260901-01.md").write_text(
+                        "# ACC" + chr(10), encoding="utf-8")
+                # 濾掉 baseline 孤兒噪音:單檔子集必然噴 16 條,那不是本案要驗的
+                return [b for b in check_status([f], allow_wip=allow) if "孤兒" not in b]
+
+        for label, acc, text, allow, want in (
+                ("合法施工期 + 無旗標", False, _WIP, False, "合法的施工期請明示"),
+                ("合法施工期 + 帶旗標", False, _WIP, True, None),
+                ("ACC 已存在 + 無旗標", True, _WIP, False, "而對應的 ACC 已經寫完了"),
+                ("ACC 已存在 + **帶旗標**", True, _WIP, True, "而對應的 ACC 已經寫完了"),
+                ("已收尾 + ACC 存在", True, _DONE, False, None)):
+            got = _bl030(acc, text, allow)
+            if want is None:
+                if got:
+                    fails.append("BL-030「" + label + "」應為綠,實得:" + got[0][:60])
+            elif not any(want in g for g in got):
+                fails.append("BL-030「" + label + "」應報「" + want + "」,實得 " +
+                             (" / ".join(got) if got else "全綠") + "——**該出口不可達**")
+        # 合併驗收的 ACC 也要認得:CHG-…-03/-04/-05 共用 ACC-…-02 是本帳本的真實形狀,
+        # 只看同尾碼會漏掉,於是矛盾態會被誤放行。
+        with tempfile.TemporaryDirectory() as d:
+            r = Path(d)
+            (r / "changes").mkdir()
+            (r / "acceptance").mkdir()
+            f = r / "changes" / "CHG-20260901-05.md"
+            f.write_text(_WIP.replace("CHG-20260901-01", "CHG-20260901-05", 1)
+                             .replace("ACC-20260901-01", "ACC-20260901-02", 1), encoding="utf-8")
+            (r / "acceptance" / "ACC-20260901-02.md").write_text("# ACC" + chr(10), encoding="utf-8")
+            got = [b for b in check_status([f], allow_wip=True) if "孤兒" not in b]
+            if not any("而對應的 ACC 已經寫完了" in g for g in got):
+                fails.append("BL-030 合併驗收:Status 明示引用的 ACC 已存在卻沒被認出"
+                             "——只比對同尾碼會漏掉合併驗收,矛盾態被誤放行")
+
+        # ── 止血條款的兩個紅端(CHG-20260822-02)──
+        # 由**同一個綠端**分別以「刪掉 ACC 引用」與「改成不存在的 ACC 引用」突變產生。
+        # 本條只驗「說出口的 ACC 必須存在」,**不宣稱完整的 CHG↔ACC 配對**——
+        # 後者沒有任何機器在看,記於 BL-034。
+        _G = ("# CHG-20260901-02 — x" + chr(10) * 2 + "- Risk: 低" + chr(10) * 2 +
+              "## Status" + chr(10) * 2 + "已驗收 — ACC-20260901-02。" + chr(10))
+        for label, text, mk_acc, want in (
+                ("綠端:已驗收且具名的 ACC 存在", _G, True, None),
+                ("紅端:已驗收但未具名任何 ACC",
+                 _G.replace(" — ACC-20260901-02", "", 1), True, "沒有具名任何 ACC 編號"),
+                ("紅端:具名的 ACC 不存在", _G, False, "而那份 ACC 不存在"),
+                ("CHG-lite 免具名 ACC(自驗)",
+                 _G.replace("- Risk: 低", "- Risk: 低" + chr(10) + "- Template: lite", 1)
+                   .replace(" — ACC-20260901-02", " — self-verified (low risk)", 1),
+                 False, None)):
+            with tempfile.TemporaryDirectory() as d:
+                r = Path(d)
+                (r / "changes").mkdir()
+                (r / "acceptance").mkdir()
+                f2 = r / "changes" / "CHG-20260901-02.md"
+                f2.write_text(text, encoding="utf-8")
+                if mk_acc:
+                    (r / "acceptance" / "ACC-20260901-02.md").write_text(
+                        "# ACC" + chr(10), encoding="utf-8")
+                got = [b for b in check_status([f2]) if "孤兒" not in b]
+            if want is None:
+                if got:
+                    fails.append("止血條款「" + label + "」應為綠,實得:" + got[0][:70])
+            elif not any(want in g for g in got):
+                fails.append("止血條款「" + label + "」應報「" + want + "」,實得 " +
+                             (" / ".join(got) if got else "全綠") + "——**該出口不可達**")
+        # **歷史引述不得誤紅**:CHG-20260817-03 的 Status 節裡引了舊的
+        # 「待 ACC-…-03」在說明更正,掃整節會撈到它。首段切法必須擋住這一格。
+        _quote = (_G + chr(10) + "本欄原本寫「施工中 — 待 ACC-20260901-99」,已具名更正。" + chr(10))
+        with tempfile.TemporaryDirectory() as d:
+            r = Path(d)
+            (r / "changes").mkdir()
+            (r / "acceptance").mkdir()
+            f2 = r / "changes" / "CHG-20260901-02.md"
+            f2.write_text(_quote, encoding="utf-8")
+            (r / "acceptance" / "ACC-20260901-02.md").write_text("# ACC" + chr(10), encoding="utf-8")
+            if [b for b in check_status([f2]) if "孤兒" not in b]:
+                fails.append("止血條款誤紅:Status 節裡的歷史引述被當成具名的 ACC"
+                             "——首段切法沒生效,同一個檔裡兩套切法必然分岔")
+
         orphan = check_status([])
         if len(orphan) != len(STATUS_BASELINE) or not all(
                 "掃不到這個檔" in g for g in orphan):
@@ -531,9 +742,18 @@ def main(argv=None) -> int:
         print("✅ self-test:佔位字串綠紅兩端可達;"
               "Status 綠端 + 三個紅出口(換詞×2 / 刪段×1)皆由綠端突變產生;"
               "baseline 的 fail-open 與孤兒條目兩個紅端亦可達;"
+              "BL-030 的兩個新紅出口 4 種組合全測(含**帶旗標時矛盾仍紅**)"
+              "+ 收尾綠端 + 合併驗收的 ACC 辨識;"
               "判定三綠端 + " + str(len(cmuts)) + " 個紅端(全部由綠端突變產生)"
               "+ 前瞻邊界的豁免與生效兩側正控皆可達")
         return 0
+
+    # 釘子三(審議席共同要求):**施工模式的輸出不得與全嚴通過一字不差**。
+    # 長期掛旗標的失效型態是靜默綠,而本 repo 對「壞掉的東西輸出與真通過一字不差」
+    # 已有三次記錄在案的教訓。無論本輪有沒有真的放行任何 CHG,標示都要印。
+    if args.allow_wip:
+        print("⚠️  施工模式(--allow-wip):判定二放行「施工中且對應 ACC 尚不存在」的 CHG。")
+        print("    ACC 已存在而 Status 仍施工中,本參數不放行。正式 CI 不得帶這個參數。")
 
     root = Path(args.repo)
     files = sorted(root.glob(args.glob))
@@ -541,12 +761,32 @@ def main(argv=None) -> int:
         print(f"ERROR: {args.glob} 掃不到任何檔案——沒驗到不等於通過", file=sys.stderr)
         return 2
 
+    # ── 份數硬條件(CHG-20260822-02;審議席一致要求,並推廣為通則)──────
+    #
+    # 本案的病根是:**綠燈可以意謂「什麼都沒掃」**。`doc_integrity_check` 的 CHG↔ACC
+    # 配對掃 `docs/changes`,而本 repo 的帳本在 `docs/writing/changes`——45 張一張沒看過,
+    # 而它印「✅ 帳本完整性通過」。exit 0 本身證明不了任何事。
+    #
+    # 通則:**任何以掃描帳本自居的閘,綠端不得僅為 exit 0**——要輸出實際解析出的
+    # 帳本根與掃描份數,並斷言份數 ≥ 具名下限。帳本哪天搬家,份數跌破下限當場紅,
+    # 不需要任何人記得——而本檔自己也寫死 `docs/writing/changes`,
+    # 沒有這條它就是下一個 `[15/19]`。
+    #
+    # 下限與 EXPECT 名單同治理:要改必須在 CHG 說明。
+    # **份數只證明掃描確實觸及帳本,不得表述為 CHG↔ACC 配對已受驗證**——那件事沒有機器在看(BL-034)。
+    if args.glob == ap.get_default("glob") and len(files) < MIN_LEDGER_CHG:
+        print(f"ERROR: 帳本根 {root / 'docs/writing/changes'} 只掃到 {len(files)} 份 CHG,"
+              f"低於具名下限 {MIN_LEDGER_CHG}——帳本搬家或路徑寫死,"
+              "而「掃到零份」與「全部通過」在 exit 0 上長得一樣", file=sys.stderr)
+        return 2
+
     problems = []
     for f in files:
         for name, value in check_text(f.read_text(encoding="utf-8")):
             problems.append((f.name, name, value))
 
-    print(f"CHG 欄位檢查 — 掃描 {len(files)} 份")
+    print(f"CHG 欄位檢查 — 帳本根 {root / 'docs/writing/changes'};"
+          f"掃描 {len(files)} 份(具名下限 {MIN_LEDGER_CHG})")
     if problems:
         print(f"\n✗ {len(problems)} 個欄位還留著佔位字串:")
         for fn, name, value in problems:
@@ -556,7 +796,7 @@ def main(argv=None) -> int:
     print("✅ 所有標頭欄位都已填。")
 
     # ── 判定二:`## Status` 的內容(BL-024)──
-    status_bad = check_status(files)
+    status_bad = check_status(files, allow_wip=args.allow_wip)
     n_base = sum(1 for f in files if f.name in STATUS_BASELINE)
     if status_bad:
         print(chr(10) + "✗ `## Status` 內容檢查 " + str(len(status_bad)) + " 項:")
@@ -565,6 +805,12 @@ def main(argv=None) -> int:
         print(chr(10) + "「施工中」不是可辨識的佔位字串,是一句**看起來完整的假陳述**"
               "——CHG-20260814-07 掛著它一路 merge 進 main,第三天才被眼睛抓到。")
         return 1
+    if args.allow_wip:
+        waived = [f.name for f in files
+                  if f.name not in STATUS_BASELINE
+                  and status_verdict(f.read_text(encoding="utf-8"))[0] == "RED(bad-state)"]
+        print("⚠️  施工模式放行了 " + str(len(waived)) + " 張:"
+              + ("、".join(waived) if waived else "(本輪沒有任何 CHG 需要放行)"))
     print("✅ `## Status` 內容一致:" + str(len(files) - n_base) + " 份判為已驗收、"
           + str(n_base) + " 份在具名 baseline(模板前的歷史帳本)。")
     print("   仍判不了的:首段直接**謊寫**已驗收。"

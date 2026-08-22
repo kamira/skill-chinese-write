@@ -85,6 +85,11 @@ MANIFEST: dict[tuple[str, str], str] = {
 
 # ── 允許跨載體邊界的環境變數 ────────────────────────────────────────────
 # 每多一個,ci_local 就多知道一點「自己跑在哪裡」,而載體不可知正是合一的前提。
+#
+# **誠實極限(兩席共記,CHG-20260822-01)**:「ci_local 不得因環境而變更判定行為」
+# 對**任意命名**的環境變數沒有機器斷言——`ENV_TOKEN` 只掃 `GITHUB_/RUNNER_/CI_` 三族,
+# 族外名字全盲。這是既有的、`BL-017` 型的極限,不是施工模式那一案新開的洞;
+# 施工模式本身走命令列,不經環境,所以它的守衛在 `APPROVED_CALL` 那一段,不在這裡。
 CARRIER_ENV: dict[str, str] = {
     "CI_SINCE_REF":
         "diff 式閘的基準。push 事件下 origin/main 就是 HEAD 自己,REF..HEAD 恆空,"
@@ -143,6 +148,44 @@ def steps_of(text: str) -> list[str]:
     return out
 
 
+# ── 唯一真相源的呼叫必須是核准的字面值(CHG-20260822-01 / BL-030)──────
+#
+# `ci_local.sh` 新增了施工模式參數 `--allow-wip`,它放行「施工中且對應 ACC 尚不存在」的 CHG。
+# **正式 workflow 絕不可以帶它**——帶了就等於把收尾閘長期關掉,而失效型態是靜默綠。
+#
+# 為什麼守衛放在這裡而不是 `CARRIER_ENV`:第一版設計把意圖走環境變數 `CI_ALLOW_WIP`,
+# 理由是「取 `CI_` 前綴才落在 `ENV_TOKEN` 的掃描域內」。審議席(fable)第三輪推翻了它——
+# **環境是可寫的通道**:GitHub Actions 的 `GITHUB_ENV` 允許前置步驟
+# `echo "NAME=value" >> "$GITHUB_ENV"`,而那行字串**可以拼接構造**,
+# 變數名不必完整出現在 workflow 檔的任何地方,文字層掃描**必然全盲**。
+# 改走命令列之後,守衛從「掃 token」升級成**結構釘死**。
+#
+# **整段字面值比對,不解析 YAML。** 抽出該步的 `run:` 純量、與核准字串逐字比對即可,
+# 不需要理解多行區塊語義,也就不引入 `steps_of` 刻意迴避的 PyYAML 依賴(理由 KN-002)。
+# 代價誠實寫明:改用 `|` / `>` 多行區塊寫同一道指令會**紅**——那是刻意的,
+# 想改呼叫形式就得同步改這裡的核准值並在 CHG 說明。
+APPROVED_CALL = "bash .github/ci_local.sh"
+_RUN_LINE = re.compile(r"^\s*run:\s*(.+?)\s*$")
+_TTS_STEP = "governance gates (single source of truth)"
+
+
+def run_of_step(text: str, step_name: str) -> str | None:
+    """抽出某一步的單行 `run:` 純量。多行區塊或找不到都回 None(呼叫端判紅)。"""
+    lines = text.splitlines()
+    for i, raw in enumerate(lines):
+        if raw.strip() == f"- name: {step_name}" or raw.strip() == f"name: {step_name}":
+            for nxt in lines[i + 1:]:
+                st = nxt.strip()
+                if st.startswith("- ") or (st.startswith("name:") and "run:" not in st):
+                    break                      # 進到下一步了
+                m = _RUN_LINE.match(nxt)
+                if m:
+                    v = m.group(1)
+                    return None if v in ("|", ">", "|-", ">-") else v
+            return None
+    return None
+
+
 def check(workflows: dict[str, str], scripts: dict[str, str],
           manifest: dict[tuple[str, str], str],
           carrier_env: dict[str, str]) -> list[str]:
@@ -165,6 +208,21 @@ def check(workflows: dict[str, str], scripts: dict[str, str],
     for key, reason in sorted(manifest.items()):
         if not reason.strip():
             bad.append(f"MANIFEST 的「{key[1]}」沒有理由——具名而不附理由等於沒具名")
+
+    # 唯一真相源的呼叫必須精確等於核准字面值——附加參數、改寫形式、多行區塊都紅。
+    for fname, text in workflows.items():
+        if (fname, _TTS_STEP) not in manifest:
+            continue                            # 這份 workflow 沒有唯一真相源那一步
+        got = run_of_step(text, _TTS_STEP)
+        if got is None:
+            bad.append(f"{fname}:抽不出「{_TTS_STEP}」的單行 `run:`"
+                       "——唯一真相源的呼叫必須是可逐字比對的單行,"
+                       "改成多行區塊就沒有東西守得住「不得帶施工參數」")
+        elif got != APPROVED_CALL:
+            bad.append(f"{fname}:唯一真相源的呼叫不是核准字面值。"
+                       f"核准「{APPROVED_CALL}」,實得「{got}」"
+                       "——正式 CI 不得帶 `--allow-wip` 或任何施工模式參數,"
+                       "帶了就是把收尾閘長期關掉,而失效型態是靜默綠")
 
     for path, text in scripts.items():
         for line_no, raw in enumerate(text.splitlines(), 1):
@@ -222,6 +280,31 @@ def self_test() -> int:
     case("g 具名附理由", {"governance.yml": _WF_OK},
          {".github/ci_local.sh": 'SINCE_REF="${CI_SINCE_REF:-origin/main}"\n'},
          _MAN_OK, CARRIER_ENV, None)
+
+    # ── 唯一真相源的呼叫必須是核准字面值(CHG-20260822-01 / BL-030)──
+    # 綠端用**真實步驟名**,紅端全部由它單一突變產生。
+    _WF_TTS = _WF_OK.replace("      - name: gates" + chr(10) +
+                             "        run: bash .github/ci_local.sh",
+                             "      - name: " + _TTS_STEP + chr(10) +
+                             "        run: " + APPROVED_CALL)
+    _MAN_TTS = {("governance.yml", "actions/checkout@v4"): "載體啟動最小集",
+                ("governance.yml", _TTS_STEP): "唯一真相源的呼叫點"}
+    case("g2 唯一真相源呼叫為核准字面值",
+         {"governance.yml": _WF_TTS}, {}, _MAN_TTS, CARRIER_ENV, None)
+
+    # **本案的核心紅端**:workflow 帶施工參數 → 收尾閘被長期關掉,失效型態是靜默綠。
+    case("r3 workflow 帶 --allow-wip",
+         {"governance.yml": _WF_TTS.replace(APPROVED_CALL, APPROVED_CALL + " --allow-wip")},
+         {}, _MAN_TTS, CARRIER_ENV, "不是核准字面值")
+    # 換一個入口繞過去也要紅(不是只擋那一個字串)
+    case("r4 workflow 改呼叫別的入口",
+         {"governance.yml": _WF_TTS.replace(APPROVED_CALL, "bash .github/dev_check.sh")},
+         {}, _MAN_TTS, CARRIER_ENV, "不是核准字面值")
+    # 改成多行區塊就沒有東西守得住 → 也要紅,不能靜默放行
+    case("r5 唯一真相源改成多行 run 區塊",
+         {"governance.yml": _WF_TTS.replace("run: " + APPROVED_CALL,
+                                            "run: |" + chr(10) + "          " + APPROVED_CALL)},
+         {}, _MAN_TTS, CARRIER_ENV, "抽不出")
 
     # 基準判別性:同一個綠端案,在空 MANIFEST 這個**錯的基準**下必須紅。
     # 沒有這一案,「綠端會綠」可能只是因為斷言根本沒在看 workflow。

@@ -74,6 +74,33 @@ _left="$(compgen -e | grep '^GIT_' | grep -v '^GIT_TRACE' || true)"
 [ -z "$_left" ] || { echo "❌ 呼叫端清 GIT_* 失敗,還留著:$_left"; exit 1; }
 unset _left _v
 
+# ── 施工模式:只從命令列進來(CHG-20260822-01 / BL-030)────────────────
+#
+# `BL-030`:判定二對 Status 說「施工中」的 CHG 必紅,而它掛在第 [9/19] 步、
+# 這支又是 pre-push hook 的內容——於是「先跑 CI 再 commit」在施工期恆為紅,
+# 綠不了不是因為東西壞了,是因為東西還沒做完,兩件事在 rc 上長得一樣。三次現形三次繞過。
+#
+# **不新增跨界環境變數。** 第一版設計是 `CI_ALLOW_WIP`,理由是「取 `CI_` 前綴才落在
+# `ENV_TOKEN` 的掃描域內」;審議席(fable)第三輪自己推翻了它——**環境是可寫的通道**,
+# GitHub Actions 的 `GITHUB_ENV` 可由前置步驟拼接構造注入,變數名不必完整出現在
+# workflow 檔的任何地方,文字層掃描**必然全盲**。命令列把整個面在機制層關掉,
+# `CARRIER_ENV` 維持唯一成員。
+#
+# 附帶一個機械事實,是這個選擇的加分:**argv 穿不過 `git push`**——
+# pre-push hook 的呼叫形式固定,沒辦法對一次 push 臨時傳參數,於是 **hook 恆為全嚴**,
+# 施工中的東西一個位元組都出不了本機。`CI_ALLOW_WIP=1 git push` 則會穿過去。
+#
+# 正式 workflow 必須**無參數**呼叫本檔;`scripts/carrier_manifest_check.py` 用
+# 「run 區塊與核准字面值整段比對」釘死這一點,附加參數即紅。
+ALLOW_WIP=""
+for _arg in "$@"; do
+  case "$_arg" in
+    --allow-wip) ALLOW_WIP="--allow-wip" ;;
+    *) echo "❌ 不認得的參數:$_arg(本檔只接受 --allow-wip)"; exit 2 ;;
+  esac
+done
+unset _arg
+
 PY=python3
 command -v python3 > /dev/null 2>&1 || PY=python
 
@@ -211,7 +238,13 @@ echo "[9/19] CHG 欄位不得留佔位字串 + \`## Status\` 說的話要為真 
 # KN-001 第 10 次,這次落在決定誰有權判定的那條規則自己身上。
 # 前瞻不追溯(檔名編號 >= CHG-20260821-01),與第 [10/19] 步的 DIAGRAM_SINCE 同一手法。
 $PY scripts/chg_field_check.py --self-test > /dev/null
-$PY scripts/chg_field_check.py --repo . > /dev/null
+# 全嚴時照舊靜音;**施工模式一律出聲**——釘子三:施工模式的輸出不得與全嚴通過一字不差,
+# 否則長期掛旗標的靜默綠又回來了。
+if [ -n "$ALLOW_WIP" ]; then
+  $PY scripts/chg_field_check.py --repo . --allow-wip
+else
+  $PY scripts/chg_field_check.py --repo . > /dev/null
+fi
 
 echo "[10/19] CHG 設計圖閘:真實帳本要過、夾具紅綠兩端都要對"
 $PY scripts/chg_diagram_gate.py --repo . > /dev/null
@@ -349,8 +382,19 @@ fi
 echo "[14/19] 隨身治理工具的漂移(上游是否前進看不出來,只查本地有沒有被改過)"
 $PY tools/tools_drift_check.py > /dev/null
 
-echo "[15/19] 帳本完整性(CHG↔ACC + 結構同步 + secrets)"
+echo "[15/19] 隨身副本 doc-integrity(**本 repo 只真的驗到 secrets**;其餘八格空轉見 BL-034)"
+# **這一步的宣稱一度超出它的覆蓋。** `check_chg_acc` 掃 `repo/docs/changes`,
+# 而本 repo 的帳本在 `docs/writing/changes`——45 張 CHG 一張都沒看過,卻印
+# 「✅ 帳本完整性通過(… CHG↔ACC …)」。A/B 實測:同一份壞 CHG 放真實位置**綠**、
+# 放 `docs/changes` **紅**,差別只在目錄。`check_structural_sync` 更是只在帶 `--staged`
+# 時才跑,而這裡沒帶。三個宣稱裡只有 secrets 是真的。
+#
+# 上游早就修了(`ledger_roots()`,其註解自述「同一個錯誤修過兩次,這是第三次」),
+# 隨身副本停在修好之前;依 AGENTS.md 第 4 條不得就地改 → 同步案 `BL-034`。
+# 本步先讓標題誠實,`scripts/ledger_coverage_honesty.py` 釘住它不准說回大話。
 $PY tools/autopilot/scripts/doc_integrity_check.py --repo . > /dev/null
+$PY scripts/ledger_coverage_honesty.py --self-test > /dev/null
+$PY scripts/ledger_coverage_honesty.py --repo . > /dev/null
 
 # 範圍**明示**收在本 repo 自己的程式碼:tools/ 是逐位元組相同的副本,
 # 上游已對那四處 shell=True 具名豁免,而豁免記的是上游路徑。
