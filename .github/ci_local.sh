@@ -27,6 +27,53 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# ── 呼叫端清 git 環境(CHG-20260821-02.3)──
+#
+# git 執行 hook 時會**匯出 `GIT_DIR` 等 repo-local 變數**,而子行程繼承之後
+# **`GIT_DIR` 贏過 cwd,也贏過 `git -C`**。後果實際發生過:`version_impact_check.py`
+# 的 self-test 建暫時 repo 跑夾具,從 pre-push hook 跑時每個 git 都打回宿主 repo——
+# 夾具建不起來,下游一律報「紅端不可達」,而**本機直跑會全綠**,兩者長得不一樣。
+# 更糟的是它的 `git init` / `git config` 把 `core.bare = true` 與假身分寫進了宿主 config。
+#
+# 這裡清一次,涵蓋全部 19 步(含未來新增的),也涵蓋**改不得的隨身副本**——
+# `tools/autopilot/scripts/doc_integrity_check.py` 用 `git -C <repo>` 定位,
+# 同型缺陷,但依 AGENTS.md 第 4 條不得就地改(→ `BL-033`,送回上游)。
+# 兩層是**縱深不是替代**:上游修好之後這一層仍然保留。
+#
+# **補集,不是列舉**:清掉所有 `GIT_*`,只留除錯用的 `GIT_TRACE` 族。
+# 列舉會讓下一個新變數靜默漏網——`version_impact_check.py` 的第一版就是這樣被兩席打回的。
+# **不用 `for $(env | sed …)`**:那個寫法有兩個病,審議席(codex)在末端 review 逐位元組讀出來——
+# ①落地的 replacement 是控制字元 `0x01` 而不是字面 `\1`(施工時的跳脫在轉手間被吃掉),
+#   於是迴圈逐字拿 SOH 去 `unset`,而這版 bash **靜默回 0**——清理根本沒跑,卻是綠的;
+# ②`for $(env …)` 會做 word splitting,環境變數值含空白或換行時會漏清或誤清。
+# `compgen -e` 直接列出已匯出的變數**名稱**,兩個病一起沒有。
+#
+# 而 `bash -n` 對①全盲(控制字元在字串裡是合法的),主 agent 當時的「實測」也全盲——
+# 它把迴圈**重打一遍**在另一個 shell 裡跑,驗的不是這個檔。KN-004 的形狀:
+# **量的東西和判的東西不是同一個。**
+# **用 bash 原生前綴展開,不經 `env | sed` 子殼。** 變數名不可能含換行,
+# 所以值裡的換行或特殊字元完全影響不到它;`env | sed` 那條路則會因值含換行而
+# 多生出看起來像變數名的東西。
+#
+# **這一層必須有自己的紅端。** 它的失效型態經實測是**靜默綠**:第一版落地的
+# sed replacement 是控制位元組 0x01 而不是字面反斜線加一,迴圈逐字拿 SOH 去 unset,
+# bash 靜默回 0——`GIT_DIR=/tmp/x` 進、`GIT_DIR=/tmp/x` 出,**一個變數都沒清,
+# 而且 exit 0,十九步全綠**。壞掉的補償控制掛在那裡,沒有任何一步變紅。
+# 所以清完之後回頭掃一次,而且**用另一套機制掃**(行動端是參數展開、斷言端是 compgen),
+# 兩者不會同病相憐。
+for _v in "${!GIT_@}"; do
+  case "$_v" in GIT_TRACE*) ;; *) unset "$_v" ;; esac
+done
+# **斷言只取變數名,不解析 `env` 的值。** 上一版用 `env | sed` 從輸出裡撈名字,
+# 而白名單變數的**值**若含真換行、而換行後那一段長得像賦值(例如值是「1」換行再接「GIT_FAKE=b」),
+# 就會撈出一個**根本不存在的變數名**,產生假紅——審議席(codex)第三輪指出,實跑重現:
+#     ❌ 呼叫端清 GIT_* 失敗,還留著:GIT_FAKE   rc=1
+# 這與先前那個「值含換行」的案例是同型輸入,只因當時毒的是 `GIT_DIR`、它先被清掉才沒觸發。
+# `compgen -e` 只輸出**名稱**,值裡有什麼都影響不到它,而它與行動端的參數展開仍是兩條路。
+_left="$(compgen -e | grep '^GIT_' | grep -v '^GIT_TRACE' || true)"
+[ -z "$_left" ] || { echo "❌ 呼叫端清 GIT_* 失敗,還留著:$_left"; exit 1; }
+unset _left _v
+
 PY=python3
 command -v python3 > /dev/null 2>&1 || PY=python
 

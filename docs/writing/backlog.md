@@ -56,6 +56,8 @@
 | BL-031 | 待辦 | **窄閘:分支關聯的 CHG 全部已驗收、main 已有對應成果,而分支仍存在 → 報告**。不判「分支是否太老」、不禁止長命分支。審議席實測出三個必須吃下的邊角:多 CHG 對一分支(`claude/ci-poetry` 掛 4 份)、`- Branch: main`(早期 3 份)、無 CHG 的 session worktree 分支(依 KN-002 明標不判)。「main 已有對應成果」**不能用 `git branch --merged`**(squash 下恆假),要用 ACC-20260820-02 的 tree/diff 三重等價法。**先做報告不硬紅**(codex 裁) | scripts/ 下新支 | 2026-08-20 ACC-20260820-02 |
 | BL-032 | 待辦 | **單項 CHG 免附逐項共識表,是使用者裁決的分階段安排,不是判定結論**。codex 三輪都主張單項也要附表,理由:第 1 款已要求每張 CHG 至少列一個修正項目 ID、ACC 也要承接同一組 ID,單項免表會讓閘**無處檢查「修正項目 ID → 處置版本 ID → 兩席判定 → ACC」這條鏈**,等於重新長出兩套承接規則;fable 三輪都主張免表,理由:閘該守的不變量標頭單欄位已守到,逐項表對單項票是重複記帳。三輪未收斂,使用者裁「兩者都要但分階段」——先落 fable 版讓規則上線。**解除條件**:實際跑過若干張單項 CHG 之後,具名裁定要不要收緊成一律附表,不得因為沒出事就默默留著。**另附一項一併覆核**:標頭第四種形狀 `使用者裁決(記於 <編號>)` 是主 agent 依第 2 款推導後新增的,**兩席都沒審過** | scripts/chg_field_check.py `CONSENSUS_SINCE` 附近 | 2026-08-21 CHG-20260821-01 |
 
+| BL-033 | 風險 | **隨身副本 `doc_integrity_check.py` 帶同型缺陷,而它每一輪握手都跑**:它的 `git()` 用 `git -C <repo>` 定位,而 **`-C` 只改 cwd,輸給 hook 匯出的 `GIT_DIR`**——與 `CHG-20260821-02` 修掉的是同一個病。它在 `ci_local.sh` 第 [15/19] 步經 pre-push hook 執行,**今天沒發作只因 `-C` 目標與繼承的 `GIT_DIR` 恰指同一個宿主**,是潛伏不是不存在。依 AGENTS.md 第 4 條不得就地改(改了 `tools_drift_check.py` 會紅),須送回上游 `kamira/skill-ai-sdlc-autopilot`。**等待期間的補償控制已上線**:`ci_local.sh` 開頭清 `GIT_*`(`CHG-20260821-02.3`,行動端 `${!GIT_@}` 參數展開、斷言端 `compgen -e`,已對該檔本身的 bytes 完成污染環境實測與紅端突變測試)。**完成標準**:上游版 `git()` 具環境清理、`tools_drift_check.py` 綠,且**呼叫端補償仍保留**——兩層是縱深,不是替代 | tools/autopilot/scripts/doc_integrity_check.py 第 97 行 | 2026-08-21 CHG-20260821-02 |
+
 
 ## 已解除
 
