@@ -209,12 +209,12 @@ if $PY skills/ci-poetry/scripts/ci_check.py --tune 清平樂 skills/ci-poetry/as
 fi
 
 echo "[7/19] zh-style:夾具雙向 + 全 repo 夾具零半形"
-$PY skills/zh-style/scripts/zh_style_check.py --self-test > /dev/null
-$PY skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-good.md > /dev/null
-if $PY skills/zh-style/scripts/zh_style_check.py skills/zh-style/assets/sample-bad.md > /dev/null 2>&1; then
+$PY engines/zh-style/scripts/zh_style_check.py --self-test > /dev/null
+$PY engines/zh-style/scripts/zh_style_check.py engines/zh-style/assets/sample-good.md > /dev/null
+if $PY engines/zh-style/scripts/zh_style_check.py engines/zh-style/assets/sample-bad.md > /dev/null 2>&1; then
   echo "    ❌ zh-style sample-bad.md 竟然通過"; exit 1
 fi
-$PY skills/zh-style/scripts/zh_style_check.py skills/*/assets/sample-good.md skills/*/assets/sample-issue.md skills/*/assets/sample-spec-good.md skills/*/assets/sample-arch-good.md skills/*/assets/sample-gov-good.md skills/*/assets/sample-press-good.md > /dev/null
+$PY engines/zh-style/scripts/zh_style_check.py skills/*/assets/sample-good.md skills/*/assets/sample-issue.md skills/*/assets/sample-spec-good.md skills/*/assets/sample-arch-good.md skills/*/assets/sample-gov-good.md skills/*/assets/sample-press-good.md > /dev/null
 
 echo "[8/19] skill 清單一致性(含紅燈可達自檢)"
 $PY scripts/skill_inventory_check.py --self-test > /dev/null
@@ -274,7 +274,7 @@ for CMD in \
   "skills/techdoc/scripts/techdoc_check.py $EMPTY --kind arch" \
   "skills/bizdoc/scripts/bizdoc_check.py $EMPTY --kind gov" \
   "skills/bizdoc/scripts/bizdoc_check.py $EMPTY --kind press" \
-  "skills/zh-style/scripts/zh_style_check.py $EMPTY" ; do
+  "engines/zh-style/scripts/zh_style_check.py $EMPTY" ; do
   if $PY $CMD 2>&1 | grep -q Traceback; then
     echo "    ❌ 空輸入炸了:$CMD"; rm -f "$EMPTY"; exit 1
   fi
@@ -292,7 +292,7 @@ rm -f "$EMPTY"
 echo "[10d/19] 未驗到名單必須釘死(門檻不得悄悄變成逃生門)"
 # 實測值,不是憑印象填的。
 # 這三份的密度規則目前沒有任何輸入跑得到,是已知且具名的缺口,不是通過。
-EXPECT_UNVERIFIED="skills/bizdoc/assets/sample-gov-good.md skills/fiction/assets/sample-good-flash.md skills/zh-style/assets/sample-good.md"
+EXPECT_UNVERIFIED="skills/bizdoc/assets/sample-gov-good.md skills/fiction/assets/sample-good-flash.md engines/zh-style/assets/sample-good.md"
 ACTUAL_UNVERIFIED=""
 probe_unverified() {   # $1=腳本 $2=檔案 $3...=額外參數
   local s="$1"; shift; local f="$1"; shift
@@ -303,7 +303,7 @@ for F in skills/fiction/assets/sample-*.md; do
 done
 for F in skills/writing/assets/sample-*.md skills/prose/assets/sample-*.md \
          skills/narrative/assets/sample-*.md skills/poetry/assets/sample-*.md \
-         skills/fu/assets/sample-*.md skills/zh-style/assets/sample-*.md; do
+         skills/fu/assets/sample-*.md engines/zh-style/assets/sample-*.md; do
   [ -f "$F" ] || continue
   ACTUAL_UNVERIFIED="$ACTUAL_UNVERIFIED $(probe_unverified skills/writing/scripts/style_check.py "$F")"
 done

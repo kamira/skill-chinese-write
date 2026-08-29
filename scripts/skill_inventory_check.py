@@ -58,7 +58,10 @@ for _stream in (sys.stdout, sys.stderr):
 
 NAME_RE = re.compile(r"^name:\s*(\S+)\s*$", re.M)
 NO_LINT_RE = re.compile(r"^##\s*.*本支沒有\s*lint", re.M)
-ENGINE_CALL_RE = re.compile(r"skills/([a-z-]+)/scripts/[a-z_]+\.py")
+# 引擎參照可能寫在 `skills/<e>/scripts/…`(文體引擎,如 bizdoc / techdoc)
+# 或 `engines/<e>/scripts/…`(跨文體引擎,CHG-20260829-01 之後的 zh-style)。
+# **只認一個命名空間就會漏掉另一個**,而漏掉的方向是靜默的。
+ENGINE_CALL_RE = re.compile(r"(?:skills|engines)/([a-z-]+)/scripts/[a-z_]+\.py")
 
 
 def load_plugins(repo: Path) -> dict[str, tuple[str, ...]]:
@@ -93,7 +96,11 @@ TOP_TOOL_FILES = {"build_suite.py", "catalog_check.py"}
 # 平台全都吃。所以擋下它們的理由不是「平台不支援」,是「本 repo 未登記」——
 # 理由變了,要不要擋沒變。未來真要用 hooks,那是一次**登記變更**(開 CHG 加進本表、
 # 補同步、補夾具),不是拆閘。
+# `engines` 是 CHG-20260829-01 的登記變更:引擎隨 plugin 出貨,但**不在 skills/ 命名空間**,
+# 所以平台不會把它列成可叫用入口。登記程序照本表註解自己寫的走——加表、補同步、補紅端夾具,
+# 三件都做了才算登記,不是把閘放寬。
 PLUGIN_TOP_ALLOWED = {".claude-plugin": "dir", "skills": "dir", "commands": "dir",
+                      "engines": "dir",
                       "README.md": "file", "THIRD-PARTY-NOTICES.md": "file"}
 
 

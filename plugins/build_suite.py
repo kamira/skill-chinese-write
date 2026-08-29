@@ -25,20 +25,48 @@ for _stream in (sys.stdout, sys.stderr):
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "skills"
 PLUGINS = {
-    "writing": ('writing', 'zh-style'),
-    "fiction": ('fiction', 'zh-style'),
-    "spec": ('spec', 'techdoc', 'zh-style'),
-    "architecture": ('architecture', 'techdoc', 'zh-style'),
-    "official": ('official', 'bizdoc', 'zh-style'),
-    "press": ('press', 'bizdoc', 'zh-style'),
-    "proposal": ('proposal', 'zh-style'),
-    "drama": ('drama', 'zh-style'),
+    "writing": ('writing',),
+    "fiction": ('fiction',),
+    "spec": ('spec', 'techdoc'),
+    "architecture": ('architecture', 'techdoc'),
+    "official": ('official', 'bizdoc'),
+    "press": ('press', 'bizdoc'),
+    "proposal": ('proposal',),
+    "drama": ('drama',),
     # CHG-20260816-03:依文體家族分組。id 與目錄用 ASCII——CJK 路徑會被
     # git 的 core.quotepath 印成八進位跳脫,版號閘與 catalog 閘兩端都取不到 blob,
     # 於是判成「沒變」(實測 fail-open)。中文名在 marketplace 的 description 裡。
-    "composition": ('prose', 'narrative', 'lyric', 'exposition', 'poetry', 'zh-style'),
-    "classical": ('fu', 'historiography', 'regulated-verse', 'ci-poetry', 'zh-style'),
+    "composition": ('prose', 'narrative', 'lyric', 'exposition', 'poetry'),
+    "classical": ('fu', 'historiography', 'regulated-verse', 'ci-poetry'),
 }
+
+# ── 引擎的**單一登記簿**(CHG-20260829-01)────────────────────────────
+#
+# **「skill」這個身分是由列舉器定義的**——誰列舉 `skills/`,誰就在定義什麼是 skill。
+# 本 repo 有兩個列舉器:平台載入器列舉 `plugins/<p>/skills/*`(呼叫面),
+# 治理閘列舉頂層 `skills/*`(治理面)。zh-style 曾經住在 `skills/` 裡,
+# 於是它**自述「這是引擎,不是前門」而每個 plugin 都給了它一扇門**——十個。
+#
+# 引擎移到 `engines/` 之後,**兩個列舉器構造上都走不到它**,不依賴任何人記得。
+# 引擎照樣隨每個宿主 plugin 出貨(使用者拿得到 lint),只是不長出可叫用入口。
+#
+# **這張表是引擎歸屬的單一真相。** `genres_table_check` 的禁令與
+# `skill_inventory_check` 的樹形斷言都讀它,不另留硬編碼副本——
+# 兩份名單自己會分岔,本 repo 記過五次。
+ENGINES = {
+    "writing": ('zh-style',),
+    "fiction": ('zh-style',),
+    "spec": ('zh-style',),
+    "architecture": ('zh-style',),
+    "official": ('zh-style',),
+    "press": ('zh-style',),
+    "proposal": ('zh-style',),
+    "drama": ('zh-style',),
+    "composition": ('zh-style',),
+    "classical": ('zh-style',),
+}
+ENGINES_SRC = ROOT / "engines"
+
 EXCLUDE = ("__pycache__", ".DS_Store")
 
 # commands 的**單一登記簿**(CHG-20260814-03)。
@@ -309,6 +337,32 @@ def main(argv) -> int:
             src, dst = SRC / name, ROOT / "plugins" / plugin / "skills" / name
             if not src.is_dir():
                 print(f"ERROR: 缺來源 {src}")
+                return 1
+            sfiles, dfiles = files_of(src), files_of(dst) if dst.is_dir() else {}
+            for rel, sp in sorted(sfiles.items()):
+                dp = dst / rel
+                if rel not in dfiles:
+                    added += 1
+                    if not check:
+                        dp.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(sp, dp)
+                elif not filecmp.cmp(sp, dp, shallow=False):
+                    updated += 1
+                    if not check:
+                        shutil.copy2(sp, dp)
+            for rel, dp in sorted(dfiles.items()):
+                if rel not in sfiles:
+                    removed += 1
+                    if not check:
+                        dp.unlink()
+
+    # ---- engines(CHG-20260829-01)。與 skills 同樣的冪等同步,只是換一個命名空間。
+    # 反向斷言與 skills 那段一致:磁碟上多出來的要刪,名冊裡缺來源的要紅。
+    for plugin, engines in ENGINES.items():
+        for name in engines:
+            src, dst = ENGINES_SRC / name, ROOT / "plugins" / plugin / "engines" / name
+            if not src.is_dir():
+                print(f"ERROR: 缺引擎來源 {src}")
                 return 1
             sfiles, dfiles = files_of(src), files_of(dst) if dst.is_dir() else {}
             for rel, sp in sorted(sfiles.items()):

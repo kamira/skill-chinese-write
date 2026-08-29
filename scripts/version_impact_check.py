@@ -235,6 +235,14 @@ def load_registries(repo: Path, ref: str) -> tuple[dict, dict]:
             _parse_registry(src, "COMMANDS", ref))
 
 
+def engines_at(repo: Path, ref: str) -> dict[str, tuple[str, ...]]:
+    """某個 ref 的 ENGINES 名冊。解析不到回空 dict——**呼叫端要當成沒驗到,不是沒問題**。"""
+    raw = blob_at(repo, ref, "plugins/build_suite.py")
+    if raw is None:
+        return {}
+    return _parse_registry(raw.decode("utf-8", "replace"), "ENGINES", ref)
+
+
 def load_plugins(repo: Path) -> dict[str, tuple[str, ...]]:
     """工作樹版本,保留給不需要兩端比較的呼叫者。"""
     src = (repo / "plugins" / "build_suite.py").read_text(encoding="utf-8")
@@ -269,14 +277,30 @@ def plugin_json_version(repo: Path, ref: str, plugin: str) -> str:
         return ""
 
 
-def skill_version(repo: Path, ref: str, skill: str) -> str:
-    path = f"skills/{skill}/SKILL.md"
+# ── 兩個命名空間(CHG-20260829-01.2①)────────────────────────────────
+#
+# **這是本張唯一 fail-open 的那一格。** 引擎移出 `skills/` 之後,本閘若仍只從
+# `PLUGINS` 種席位、只掃 `skills/` 前綴,「引擎內容變了、十個 plugin 出貨全變」
+# 這件事它**永遠看不見**——而那正是本檔 docstring 自述要堵的洞,舉的例子還就是 zh-style。
+# 其他觸點(genres 表、ci_local 路徑、inventory 樹形)都是 fail-closed 會逼人修,
+# **只有這一處落地後永久靜默**,所以它是必修,不是連帶。
+NS = {"skill": ("skills", "SKILL.md"), "engine": ("engines", "README.md")}
+
+
+def unit_version(repo: Path, ref: str, name: str, kind: str = "skill") -> str:
+    root, idfile = NS[kind]
+    path = f"{root}/{name}/{idfile}"
     raw = blob_at(repo, ref, path)
     if raw is None:
         return ""
     m = re.search(r"^metadata:\s*$\s*^\s+version:\s*(\S+)\s*$",
                   raw.decode("utf-8", "replace"), re.M)
     return m.group(1) if m else ""
+
+
+def skill_version(repo: Path, ref: str, skill: str) -> str:
+    """向後相容薄殼——既有呼叫端與 self-test 仍以 skill 為預設命名空間。"""
+    return unit_version(repo, ref, skill, "skill")
 
 
 def tree_files(repo: Path, ref: str, prefix: str) -> set[str]:
@@ -287,14 +311,15 @@ def tree_files(repo: Path, ref: str, prefix: str) -> set[str]:
             if p and not any(x in p.split("/") for x in EXCLUDE_PARTS)}
 
 
-def classify(repo: Path, ref: str, head: str, skill: str) -> str:
+def classify(repo: Path, ref: str, head: str, skill: str, kind: str = "skill") -> str:
     """回傳 'content' / 'stamp' / 'none'。**兩端都是 committed 狀態。**
 
     'stamp' 不再與 'none' 同義——見 check() 裡的戳記凍結規則。
     """
-    root_md = f"skills/{skill}/SKILL.md"
-    paths = tree_files(repo, ref, f"skills/{skill}/") | \
-        tree_files(repo, head, f"skills/{skill}/")
+    _root, _idfile = NS[kind]
+    root_md = f"{_root}/{skill}/{_idfile}"
+    _pfx = f"{_root}/{skill}/"
+    paths = tree_files(repo, ref, _pfx) | tree_files(repo, head, _pfx)
 
     stamp_only = False
     for p in sorted(paths):
@@ -559,6 +584,29 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
         if changed := own_files_delta(repo, ref, head, p):
             why(p, "自己的手寫檔變了:" + "、".join(changed[:4])
                 + (f" 等 {len(changed)} 檔" if len(changed) > 4 else ""))
+
+    # ---- 引擎那一輪(CHG-20260829-01.2①)。與 skill 同一套判定,只是換命名空間。
+    # **少了這一段,引擎變更對本閘就是隱形的**——而隱形的方向是綠。
+    E_old, E_new = engines_at(repo, ref), engines_at(repo, head)
+    if not E_new:
+        bad.append("build_suite.ENGINES 在工作樹解析不到——**解析失敗不等於沒有引擎**;"
+                   "引擎的版號影響會靜默漏報(本張要修的就是這一格)")
+    for e in sorted({x for eng in E_new.values() for x in eng}):
+        kind = classify(repo, ref, head, e, "engine")
+        ev_old = unit_version(repo, ref, e, "engine")
+        ev_new = unit_version(repo, head, e, "engine")
+        if kind == "stamp":
+            bad.append(f"引擎「{e}」的內容自 {ref} 起一個 byte 都沒變,"
+                       f"但 metadata.version 從 {ev_old} 動到 {ev_new}——戳記凍結")
+            continue
+        if kind != "content":
+            continue
+        if not advanced(ev_old, ev_new):
+            bad.append(f"引擎「{e}」的出貨內容自 {ref} 起有變動,但 "
+                       f"engines/{e}/README.md 的 metadata.version 沒有遞增"
+                       f"({ev_old or '(讀不到)'} → {ev_new or '(讀不到)'})")
+        for h in sorted(p for p, eng in E_new.items() if e in eng):
+            why(h, f"它打包的引擎「{e}」內容變了")
 
     plugins = P_new
     for s in sorted({s for sk in plugins.values() for s in sk}):
