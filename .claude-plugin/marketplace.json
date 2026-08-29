@@ -5,14 +5,14 @@
   },
   "metadata": {
     "description": "繁體中文寫作技能集:**每個文體一支 skill**,因為它們的硬規則會互相誤殺——同一個詞(如「予以」)在評論裡要改掉、在公文裡是精準用語。涵蓋評論、小說(主層,流派以命令提供)、規格書、架構說明、公文、新聞稿、企劃、散文、詩歌、戲劇、記敘、抒情、說明文、賦駢文、史傳奏啟。有可判定規則的配可跑的 lint(硬性違規 exit 1);判不了的**明標「本支沒有 lint」**,不假裝有把關。Traditional-Chinese writing skills, one per genre.",
-    "version": "4.3.1"
+    "version": "4.4.0"
   },
   "plugins": [
     {
       "name": "writing",
       "source": "./plugins/writing",
       "description": "中文寫作技能(繁中)。目前只做一種文體:**評論文章**——時事評論、觀點文、專欄、影評書評、 產品/現象評論、讀後感式的論述。當使用者要寫評論、寫觀點、寫專欄、要你「針對某件事寫一篇 文章談看法」、要你把筆記或想法整理成一篇可讀的評論、或要你改稿讓文章不那麼像 AI 寫的時候 使用。核心約束:第一人稱、口語、句長刻意參差、對稱句只用在零星重點、禁 AI 腔與公文腔詞句。 議題型另有分節寫法(現象/可選的省思/結語/後記,要寫出感受)。 規則不是散文建議而是可跑的 lint(`scripts/style_check.py`;**只支援中文**)。也能接手改稿:使用者丟一篇已經寫好 的文章要你「去掉 AI 味」「改得像人寫的」「潤一下但不要變成公文」時,走改稿模式(保存優先—— 不編造、不換作者的判斷)。**小說請用 `fiction` skill**(它的硬規則與本 skill 相反);散文、詩歌、 劇本等其他文體尚未實作,不要冒充。",
-      "version": "1.5.0",
+      "version": "1.6.0",
       "author": {
         "name": "kamira"
       },
@@ -28,7 +28,7 @@
       "name": "fiction",
       "source": "./plugins/fiction",
       "description": "中文小說寫作技能(繁中)。當使用者要寫小說、寫故事、寫連載、寫一段情節或場景、要你續寫或改 小說稿、要你處理對話與分章分段時使用。涵蓋篇幅(微型/中長篇)與流派(武俠仙俠、科幻、 懸疑推理驚悚、言情都市),以及對話形式、擬聲詞、分段分行、切章點這些技術規範。 核心約束:換人說話就獨立成段、段落有字數上限(實體 150 字 / 網文 80 字且不超過 3 行)、 擬聲詞能不用就不用改用強動詞、對話禁止無意義寒暄。規則不是散文建議而是可跑的 lint (`scripts/fiction_check.py`;**只支援中文**)。 **不要拿 writing skill 的評論規則套小說**——那支要求第一人稱、禁短句收尾、限制刻意句, 三條對小說都是反的。散文、詩歌、劇本、議論文等其他文體尚未實作,不要冒充。",
-      "version": "1.3.0",
+      "version": "1.4.0",
       "author": {
         "name": "kamira"
       },
@@ -45,7 +45,7 @@
       "name": "spec",
       "source": "./plugins/spec",
       "description": "中文規格書寫作技能(繁中)。當使用者要寫規格書、需求規格、驗收標準、API 規格、功能規格時使用。 修辭比例0%,嚴禁任何修辭。規則不是散文建議而是可跑的 lint——判定邏輯在 `techdoc` 引擎, 交稿前跑 `techdoc_check.py --kind spec`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "kamira"
       },
@@ -61,7 +61,7 @@
       "name": "architecture",
       "source": "./plugins/architecture",
       "description": "中文架構說明 / 設計文件寫作技能(繁中)。當使用者要寫架構說明、系統設計文件、技術選型文件、模組關係說明時使用。 修辭比例極低(0%-2%),僅允許類比。規則不是散文建議而是可跑的 lint——判定邏輯在 `techdoc` 引擎, 交稿前跑 `techdoc_check.py --kind arch`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "kamira"
       },
@@ -77,7 +77,7 @@
       "name": "official",
       "source": "./plugins/official",
       "description": "中文公文寫作技能(繁中)。當使用者要寫公文、函、簽、通知、公告、開會通知、陳報時使用。 修辭比例趨近於零(0%-5%),嚴禁情緒化或模糊的修辭。規則不是散文建議而是可跑的 lint——判定邏輯在 `bizdoc` 引擎, 交稿前跑 `bizdoc_check.py --kind gov`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "kamira"
       },
@@ -92,7 +92,7 @@
       "name": "press",
       "source": "./plugins/press",
       "description": "中文新聞稿寫作技能(繁中)。當使用者要寫新聞稿、媒體聲明、對外公告、記者會稿時使用。 修辭比例趨近於零(0%-5%)。規則不是散文建議而是可跑的 lint——判定邏輯在 `bizdoc` 引擎, 交稿前跑 `bizdoc_check.py --kind press`(安裝本 plugin 時引擎會一起帶進來)。 **不要拿 writing 或 fiction 的規則套這個文體**——那兩支要的修辭密度在這裡全是違規。",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "kamira"
       },
@@ -107,7 +107,7 @@
       "name": "proposal",
       "source": "./plugins/proposal",
       "description": "中文企劃書寫作技能(繁中)。當使用者要寫企劃書、專案提案、活動企劃、簡報型提案時使用。 規格化與標準化,開門見山,採用固定欄位、格式與專業術語。修辭比例趨近於零(0%-5%),嚴禁情緒化或模糊的修辭。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "kamira"
       },
@@ -122,7 +122,7 @@
       "name": "drama",
       "source": "./plugins/drama",
       "description": "中文戲劇 / 劇本寫作技能(繁中)。當使用者要寫劇本、舞台劇、對白為主的作品、獨白時使用。 純對話驅動,僅靠台詞與舞台說明推動劇情、展現衝突。修辭比例低至中(15%-25%),必須符合角色說話的口語習慣。 **本支沒有可跑的 lint**——這個文體的核心指標判不了,規則靠人判斷,SKILL.md 裡有明說原因。 不要拿其他文體的 lint 來量這一篇。",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "kamira"
       },
@@ -136,13 +136,13 @@
     {
       "name": "composition",
       "source": "./plugins/composition",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "description": "中文作文五文體(散文 / 記敘文 / 抒情文 / 說明文 / 詩歌)。每支保留自己的觸發面,本 plugin 只做打包。"
     },
     {
       "name": "classical",
       "source": "./plugins/classical",
-      "version": "1.3.1",
+      "version": "1.4.0",
       "description": "中文文言文體(賦・駢文 / 史傳・奏啟 / 近體詩 / 詞)。每支保留自己的觸發面,本 plugin 只做打包。"
     }
   ]

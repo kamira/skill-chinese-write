@@ -235,12 +235,26 @@ def load_registries(repo: Path, ref: str) -> tuple[dict, dict]:
             _parse_registry(src, "COMMANDS", ref))
 
 
-def engines_at(repo: Path, ref: str) -> dict[str, tuple[str, ...]]:
-    """某個 ref 的 ENGINES 名冊。解析不到回空 dict——**呼叫端要當成沒驗到,不是沒問題**。"""
+def engines_at(repo: Path, ref: str, strict: bool = True) -> dict[str, tuple[str, ...]]:
+    """某個 ref 的 ENGINES 名冊。
+
+    **「名冊不存在」與「名冊壞掉」要分開。** `ENGINES` 是 `CHG-20260829-01` 新增的,
+    所以任何早於它的基準 ref 上本來就沒有這張表——那不是本閘失效,是**當時沒有引擎**,
+    誠實讀法是空 dict。而 HEAD 上讀不到就是真的壞了(`strict=True` → 由呼叫端報紅)。
+
+    這一格分不開的話,本張自己的第一次執行就會紅在「名冊形狀變了」,
+    而那是**引入新名冊的必然代價被誤判成缺陷**。
+    """
     raw = blob_at(repo, ref, "plugins/build_suite.py")
     if raw is None:
         return {}
-    return _parse_registry(raw.decode("utf-8", "replace"), "ENGINES", ref)
+    src = raw.decode("utf-8", "replace")
+    if not re.search(r"^ENGINES[^=]*=\s*\{", src, re.M):
+        if strict:
+            raise SystemExit(f"讀不到 build_suite.py 的 ENGINES({ref})"
+                             "——HEAD 上名冊消失,引擎的版號影響會靜默漏報")
+        return {}                      # 基準早於 ENGINES 引入:當時沒有引擎
+    return _parse_registry(src, "ENGINES", ref)
 
 
 def load_plugins(repo: Path) -> dict[str, tuple[str, ...]]:
@@ -417,7 +431,10 @@ def exclude_drift(repo: Path) -> list[str]:
     return []
 
 
-GEN_SPACES = ("skills", "commands")   # plugin 目錄裡的生成空間
+# `engines` 是 CHG-20260829-01 新增的第三個生成空間:引擎副本由 build_suite 的
+# ENGINES 名冊產生,不是手寫檔。漏掉它,R3 會把引擎同步誤報成「自己的手寫檔變了」
+# ——理由不實不是小事,它會讓真正的手寫檔變更淹沒在噪音裡。
+GEN_SPACES = ("skills", "commands", "engines")
 
 
 def own_files_delta(repo: Path, ref: str, head: str, plugin: str) -> list[str]:
@@ -587,7 +604,8 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
 
     # ---- 引擎那一輪(CHG-20260829-01.2①)。與 skill 同一套判定,只是換命名空間。
     # **少了這一段,引擎變更對本閘就是隱形的**——而隱形的方向是綠。
-    E_old, E_new = engines_at(repo, ref), engines_at(repo, head)
+    E_old = engines_at(repo, ref, strict=False)   # 基準可能早於 ENGINES 引入
+    E_new = engines_at(repo, head)                # HEAD 沒有就是真的壞了
     if not E_new:
         bad.append("build_suite.ENGINES 在工作樹解析不到——**解析失敗不等於沒有引擎**;"
                    "引擎的版號影響會靜默漏報(本張要修的就是這一格)")
