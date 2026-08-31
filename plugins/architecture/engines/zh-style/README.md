@@ -1,3 +1,14 @@
+---
+# **這不是 skill 的 frontmatter,是引擎的版號戳記。**
+# skill 身分由檔名 `SKILL.md` 與所在的 `skills/` 命名空間決定,不由 frontmatter 決定;
+# 本檔是 `engines/zh-style/README.md`,平台不會列舉它。
+# 版號留著是因為 `version_impact_check` 要它:引擎內容變了,十個宿主 plugin 都得 bump,
+# 而「內容變了但版號沒動」與「版號動了但內容沒變」兩個方向都要判得出來。
+name: zh-style
+metadata:
+  version: 1.1.0
+---
+
 # zh-style — 中文正字法與收尾(**引擎,不是 skill**)
 
 > **這不是 skill,是引擎。** 它沒有 `SKILL.md`,不出現在任何 `skills/` 底下,

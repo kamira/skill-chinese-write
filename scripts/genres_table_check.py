@@ -348,6 +348,24 @@ def check(repo: Path, *, ci_path: Path = None) -> list:
                                ",而 build_suite.PLUGINS 是 " +
                                str(sorted(registry[pid])))
 
+    # ── 4b 引擎的 lint 必須真的在 CI 裡被跑(CHG-20260829-01.2③)──
+    #
+    # 這一條是**升格**,不是新增。它原本以副作用的形式**寄生**在
+    # `--self-test` 的插入錨點上:錨點找不到就紅,於是「引擎的 self-test 在 CI 裡」
+    # 被順帶保證了。錨點解綁之後那條保證會蒸發——
+    # **斷言藏在別支閘的 self-test 副作用裡,正是本案「宣稱在一處、實際在另一處」的形狀。**
+    # 它不該以副作用存在,但也不該無聲消失,所以在這裡具名。
+    for row in secmap[SEC_UNIVERSAL]:
+        name = _first_code(row[1]) if len(row) > 1 else None
+        lint = _first_code(row[2]) if len(row) > 2 else None
+        if not (name and lint):
+            continue
+        call = "engines/" + name + "/scripts/" + lint
+        if call not in ci_text:
+            bad.append("[引擎/CI] 表列通用引擎 `" + name + "` 的 lint 是 `" + lint +
+                       "`,而 `" + call + "` 沒有出現在 ci_local.sh 裡"
+                       "——引擎有 lint 卻沒有任何一步在跑它,等於沒有把關")
+
     # ── 5 雙向:磁碟上每一支都要在表上 ──
     # **母體是 skills/ 加 engines/**(CHG-20260829-01.2②)。引擎移出 skills/ 之後,
     # 只拿 skills/ 當母體會讓表列的引擎被判成「磁碟上沒有」——那是找錯地方,不是真的不見了。
@@ -481,16 +499,18 @@ def self_test(repo: Path) -> int:
     cip = repo / ".github" / "ci_local.sh"
     ci_raw = cip.read_bytes()
     ci_txt = ci_raw.decode("utf-8")
-    hook = "$PY skills/zh-style/scripts/zh_style_check.py --self-test"
-    if hook not in ci_txt:
-        fails.append("ci_local 突變的錨點找不到:" + hook)
-    else:
+    # ③ 錨點解綁(CHG-20260829-01.2③)。原本拿 zh-style 的 self-test 那一行當**插入錨點**,
+    # 引擎路徑一動這裡就紅在「錨點找不到」——**寄生錨點**,而且剛剛實際紅過一次。
+    # 受測判定是**全文字面子串比對**,插入位置無語意,所以改成**文末附加**:
+    # `ci_txt + 探針行` 與 `replace(hook, …)` 對受測邏輯等價,判別力一分不差,
+    # 而且不再依附任何引擎的實體路徑。
+    if True:
         made_dir = not probe_dir.exists()
         import tempfile
         with tempfile.TemporaryDirectory() as td:
             fake_ci = Path(td) / "ci_local.sh"
-            fake_ci.write_text(ci_txt.replace(
-                hook, hook + chr(10) + "$PY skills/prose/scripts/prose_check.py", 1),
+            fake_ci.write_text(
+                ci_txt + chr(10) + "$PY skills/prose/scripts/prose_check.py" + chr(10),
                 encoding="utf-8")
             try:
                 probe_dir.mkdir(parents=True, exist_ok=True)

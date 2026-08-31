@@ -231,12 +231,67 @@ def engines_referenced(text: str, own: str) -> set[str]:
     return {g for g in ENGINE_CALL_RE.findall(text) if g != own}
 
 
+def load_engines(repo: Path) -> dict[str, tuple[str, ...]]:
+    """`build_suite.ENGINES` —— 引擎歸屬的單一真相(CHG-20260829-01)。"""
+    src = (repo / "plugins" / "build_suite.py").read_text(encoding="utf-8")
+    m = re.search(r"^ENGINES\s*=\s*(\{.*?^\})", src, re.S | re.M)
+    if m is None:
+        raise SystemExit("讀不到 build_suite.py 的 ENGINES——名冊形狀變了,"
+                         "引擎的三腿斷言會靜默失效。**不 skip**")
+    return ast.literal_eval(m.group(1))
+
+
+def engine_not_a_skill(repo: Path, plugins: dict, engines: dict) -> list[str]:
+    """`.3` 三腿集合不相交 + 引擎樹內不得有 SKILL.md(CHG-20260829-01.3)。
+
+    **為什麼要三腿而不是一腿**(fable 第一輪復查現有閘後指出):
+    zh-style 只重現於頂層 `skills/` → 第 3 項紅;只重現於 `plugins/*/skills/` → 第 7 項紅;
+    但**若有人把它加回 `PLUGINS` 成分並同時重建 `skills/zh-style/`,全部閘同時轉綠**
+    ——分岔以完全一致的姿態回歸,現有閘一根手指都不會動。單腿擋不住那條復發路。
+
+    第四腿(引擎樹內不得有 `SKILL.md`)是把散文端**唯一判得動的部分**收進資料端:
+    skill 身分由檔名與命名空間決定,`SKILL.md` 一出現在引擎樹裡,它就又是 skill 了。
+    措辭層(README 是否仍宣稱「不是前門」)依 KN-001 明講靠人,不造 NLP lint。
+    """
+    bad: list[str] = []
+    ids = {e for tup in engines.values() for e in tup}
+    if not ids:
+        return ["ENGINES 名冊是空的——引擎的三腿斷言沒有標的,**空集合不等於通過**"]
+    for e in sorted(ids):
+        for pid, members in sorted(plugins.items()):
+            if e in members:
+                bad.append(f"[腿一] 引擎 `{e}` 出現在 PLUGINS['{pid}'] 的成分裡"
+                           "——加回 PLUGINS 會讓它重新長出可叫用入口")
+        if (repo / "skills" / e).is_dir():
+            bad.append(f"[腿二] 引擎 `{e}` 出現在頂層 `skills/` 底下"
+                       "——治理列舉器會走到它,它就又是 skill 了")
+        for pid in sorted(plugins):
+            if (repo / "plugins" / pid / "skills" / e).is_dir():
+                bad.append(f"[腿三] 引擎 `{e}` 出現在 `plugins/{pid}/skills/` 底下"
+                           "——平台列舉器會把它列成 `/{pid}:{e}` 那樣的入口")
+        src = repo / "engines" / e
+        if src.is_dir():
+            for f in sorted(src.rglob("SKILL.md")):
+                bad.append(f"[腿四] 引擎樹裡有 `{f.relative_to(repo)}`"
+                           "——`SKILL.md` 是 skill 的標記檔,出現在引擎樹裡等於身分回退")
+        for pid, tup in sorted(engines.items()):
+            if e not in tup:
+                continue
+            dst = repo / "plugins" / pid / "engines" / e
+            if not dst.is_dir():
+                bad.append(f"[出貨] `ENGINES['{pid}']` 宣告了 `{e}`,而 "
+                           f"plugins/{pid}/engines/{e}/ 不存在"
+                           "——**引擎一起消失也是一種假綠**,三腿只擋前門不擋這格")
+    return bad
+
+
 def check(repo: Path) -> list[str]:
     problems: list[str] = []
     plugins = load_plugins(repo)
     skills_dir = repo / "skills"
     on_disk = {p.name for p in skills_dir.iterdir() if p.is_dir()}
     packaged = {s for tup in plugins.values() for s in tup}
+    problems += engine_not_a_skill(repo, plugins, load_engines(repo))
 
     for skill in sorted(on_disk):
         md = skills_dir / skill / "SKILL.md"
@@ -348,6 +403,46 @@ SHAPE_CASES = [
 def self_test() -> int:
     """紅燈可達:每一項判定的綠燈與紅燈都要各走一次。"""
     fails = []
+
+    # ── `.3` 三腿集合不相交 + 引擎樹禁 SKILL.md + 出貨腿(CHG-20260829-01.3)──
+    # 五端全部由**同一個綠端**單點突變產生。第五腿(宣告了卻沒出貨)是刻意的:
+    # 三腿只擋「引擎變回前門」,擋不住「引擎一起消失」——那是被使用者排除的候選 A,
+    # 而**假綠不會因為它是被排除的方案就不出現**。
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as _d:
+        _r = Path(_d)
+        (_r / "engines" / "zh-style").mkdir(parents=True)
+        (_r / "plugins" / "writing" / "engines" / "zh-style").mkdir(parents=True)
+        _P = {"writing": ("writing",)}
+        _E = {"writing": ("zh-style",)}
+        if engine_not_a_skill(_r, _P, _E):
+            fails.append("三腿綠端不綠:" + str(engine_not_a_skill(_r, _P, _E))[:80])
+        def _mut(kind):
+            """單點突變。**不用 `x or f()` 那種取巧寫法**——`write_text` 回傳字元數,
+            truthy 會讓 `or` 短路回傳整數而不是問題清單,實測踩過。"""
+            if kind == "leg1":
+                return engine_not_a_skill(_r, {"writing": ("writing", "zh-style")}, _E)
+            if kind == "leg2":
+                (_r / "skills" / "zh-style").mkdir(parents=True, exist_ok=True)
+            elif kind == "leg3":
+                (_r / "plugins" / "writing" / "skills" / "zh-style").mkdir(
+                    parents=True, exist_ok=True)
+            elif kind == "leg4":
+                (_r / "engines" / "zh-style" / "SKILL.md").write_text("x", encoding="utf-8")
+            elif kind == "ship":
+                return engine_not_a_skill(_r, _P, {"press": ("zh-style",)})
+            return engine_not_a_skill(_r, _P, _E)
+
+        for _label, _kind, _tag in (
+                ("腿一 加回 PLUGINS", "leg1", "[腿一]"),
+                ("腿二 頂層 skills/", "leg2", "[腿二]"),
+                ("腿三 plugin skills/", "leg3", "[腿三]"),
+                ("腿四 引擎樹有 SKILL.md", "leg4", "[腿四]"),
+                ("出貨腿 宣告了卻沒出貨", "ship", "[出貨]")):
+            _got = _mut(_kind)
+            if not any(str(g).startswith(_tag) for g in _got):
+                fails.append("三腿紅端「" + _label + "」不可達——應報 " + _tag)
+
 
     if not NO_LINT_RE.search(GOOD_MD):
         fails.append("好樣本(有明標節)竟然沒被認出來——判定過嚴")

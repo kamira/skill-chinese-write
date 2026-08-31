@@ -9,14 +9,24 @@
     def skills_of(repo, plugin):
         return [p for p in [repo / "skills" / plugin / "SKILL.md"] if p.is_file()]
 
-**它只看同名 skill。** 而一個 plugin 的出貨樹裡,同名的只有一支,其餘全是隨附。
-實測 `zh-style` 被**全部 21 個** plugin 打包、`fiction` 被 7 個。
+**它只看同名 skill。** 而一個 plugin 的出貨樹裡,同名的只有一支,其餘全是隨附;
+跨文體的共用引擎更是**打包它的每一個宿主**都帶一份。
 
-於是:今天改一條 `zh-style` 的規則,`catalog_check --since` 只會逼 marketplace
-的總版號 bump,**21 個宿主 plugin 的 entry / plugin.json 一個都不用動,閘全綠**
-——而那 21 個 plugin 的出貨行為全變了,已安裝的使用者一個都拿不到。
+於是:今天改一條共用引擎的規則,`catalog_check --since` 只會逼 marketplace
+的總版號 bump,**打包它的每一個宿主 plugin 的 entry / plugin.json 一個都不用動,閘全綠**
+——而那些 plugin 的出貨行為全變了,已安裝的使用者一個都拿不到。
+
+**這段刻意不寫「幾個 plugin」。**(`CHG-20260829-01.4`)原文寫死「21 個」與「fiction 被 7 個」,
+兩個數字都在退役與重組之後過期了,而治理腳本的說明文字過期比程式碼過期更難發現——
+沒有人會去追查一段註解。**用當下的實數替換只是把下一個會過期的手抄數字放進來**,
+所以改成指稱關係。這一族判不動(docstring 的數字語意要 NLP 定位),
+依 KN-001 第二條路明講靠人:**治理腳本的敘述不放現況計數**,是寫作紀律,不是斷言。
 
 規則想管「plugin 變了就要 bump」,斷言查的只是其中一小塊。**KN-001 的形狀。**
+
+**驅動源有兩個命名空間**(`CHG-20260829-01.2①`):`PLUGINS` × `skills/` 是文體 skill,
+`ENGINES` × `engines/` 是跨文體引擎。引擎從 `skills/` 搬出去之後,只驅動前者
+就會讓引擎變更**完全隱形**——而隱形的方向是綠。那是本閘曾經有過的唯一 fail-open。
 
 ## 內容 vs 戳記
 
@@ -35,7 +45,7 @@
 - **空白與註解也算**——「以 byte 為準,只要 byte 狀態改變,同一版本就不應
   指向兩種產物;僅精確排除 `metadata.version` 那一行。」
 
-這意味著本閘**沒有語意層的寬容**:改一個空格就要 bump 21 個宿主。
+這意味著本閘**沒有語意層的寬容**:改一個空格,打包它的每一個宿主都要 bump。
 那不是誤傷,是 copy-bundling 的誠實成本。
 """
 from __future__ import annotations
@@ -250,10 +260,12 @@ def engines_at(repo: Path, ref: str, strict: bool = True) -> dict[str, tuple[str
         return {}
     src = raw.decode("utf-8", "replace")
     if not re.search(r"^ENGINES[^=]*=\s*\{", src, re.M):
-        if strict:
-            raise SystemExit(f"讀不到 build_suite.py 的 ENGINES({ref})"
-                             "——HEAD 上名冊消失,引擎的版號影響會靜默漏報")
-        return {}                      # 基準早於 ENGINES 引入:當時沒有引擎
+        # **「沒有這張表」不等於「表壞了」。** 沒有引擎的 repo 本來就不會有 ENGINES,
+        # 而 self-test 的合成樹正是這種形狀——把它判成故障,是把「引入新名冊」與
+        # 「名冊消失」混成同一件事(施工時實際紅過一次)。
+        # 名冊在真實 repo 上消失由別人接:`skill_inventory_check.load_engines` 直接 SystemExit、
+        # `genres_table_check` 報「ENGINES 解析不到任何項目」。這裡只在**磁碟有引擎卻沒名冊**時紅。
+        return {}
     return _parse_registry(src, "ENGINES", ref)
 
 
@@ -604,11 +616,13 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
 
     # ---- 引擎那一輪(CHG-20260829-01.2①)。與 skill 同一套判定,只是換命名空間。
     # **少了這一段,引擎變更對本閘就是隱形的**——而隱形的方向是綠。
-    E_old = engines_at(repo, ref, strict=False)   # 基準可能早於 ENGINES 引入
-    E_new = engines_at(repo, head)                # HEAD 沒有就是真的壞了
-    if not E_new:
-        bad.append("build_suite.ENGINES 在工作樹解析不到——**解析失敗不等於沒有引擎**;"
-                   "引擎的版號影響會靜默漏報(本張要修的就是這一格)")
+    E_old = engines_at(repo, ref)
+    E_new = engines_at(repo, head)
+    # **磁碟上有引擎、名冊卻是空的** → 名冊消失或解析壞掉,引擎的版號影響會靜默漏報。
+    # 磁碟上沒有引擎時空名冊是合法的(沒有引擎的 repo,以及 self-test 的合成樹)。
+    if (repo / "engines").is_dir() and any((repo / "engines").iterdir()) and not E_new:
+        bad.append("磁碟上有 engines/,而 build_suite.ENGINES 讀不到任何項目"
+                   "——引擎的版號影響會靜默漏報(本張要修的就是這一格)")
     for e in sorted({x for eng in E_new.values() for x in eng}):
         kind = classify(repo, ref, head, e, "engine")
         ev_old = unit_version(repo, ref, e, "engine")
