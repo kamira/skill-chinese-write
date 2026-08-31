@@ -66,7 +66,15 @@ NO_LINT_DECL = "本支沒有可跑的 lint"
 
 CODE = re.compile(r"`([^`]+)`")
 # zh-style 是引擎不是文體,由所有 plugin 打包,不列在 plugin 表的成分欄裡。
-UNIVERSAL = "zh-style"
+# ── 通用引擎:從「扣除式豁免」換極性為「出現即紅」的禁令(CHG-20260829-01.4/.3)──
+#
+# 舊寫法是 `registry[p] - {UNIVERSAL}`——把 zh-style 從 PLUGINS 成分裡**減掉別比**。
+# 那在 zh-style 還住 `skills/` 時是對的,但它會**靜默吸收**一個復發:
+# 日後有人把 zh-style 加回 `PLUGINS`,扣除式豁免會讓它安靜通過,而那正是本張要防的分岔。
+#
+# 換極性之後:引擎名冊的 id **出現在 PLUGINS 成分裡就是紅**。
+# 名冊本身不在這裡硬編碼——讀 `build_suite.py` 的 `ENGINES`,單一真相只有一份。
+UNIVERSAL_LEGACY = "zh-style"      # 僅供 docs/genres.md 的 universal 表列名比對
 HEADER_CELLS = ("文體", "規則", "plugin id")
 
 
@@ -166,24 +174,35 @@ def check(repo: Path, *, ci_path: Path = None) -> list:
                 "節標題可以自由改寫,錨點不行"]
 
     # ── 1 有引擎的(含通用引擎):skill 要在、lint 檔要在 ──
-    for row in secmap[SEC_UNIVERSAL] + secmap[SEC_ENGINE]:
+    # **通用引擎住 `engines/`,文體引擎住 `skills/`**(CHG-20260829-01.2②)。
+    # 兩個命名空間、兩種身分檔名(README.md / SKILL.md)——寫死一種就會漏掉另一種,
+    # 而漏掉的方向是靜默的(表列著、磁碟上有,只是閘找錯地方)。
+    engines_dir = repo / "engines"
+    on_disk_engines = ({d.name for d in engines_dir.iterdir() if d.is_dir()}
+                       if engines_dir.is_dir() else set())
+    for row, universal in ([(r, True) for r in secmap[SEC_UNIVERSAL]] +
+                           [(r, False) for r in secmap[SEC_ENGINE]]):
         name = _first_code(row[1]) if len(row) > 1 else None
         lint = _first_code(row[2]) if len(row) > 2 else None
         if not name:
             continue
         claimed.add(name)
-        if name not in on_disk:
-            bad.append("[有引擎] 表列 `" + name + "`,而 skills/" + name + "/ 不存在")
-        elif lint and not (skills_dir / name / "scripts" / lint).exists():
+        base = engines_dir if universal else skills_dir
+        pool = on_disk_engines if universal else on_disk
+        rel = "engines/" if universal else "skills/"
+        idfile = "README.md" if universal else "SKILL.md"
+        if name not in pool:
+            bad.append("[有引擎] 表列 `" + name + "`,而 " + rel + name + "/ 不存在")
+        elif lint and not (base / name / "scripts" / lint).exists():
             bad.append("[有引擎] 表說 `" + name + "` 的 lint 是 `" + lint +
-                       "`,而 skills/" + name + "/scripts/" + lint + " 不存在")
+                       "`,而 " + rel + name + "/scripts/" + lint + " 不存在")
         elif lint:
-            sk = skills_dir / name / "SKILL.md"
+            sk = base / name / idfile
             ref = "scripts/" + lint
             if sk.exists() and ref not in sk.read_text(encoding="utf-8"):
                 bad.append("[有引擎] 表說 `" + name + "` 的 lint 是 `" + lint +
-                           "`,而它的 SKILL.md 沒有引用 " + ref +
-                           "——表與 skill 自己的宣告不一致")
+                           "`,而它的 " + idfile + " 沒有引用 " + ref +
+                           "——表與引擎自己的宣告不一致")
 
     # ── 2 前門:skill 或 /plugin:command 二者之一要在 ──
     bsrc = (repo / "plugins" / "build_suite.py")
@@ -274,7 +293,22 @@ def check(repo: Path, *, ci_path: Path = None) -> list:
             for pm in re.finditer(r'"([^"]+)":\s*\(([^)]*)\)', m.group(1)):
                 registry[pm.group(1)] = {x.strip().strip("'").strip('"')
                                          for x in pm.group(2).split(",")
-                                         if x.strip()} - {UNIVERSAL}
+                                         if x.strip()}
+        # 換極性:引擎不得出現在 PLUGINS 成分裡。**不是減掉別比,是出現即紅。**
+        eng_ids = set()
+        me = re.search(r"ENGINES = \{(.*?)" + chr(10) + r"\}", src, re.S)
+        if me:
+            for em in re.finditer(r"'([^']+)'", me.group(1)):
+                eng_ids.add(em.group(1))
+        if not eng_ids:
+            bad.append("build_suite.ENGINES 解析不到任何項目"
+                       "——**解析失敗不等於一致**;引擎禁令會靜默失效")
+        for pid, members in sorted(registry.items()):
+            back = sorted(members & eng_ids)
+            if back:
+                bad.append("引擎 `" + "、".join(back) + "` 出現在 PLUGINS['" + pid +
+                           "'] 的成分裡——引擎不是 skill,加回 PLUGINS 會讓它重新長出可叫用入口"
+                           "(CHG-20260829-01)")
         if not registry:
             bad.append("build_suite.PLUGINS 解析不到任何項目"
                        "——**解析失敗不等於一致**")
@@ -314,12 +348,36 @@ def check(repo: Path, *, ci_path: Path = None) -> list:
                                ",而 build_suite.PLUGINS 是 " +
                                str(sorted(registry[pid])))
 
+    # ── 4b 引擎的 lint 必須真的在 CI 裡被跑(CHG-20260829-01.2③)──
+    #
+    # 這一條是**升格**,不是新增。它原本以副作用的形式**寄生**在
+    # `--self-test` 的插入錨點上:錨點找不到就紅,於是「引擎的 self-test 在 CI 裡」
+    # 被順帶保證了。錨點解綁之後那條保證會蒸發——
+    # **斷言藏在別支閘的 self-test 副作用裡,正是本案「宣稱在一處、實際在另一處」的形狀。**
+    # 它不該以副作用存在,但也不該無聲消失,所以在這裡具名。
+    for row in secmap[SEC_UNIVERSAL]:
+        name = _first_code(row[1]) if len(row) > 1 else None
+        lint = _first_code(row[2]) if len(row) > 2 else None
+        if not (name and lint):
+            continue
+        call = "engines/" + name + "/scripts/" + lint
+        if call not in ci_text:
+            bad.append("[引擎/CI] 表列通用引擎 `" + name + "` 的 lint 是 `" + lint +
+                       "`,而 `" + call + "` 沒有出現在 ci_local.sh 裡"
+                       "——引擎有 lint 卻沒有任何一步在跑它,等於沒有把關")
+
     # ── 5 雙向:磁碟上每一支都要在表上 ──
+    # **母體是 skills/ 加 engines/**(CHG-20260829-01.2②)。引擎移出 skills/ 之後,
+    # 只拿 skills/ 當母體會讓表列的引擎被判成「磁碟上沒有」——那是找錯地方,不是真的不見了。
+    universe = on_disk | on_disk_engines
     for name in sorted(on_disk - claimed):
         bad.append("[雙向] skills/" + name + "/ 存在,而三張表都沒有列它"
                    "——新增 skill 要同時上表,否則表會靜默過期")
-    for name in sorted(claimed - on_disk):
-        bad.append("[雙向] 表列 `" + name + "`,而磁碟上沒有")
+    for name in sorted(on_disk_engines - claimed):
+        bad.append("[雙向] engines/" + name + "/ 存在,而三張表都沒有列它"
+                   "——新增引擎要同時上表,否則表會靜默過期")
+    for name in sorted(claimed - universe):
+        bad.append("[雙向] 表列 `" + name + "`,而 skills/ 與 engines/ 都沒有")
     return bad
 
 
@@ -441,16 +499,18 @@ def self_test(repo: Path) -> int:
     cip = repo / ".github" / "ci_local.sh"
     ci_raw = cip.read_bytes()
     ci_txt = ci_raw.decode("utf-8")
-    hook = "$PY skills/zh-style/scripts/zh_style_check.py --self-test"
-    if hook not in ci_txt:
-        fails.append("ci_local 突變的錨點找不到:" + hook)
-    else:
+    # ③ 錨點解綁(CHG-20260829-01.2③)。原本拿 zh-style 的 self-test 那一行當**插入錨點**,
+    # 引擎路徑一動這裡就紅在「錨點找不到」——**寄生錨點**,而且剛剛實際紅過一次。
+    # 受測判定是**全文字面子串比對**,插入位置無語意,所以改成**文末附加**:
+    # `ci_txt + 探針行` 與 `replace(hook, …)` 對受測邏輯等價,判別力一分不差,
+    # 而且不再依附任何引擎的實體路徑。
+    if True:
         made_dir = not probe_dir.exists()
         import tempfile
         with tempfile.TemporaryDirectory() as td:
             fake_ci = Path(td) / "ci_local.sh"
-            fake_ci.write_text(ci_txt.replace(
-                hook, hook + chr(10) + "$PY skills/prose/scripts/prose_check.py", 1),
+            fake_ci.write_text(
+                ci_txt + chr(10) + "$PY skills/prose/scripts/prose_check.py" + chr(10),
                 encoding="utf-8")
             try:
                 probe_dir.mkdir(parents=True, exist_ok=True)

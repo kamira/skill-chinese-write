@@ -9,14 +9,24 @@
     def skills_of(repo, plugin):
         return [p for p in [repo / "skills" / plugin / "SKILL.md"] if p.is_file()]
 
-**它只看同名 skill。** 而一個 plugin 的出貨樹裡,同名的只有一支,其餘全是隨附。
-實測 `zh-style` 被**全部 21 個** plugin 打包、`fiction` 被 7 個。
+**它只看同名 skill。** 而一個 plugin 的出貨樹裡,同名的只有一支,其餘全是隨附;
+跨文體的共用引擎更是**打包它的每一個宿主**都帶一份。
 
-於是:今天改一條 `zh-style` 的規則,`catalog_check --since` 只會逼 marketplace
-的總版號 bump,**21 個宿主 plugin 的 entry / plugin.json 一個都不用動,閘全綠**
-——而那 21 個 plugin 的出貨行為全變了,已安裝的使用者一個都拿不到。
+於是:今天改一條共用引擎的規則,`catalog_check --since` 只會逼 marketplace
+的總版號 bump,**打包它的每一個宿主 plugin 的 entry / plugin.json 一個都不用動,閘全綠**
+——而那些 plugin 的出貨行為全變了,已安裝的使用者一個都拿不到。
+
+**這段刻意不寫「幾個 plugin」。**(`CHG-20260829-01.4`)原文寫死「21 個」與「fiction 被 7 個」,
+兩個數字都在退役與重組之後過期了,而治理腳本的說明文字過期比程式碼過期更難發現——
+沒有人會去追查一段註解。**用當下的實數替換只是把下一個會過期的手抄數字放進來**,
+所以改成指稱關係。這一族判不動(docstring 的數字語意要 NLP 定位),
+依 KN-001 第二條路明講靠人:**治理腳本的敘述不放現況計數**,是寫作紀律,不是斷言。
 
 規則想管「plugin 變了就要 bump」,斷言查的只是其中一小塊。**KN-001 的形狀。**
+
+**驅動源有兩個命名空間**(`CHG-20260829-01.2①`):`PLUGINS` × `skills/` 是文體 skill,
+`ENGINES` × `engines/` 是跨文體引擎。引擎從 `skills/` 搬出去之後,只驅動前者
+就會讓引擎變更**完全隱形**——而隱形的方向是綠。那是本閘曾經有過的唯一 fail-open。
 
 ## 內容 vs 戳記
 
@@ -35,7 +45,7 @@
 - **空白與註解也算**——「以 byte 為準,只要 byte 狀態改變,同一版本就不應
   指向兩種產物;僅精確排除 `metadata.version` 那一行。」
 
-這意味著本閘**沒有語意層的寬容**:改一個空格就要 bump 21 個宿主。
+這意味著本閘**沒有語意層的寬容**:改一個空格,打包它的每一個宿主都要 bump。
 那不是誤傷,是 copy-bundling 的誠實成本。
 """
 from __future__ import annotations
@@ -235,6 +245,30 @@ def load_registries(repo: Path, ref: str) -> tuple[dict, dict]:
             _parse_registry(src, "COMMANDS", ref))
 
 
+def engines_at(repo: Path, ref: str, strict: bool = True) -> dict[str, tuple[str, ...]]:
+    """某個 ref 的 ENGINES 名冊。
+
+    **「名冊不存在」與「名冊壞掉」要分開。** `ENGINES` 是 `CHG-20260829-01` 新增的,
+    所以任何早於它的基準 ref 上本來就沒有這張表——那不是本閘失效,是**當時沒有引擎**,
+    誠實讀法是空 dict。而 HEAD 上讀不到就是真的壞了(`strict=True` → 由呼叫端報紅)。
+
+    這一格分不開的話,本張自己的第一次執行就會紅在「名冊形狀變了」,
+    而那是**引入新名冊的必然代價被誤判成缺陷**。
+    """
+    raw = blob_at(repo, ref, "plugins/build_suite.py")
+    if raw is None:
+        return {}
+    src = raw.decode("utf-8", "replace")
+    if not re.search(r"^ENGINES[^=]*=\s*\{", src, re.M):
+        # **「沒有這張表」不等於「表壞了」。** 沒有引擎的 repo 本來就不會有 ENGINES,
+        # 而 self-test 的合成樹正是這種形狀——把它判成故障,是把「引入新名冊」與
+        # 「名冊消失」混成同一件事(施工時實際紅過一次)。
+        # 名冊在真實 repo 上消失由別人接:`skill_inventory_check.load_engines` 直接 SystemExit、
+        # `genres_table_check` 報「ENGINES 解析不到任何項目」。這裡只在**磁碟有引擎卻沒名冊**時紅。
+        return {}
+    return _parse_registry(src, "ENGINES", ref)
+
+
 def load_plugins(repo: Path) -> dict[str, tuple[str, ...]]:
     """工作樹版本,保留給不需要兩端比較的呼叫者。"""
     src = (repo / "plugins" / "build_suite.py").read_text(encoding="utf-8")
@@ -269,14 +303,30 @@ def plugin_json_version(repo: Path, ref: str, plugin: str) -> str:
         return ""
 
 
-def skill_version(repo: Path, ref: str, skill: str) -> str:
-    path = f"skills/{skill}/SKILL.md"
+# ── 兩個命名空間(CHG-20260829-01.2①)────────────────────────────────
+#
+# **這是本張唯一 fail-open 的那一格。** 引擎移出 `skills/` 之後,本閘若仍只從
+# `PLUGINS` 種席位、只掃 `skills/` 前綴,「引擎內容變了、十個 plugin 出貨全變」
+# 這件事它**永遠看不見**——而那正是本檔 docstring 自述要堵的洞,舉的例子還就是 zh-style。
+# 其他觸點(genres 表、ci_local 路徑、inventory 樹形)都是 fail-closed 會逼人修,
+# **只有這一處落地後永久靜默**,所以它是必修,不是連帶。
+NS = {"skill": ("skills", "SKILL.md"), "engine": ("engines", "README.md")}
+
+
+def unit_version(repo: Path, ref: str, name: str, kind: str = "skill") -> str:
+    root, idfile = NS[kind]
+    path = f"{root}/{name}/{idfile}"
     raw = blob_at(repo, ref, path)
     if raw is None:
         return ""
     m = re.search(r"^metadata:\s*$\s*^\s+version:\s*(\S+)\s*$",
                   raw.decode("utf-8", "replace"), re.M)
     return m.group(1) if m else ""
+
+
+def skill_version(repo: Path, ref: str, skill: str) -> str:
+    """向後相容薄殼——既有呼叫端與 self-test 仍以 skill 為預設命名空間。"""
+    return unit_version(repo, ref, skill, "skill")
 
 
 def tree_files(repo: Path, ref: str, prefix: str) -> set[str]:
@@ -287,14 +337,15 @@ def tree_files(repo: Path, ref: str, prefix: str) -> set[str]:
             if p and not any(x in p.split("/") for x in EXCLUDE_PARTS)}
 
 
-def classify(repo: Path, ref: str, head: str, skill: str) -> str:
+def classify(repo: Path, ref: str, head: str, skill: str, kind: str = "skill") -> str:
     """回傳 'content' / 'stamp' / 'none'。**兩端都是 committed 狀態。**
 
     'stamp' 不再與 'none' 同義——見 check() 裡的戳記凍結規則。
     """
-    root_md = f"skills/{skill}/SKILL.md"
-    paths = tree_files(repo, ref, f"skills/{skill}/") | \
-        tree_files(repo, head, f"skills/{skill}/")
+    _root, _idfile = NS[kind]
+    root_md = f"{_root}/{skill}/{_idfile}"
+    _pfx = f"{_root}/{skill}/"
+    paths = tree_files(repo, ref, _pfx) | tree_files(repo, head, _pfx)
 
     stamp_only = False
     for p in sorted(paths):
@@ -392,7 +443,10 @@ def exclude_drift(repo: Path) -> list[str]:
     return []
 
 
-GEN_SPACES = ("skills", "commands")   # plugin 目錄裡的生成空間
+# `engines` 是 CHG-20260829-01 新增的第三個生成空間:引擎副本由 build_suite 的
+# ENGINES 名冊產生,不是手寫檔。漏掉它,R3 會把引擎同步誤報成「自己的手寫檔變了」
+# ——理由不實不是小事,它會讓真正的手寫檔變更淹沒在噪音裡。
+GEN_SPACES = ("skills", "commands", "engines")
 
 
 def own_files_delta(repo: Path, ref: str, head: str, plugin: str) -> list[str]:
@@ -559,6 +613,32 @@ def check(repo: Path, ref: str, head: str = "HEAD") -> list[str]:
         if changed := own_files_delta(repo, ref, head, p):
             why(p, "自己的手寫檔變了:" + "、".join(changed[:4])
                 + (f" 等 {len(changed)} 檔" if len(changed) > 4 else ""))
+
+    # ---- 引擎那一輪(CHG-20260829-01.2①)。與 skill 同一套判定,只是換命名空間。
+    # **少了這一段,引擎變更對本閘就是隱形的**——而隱形的方向是綠。
+    E_old = engines_at(repo, ref)
+    E_new = engines_at(repo, head)
+    # **磁碟上有引擎、名冊卻是空的** → 名冊消失或解析壞掉,引擎的版號影響會靜默漏報。
+    # 磁碟上沒有引擎時空名冊是合法的(沒有引擎的 repo,以及 self-test 的合成樹)。
+    if (repo / "engines").is_dir() and any((repo / "engines").iterdir()) and not E_new:
+        bad.append("磁碟上有 engines/,而 build_suite.ENGINES 讀不到任何項目"
+                   "——引擎的版號影響會靜默漏報(本張要修的就是這一格)")
+    for e in sorted({x for eng in E_new.values() for x in eng}):
+        kind = classify(repo, ref, head, e, "engine")
+        ev_old = unit_version(repo, ref, e, "engine")
+        ev_new = unit_version(repo, head, e, "engine")
+        if kind == "stamp":
+            bad.append(f"引擎「{e}」的內容自 {ref} 起一個 byte 都沒變,"
+                       f"但 metadata.version 從 {ev_old} 動到 {ev_new}——戳記凍結")
+            continue
+        if kind != "content":
+            continue
+        if not advanced(ev_old, ev_new):
+            bad.append(f"引擎「{e}」的出貨內容自 {ref} 起有變動,但 "
+                       f"engines/{e}/README.md 的 metadata.version 沒有遞增"
+                       f"({ev_old or '(讀不到)'} → {ev_new or '(讀不到)'})")
+        for h in sorted(p for p, eng in E_new.items() if e in eng):
+            why(h, f"它打包的引擎「{e}」內容變了")
 
     plugins = P_new
     for s in sorted({s for sk in plugins.values() for s in sk}):

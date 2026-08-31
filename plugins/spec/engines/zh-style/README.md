@@ -1,19 +1,33 @@
 ---
+# **這不是 skill 的 frontmatter,是引擎的版號戳記。**
+# skill 身分由檔名 `SKILL.md` 與所在的 `skills/` 命名空間決定,不由 frontmatter 決定;
+# 本檔是 `engines/zh-style/README.md`,平台不會列舉它。
+# 版號留著是因為 `version_impact_check` 要它:引擎內容變了,十個宿主 plugin 都得 bump,
+# 而「內容變了但版號沒動」與「版號動了但內容沒變」兩個方向都要判得出來。
 name: zh-style
-description: >
-  中文正字法與收尾檢查(繁中)。**這是引擎,不是前門**——沒有人會說「幫我寫一篇正字法」,
-  所以它沒有自己的 plugin;**所有 plugin 全部把它打包帶入**。
-  它收的是**不隨文體改變**的兩條規則:①中文脈絡下的半形標點(逗號、冒號、分號、問號、
-  驚嘆號、括號)一律視為硬性違規;②最後一段出現總結殼(有些X是這樣 / 不是A是B / 說到底)
-  或兩句光禿的短陳述並排時提醒。
-  跑法:`scripts/zh_style_check.py 稿件.md`。任何文體都適用,與各文體引擎並行使用。
 metadata:
   version: 1.1.0
 ---
 
-# zh-style — 中文正字法與收尾
+# zh-style — 中文正字法與收尾(**引擎,不是 skill**)
 
-> **這是引擎,不是前門。**它沒有自己的 plugin,由所有 plugin 打包帶入。
+> **這不是 skill,是引擎。** 它沒有 `SKILL.md`,不出現在任何 `skills/` 底下,
+> 因此**平台不會把它列成可叫用的入口**——`/<plugin>:zh-style` 這種東西不存在。
+>
+> 單一真相在頂層 `engines/zh-style/`;`build_suite.py` 的 `ENGINES` 名冊把它
+> 出貨到每個宿主 plugin 的 `engines/zh-style/`。**引擎照樣隨 plugin 出貨,只是不當前門。**
+>
+> 為什麼要這樣:**「skill」這個身分是由列舉器定義的**——誰列舉 `skills/`,誰就在定義什麼是 skill。
+> 本 repo 有兩個列舉器(平台載入器列舉 `plugins/<p>/skills/*`、治理閘列舉頂層 `skills/*`),
+> 引擎放在 `engines/` 讓**兩個列舉器構造上都走不到它**,不依賴任何人記得。
+> 這件事由 `CHG-20260829-01` 的三腿集合不相交斷言守著。
+
+跑法:
+
+```bash
+python3 engines/zh-style/scripts/zh_style_check.py 稿件.md
+python3 engines/zh-style/scripts/zh_style_check.py --self-test
+```
 
 ## 為什麼是共用的
 
